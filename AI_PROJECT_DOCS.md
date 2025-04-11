@@ -10,8 +10,8 @@ An AI-powered news credibility analyzer built with Django. This document provide
 The News Advance system is built on Django 5.2 with a modular architecture organized into specialized apps:
 
 - **news_aggregator**: News collection, storage, and management
-- **news_analysis**: AI analysis pipelines and algorithms
-- **accounts**: User authentication, profiles, and preference management
+- **news_analysis**: AI analysis pipelines and algorithms (bias detection, sentiment analysis)
+- **accounts**: User authentication, profiles, saved articles, and preference management
 
 ## Data Models
 

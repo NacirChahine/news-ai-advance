@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load math_filters %}
+
+{% block title %}{{ source.name }} | News Advance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Source header with info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'news_aggregator:latest' %}">Latest News</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'news_aggregator:source_list' %}">Sources</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ source.name }}</li>
+                </ol>
+            </nav>
+            
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h1 class="mb-3">{{ source.name }}</h1>
+                            <p class="lead">
+                                <a href="{{ source.url }}" target="_blank" class="text-decoration-none">
+                                    <i class="fas fa-external-link-alt me-1"></i> Visit website
+                                </a>
+                            </p>
+                            {% if source.description %}
+                                <p>{{ source.description }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <h4 class="mb-3">Reliability Score</h4>
+                            <div class="position-relative d-inline-block">
+                                <svg width="120" height="120" viewBox="0 0 120 120">
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="#e6e6e6" stroke-width="12"/>
+                                    <circle cx="60" cy="60" r="54" fill="none" stroke="url(#gradient)" stroke-width="12"
+                                            stroke-dasharray="339.3" stroke-dashoffset="{{ source.reliability_score|sub:100|mul:3.393 }}"
+                                            transform="rotate(-90 60 60)"/>
+                                    <text x="60" y="65" text-anchor="middle" fill="#333" font-size="20" font-weight="bold">
+                                        {{ source.reliability_score|floatformat:0 }}
+                                    </text>
+                                    <defs>
+                                        <linearGradient id="gradient">
+                                            <stop offset="0%" stop-color="#ff4d4d" />
+                                            <stop offset="50%" stop-color="#ffcc00" />
+                                            <stop offset="100%" stop-color="#00cc44" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <span class="badge 
+                                    {% if source.reliability_score >= 80 %}bg-success
+                                    {% elif source.reliability_score >= 60 %}bg-warning text-dark
+                                    {% elif source.reliability_score >= 40 %}bg-secondary
+                                    {% elif source.reliability_score >= 20 %}bg-warning text-dark
+                                    {% else %}bg-danger{% endif %}">
+                                    {% if source.reliability_score >= 80 %}Very Reliable
+                                    {% elif source.reliability_score >= 60 %}Mostly Reliable
+                                    {% elif source.reliability_score >= 40 %}Mixed Reliability
+                                    {% elif source.reliability_score >= 20 %}Questionable
+                                    {% else %}Unreliable{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Articles from this source -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="mb-4">Articles from {{ source.name }}</h2>
+            
+            {% if page_obj %}
+                <div class="row">
+                    {% for article in page_obj %}
+                        <div class="col-md-4 mb-4">
+                            <div class="card h-100">
+                                {% if article.image_url %}
+                                    <img src="{{ article.image_url }}" class="card-img-top" alt="{{ article.title }}">
+                                {% else %}
+                                    <div class="card-img-top bg-light text-center py-5">
+                                        <i class="fas fa-newspaper fa-3x text-secondary"></i>
+                                    </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ article.title }}</h5>
+                                    <p class="card-text text-muted small">
+                                        <i class="far fa-calendar-alt me-1"></i> {{ article.published_date|date:"F d, Y" }}
+                                    </p>
+                                    <p class="card-text">{{ article.summary|default:article.content|truncatewords:30 }}</p>
+                                </div>
+                                <div class="card-footer bg-transparent">
+                                    <a href="{% url 'news_aggregator:article_detail' article.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-book-reader"></i> Read Article
+                                    </a>
+                                    {% if user.is_authenticated %}
+                                        {% if article in user.saved_articles.all %}
+                                            <a href="{% url 'news_aggregator:save_article_by_id' article.id %}?next=news_aggregator:source_detail&source_id={{ source.id }}" class="btn btn-sm btn-outline-danger float-end">
+                                                <i class="fas fa-bookmark"></i> Unsave
+                                            </a>
+                                        {% else %}
+                                            <a href="{% url 'news_aggregator:save_article_by_id' article.id %}?next=news_aggregator:source_detail&source_id={{ source.id }}" class="btn btn-sm btn-outline-primary float-end">
+                                                <i class="far fa-bookmark"></i> Save
+                                            </a>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Pagination -->
+                {% if page_obj.has_other_pages %}
+                    <nav aria-label="Page navigation" class="my-4">
+                        <ul class="pagination justify-content-center">
+                            {% if page_obj.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page=1" aria-label="First">
+                                        <span aria-hidden="true">&laquo;&laquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">&laquo;&laquo;</span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">&laquo;</span>
+                                </li>
+                            {% endif %}
+                            
+                            {% for num in page_obj.paginator.page_range %}
+                                {% if page_obj.number == num %}
+                                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            {% if page_obj.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}" aria-label="Last">
+                                        <span aria-hidden="true">&raquo;&raquo;</span>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link">&raquo;</span>
+                                </li>
+                                <li class="page-item disabled">
+                                    <span class="page-link">&raquo;&raquo;</span>
+                                </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                {% endif %}
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>No articles have been found from this source.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

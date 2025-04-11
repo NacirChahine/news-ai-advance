@@ -102,10 +102,24 @@ def save_article(request, article_id):
         messages.success(request, f'Article "{article.title}" saved to your collection.')
     
     # Redirect back to the referring page or article detail
-    next_url = request.GET.get('next', 'news_aggregator:article_detail')
-    if next_url == 'article_detail':
+    next_url = request.GET.get('next', '')
+    
+    # Handle different next url destinations
+    if next_url == 'news_aggregator:article_detail':
         return redirect('news_aggregator:article_detail', article_id=article.id)
-    return redirect(next_url)
+    elif next_url == 'news_aggregator:source_detail':
+        source_id = request.GET.get('source_id')
+        if source_id:
+            return redirect('news_aggregator:source_detail', source_id=source_id)
+        else:
+            return redirect('news_aggregator:source_list')
+    elif next_url == 'news_aggregator:latest':
+        return redirect('news_aggregator:latest')
+    elif next_url == 'news_analysis:article_analysis':
+        return redirect('news_analysis:article_analysis', article_id=article.id)
+    else:
+        # Default to article detail page if no valid next URL
+        return redirect('news_aggregator:article_detail', article_id=article.id)
 
 
 @login_required

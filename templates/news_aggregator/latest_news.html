@@ -94,11 +94,11 @@
                             </a>
                             {% if user.is_authenticated %}
                                 {% if article in user.saved_articles.all %}
-                                    <a href="{% url 'news_aggregator:save_article' article.id %}?next=news_aggregator:latest" class="btn btn-sm btn-outline-danger float-end">
+                                    <a href="{% url 'news_aggregator:save_article_by_id' article.id %}?next=news_aggregator:latest" class="btn btn-sm btn-outline-danger float-end">
                                         <i class="fas fa-bookmark"></i> Unsave
                                     </a>
                                 {% else %}
-                                    <a href="{% url 'news_aggregator:save_article' article.id %}?next=news_aggregator:latest" class="btn btn-sm btn-outline-primary float-end">
+                                    <a href="{% url 'news_aggregator:save_article_by_id' article.id %}?next=news_aggregator:latest" class="btn btn-sm btn-outline-primary float-end">
                                         <i class="far fa-bookmark"></i> Save
                                     </a>
                                 {% endif %}

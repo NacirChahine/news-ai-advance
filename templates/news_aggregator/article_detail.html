@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load math_filters %}
 
 {% block title %}{{ article.title }} | News Advance{% endblock %}
 
@@ -37,11 +38,11 @@
                         <div>
                             {% if user.is_authenticated %}
                                 {% if user_saved %}
-                                    <a href="{% url 'news_aggregator:save_article' article.id %}?next=news_aggregator:article_detail" class="btn btn-sm btn-outline-danger">
+                                    <a href="{% url 'news_aggregator:save_article_by_id' article.id %}?next=news_aggregator:article_detail" class="btn btn-sm btn-outline-danger">
                                         <i class="fas fa-bookmark"></i> Unsave
                                     </a>
                                 {% else %}
-                                    <a href="{% url 'news_aggregator:save_article' article.id %}?next=news_aggregator:article_detail" class="btn btn-sm btn-outline-primary">
+                                    <a href="{% url 'news_aggregator:save_article_by_id' article.id %}?next=news_aggregator:article_detail" class="btn btn-sm btn-outline-primary">
                                         <i class="far fa-bookmark"></i> Save
                                     </a>
                                 {% endif %}

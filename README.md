@@ -24,8 +24,8 @@ News Advance is a web application that aggregates news articles and applies AI-d
 The project is organized into the following Django apps:
 
 - **news_aggregator**: Handles news article collection and storage
-- **news_analysis**: Performs AI analysis of news content
-- **accounts**: Manages user authentication and preferences
+- **news_analysis**: Performs AI analysis of news content (bias detection, sentiment analysis)
+- **accounts**: Manages user authentication, saved articles, and user preferences
 
 ## Setup & Installation
 
@@ -114,24 +114,25 @@ python manage.py analyze_articles
 
 ## Features
 
-- **User System**
+### News Aggregation
+- Collection and storage of news articles from multiple sources
+- Source credibility ratings and filtering
+- Personalized news feed based on topics of interest
+- Save articles to your personal collection with notes
+
+### News Analysis
+- Political bias detection and visualization using advanced NLP techniques
+- Sentiment analysis to detect emotional tone (positive, negative, neutral)
+- Named entity recognition and extraction
+- Readability scoring and complexity analysis
+- Visual indicators for source reliability and content bias
+
+### User System
   - User authentication and profile management
   - Personalized news preferences
   - Saved articles with notes
 
-- **News Collection**
-  - Multi-source aggregation using newspaper3k
-  - Article preprocessing and content extraction
-  - Automatic summarization
-
-- **Analysis Tools**
-  - Political bias detection
-  - Sentiment analysis using VADER
-  - Readability scoring
-  - Named entity recognition
-  - Topic extraction
-
-- **Misinformation Tracking**
+### Misinformation Tracking
   - Real-time alerts for misleading content
   - Fact-checking of claims
   - Source reliability scoring
