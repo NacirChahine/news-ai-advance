@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ article.title }} | News Advance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <!-- Main article content -->
+        <div class="col-lg-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'news_aggregator:latest' %}">Latest News</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'news_aggregator:source_detail' article.source.id %}">{{ article.source.name }}</a></li>
+                            <li class="breadcrumb-item active" aria-current="page">{{ article.title|truncatechars:30 }}</li>
+                        </ol>
+                    </nav>
+                    
+                    <h1 class="mb-3">{{ article.title }}</h1>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <div>
+                            <span class="text-muted">
+                                <i class="fas fa-newspaper me-1"></i> {{ article.source.name }}
+                            </span>
+                            {% if article.author %}
+                                <span class="text-muted ms-3">
+                                    <i class="fas fa-user me-1"></i> {{ article.author }}
+                                </span>
+                            {% endif %}
+                            <span class="text-muted ms-3">
+                                <i class="far fa-calendar-alt me-1"></i> {{ article.published_date|date:"F d, Y" }}
+                            </span>
+                        </div>
+                        <div>
+                            {% if user.is_authenticated %}
+                                {% if user_saved %}
+                                    <a href="{% url 'news_aggregator:save_article' article.id %}?next=news_aggregator:article_detail" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-bookmark"></i> Unsave
+                                    </a>
+                                {% else %}
+                                    <a href="{% url 'news_aggregator:save_article' article.id %}?next=news_aggregator:article_detail" class="btn btn-sm btn-outline-primary">
+                                        <i class="far fa-bookmark"></i> Save
+                                    </a>
+                                {% endif %}
+                            {% endif %}
+                            <a href="{{ article.url }}" target="_blank" class="btn btn-sm btn-outline-secondary ms-2">
+                                <i class="fas fa-external-link-alt"></i> Original Source
+                            </a>
+                        </div>
+                    </div>
+                    
+                    {% if article.image_url %}
+                        <img src="{{ article.image_url }}" class="img-fluid rounded mb-4" alt="{{ article.title }}">
+                    {% endif %}
+                    
+                    {% if article.is_summarized and article.summary %}
+                        <div class="alert alert-info mb-4">
+                            <h5><i class="fas fa-file-alt me-2"></i>AI-Generated Summary</h5>
+                            <p class="mb-0">{{ article.summary }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="article-content">
+                        {{ article.content|linebreaks }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Analysis sidebar -->
+        <div class="col-lg-4">
+            <!-- Credibility Analysis -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>AI Analysis</h5>
+                </div>
+                <div class="card-body">
+                    {% if article.is_analyzed %}
+                        <!-- Bias Analysis -->
+                        {% if article.bias_analysis %}
+                            <div class="mb-4">
+                                <h6>Political Bias</h6>
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span>Left</span>
+                                    <span>Center</span>
+                                    <span>Right</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 25px;">
+                                    {% with bias_score=article.bias_analysis.bias_score %}
+                                        {% with position=bias_score|add:"1"|floatformat:2|mul:50 %}
+                                            <div class="progress-bar 
+                                                {% if bias_score < -0.5 %}bg-primary
+                                                {% elif bias_score < -0.1 %}bg-info
+                                                {% elif bias_score < 0.1 %}bg-success
+                                                {% elif bias_score < 0.5 %}bg-warning
+                                                {% else %}bg-danger{% endif %}"
+                                                style="width: 10px; margin-left: calc({{ position }}% - 5px);">
+                                            </div>
+                                        {% endwith %}
+                                    {% endwith %}
+                                </div>
+                                <p class="mb-0">
+                                    <strong>Assessment:</strong> 
+                                    {{ article.bias_analysis.get_political_leaning_display }} 
+                                    (Confidence: {{ article.bias_analysis.confidence|floatformat:2 }})
+                                </p>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Sentiment Analysis -->
+                        {% if article.sentiment_analysis %}
+                            <div class="mb-4">
+                                <h6>Emotional Tone</h6>
+                                <div class="progress mb-2" style="height: 25px;">
+                                    <div class="progress-bar bg-danger" role="progressbar" 
+                                         style="width: {{ article.sentiment_analysis.negative_score|floatformat:2|mul:100 }}%" 
+                                         title="Negative: {{ article.sentiment_analysis.negative_score|floatformat:2 }}">
+                                    </div>
+                                    <div class="progress-bar bg-secondary" role="progressbar" 
+                                         style="width: {{ article.sentiment_analysis.neutral_score|floatformat:2|mul:100 }}%" 
+                                         title="Neutral: {{ article.sentiment_analysis.neutral_score|floatformat:2 }}">
+                                    </div>
+                                    <div class="progress-bar bg-success" role="progressbar" 
+                                         style="width: {{ article.sentiment_analysis.positive_score|floatformat:2|mul:100 }}%" 
+                                         title="Positive: {{ article.sentiment_analysis.positive_score|floatformat:2 }}">
+                                    </div>
+                                </div>
+                                <p class="mb-0">
+                                    <strong>Overall sentiment:</strong> 
+                                    {% if article.sentiment_analysis.sentiment_score > 0.3 %}
+                                        <span class="text-success">Positive</span>
+                                    {% elif article.sentiment_analysis.sentiment_score < -0.3 %}
+                                        <span class="text-danger">Negative</span>
+                                    {% else %}
+                                        <span class="text-secondary">Neutral</span>
+                                    {% endif %}
+                                    (Score: {{ article.sentiment_analysis.sentiment_score|floatformat:2 }})
+                                </p>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Fact Checks -->
+                        {% if article.fact_checks.exists %}
+                            <div class="mb-4">
+                                <h6>Fact Checks</h6>
+                                <div class="accordion" id="factChecksAccordion">
+                                    {% for fact_check in article.fact_checks.all %}
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="heading{{ fact_check.id }}">
+                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                                        data-bs-target="#collapse{{ fact_check.id }}" aria-expanded="false" 
+                                                        aria-controls="collapse{{ fact_check.id }}">
+                                                    <span class="badge 
+                                                        {% if fact_check.rating == 'true' or fact_check.rating == 'mostly_true' %}bg-success
+                                                        {% elif fact_check.rating == 'half_true' %}bg-warning text-dark
+                                                        {% elif fact_check.rating == 'mostly_false' or fact_check.rating == 'false' or fact_check.rating == 'pants_on_fire' %}bg-danger
+                                                        {% else %}bg-secondary{% endif %} me-2">
+                                                        {{ fact_check.get_rating_display }}
+                                                    </span>
+                                                    {{ fact_check.claim|truncatechars:70 }}
+                                                </button>
+                                            </h2>
+                                            <div id="collapse{{ fact_check.id }}" class="accordion-collapse collapse" 
+                                                 aria-labelledby="heading{{ fact_check.id }}" data-bs-parent="#factChecksAccordion">
+                                                <div class="accordion-body">
+                                                    <p><strong>Claim:</strong> {{ fact_check.claim }}</p>
+                                                    <p><strong>Explanation:</strong> {{ fact_check.explanation }}</p>
+                                                    {% if fact_check.sources %}
+                                                        <p><strong>Sources:</strong> {{ fact_check.sources }}</p>
+                                                    {% endif %}
+                                                    <small class="text-muted">Checked on {{ fact_check.checked_at|date:"F d, Y" }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning mb-0">
+                            <i class="fas fa-info-circle me-2"></i>This article has not been analyzed yet.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Related Articles -->
+            {% if related_articles %}
+                <div class="card mb-4">
+                    <div class="card-header bg-secondary text-white">
+                        <h5 class="mb-0"><i class="fas fa-link me-2"></i>Related Articles</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            {% for related in related_articles %}
+                                <li class="list-group-item">
+                                    <a href="{% url 'news_aggregator:article_detail' related.id %}">{{ related.title }}</a>
+                                    <small class="text-muted d-block">{{ related.published_date|date:"M d, Y" }}</small>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- Source Information -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-newspaper me-2"></i>About the Source</h5>
+                </div>
+                <div class="card-body">
+                    <h6>{{ article.source.name }}</h6>
+                    {% if article.source.logo %}
+                        <img src="{{ article.source.logo.url }}" alt="{{ article.source.name }}" class="img-fluid mb-2" style="max-height: 60px;">
+                    {% endif %}
+                    <p>{{ article.source.description }}</p>
+                    <p class="mb-0">
+                        <strong>Reliability Score:</strong> 
+                        <span class="
+                            {% if article.source.reliability_score >= 75 %}text-success
+                            {% elif article.source.reliability_score >= 50 %}text-warning
+                            {% else %}text-danger{% endif %}">
+                            {{ article.source.reliability_score }}/100
+                        </span>
+                    </p>
+                    <a href="{% url 'news_aggregator:source_detail' article.source.id %}" class="btn btn-sm btn-outline-info mt-3">
+                        <i class="fas fa-newspaper me-1"></i> View All Articles from this Source
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Custom JavaScript for article features can be added here
+    $(document).ready(function() {
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Additional article-specific JS could go here
+    });
+</script>
+{% endblock %}

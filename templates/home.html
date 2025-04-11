@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}News Advance - AI-Powered News Credibility Analyzer{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-5">
+        <div class="col-md-8 offset-md-2 text-center">
+            <h1 class="display-4 mb-4">Welcome to News Advance</h1>
+            <p class="lead">
+                An AI-powered news credibility analyzer that helps you access more balanced and fact-checked information while combating misinformation.
+            </p>
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mt-4">
+                <a href="{% url 'news_aggregator:latest' %}" class="btn btn-primary btn-lg px-4 gap-3">
+                    <i class="fas fa-newspaper me-2"></i>Browse News
+                </a>
+                <a href="{% url 'about' %}" class="btn btn-outline-secondary btn-lg px-4">
+                    <i class="fas fa-info-circle me-2"></i>Learn More
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h2 class="text-center mb-4">Key Features</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            <i class="fas fa-balance-scale fa-3x mb-3 text-primary"></i>
+                            <h5 class="card-title">Bias & Sentiment Analysis</h5>
+                            <p class="card-text">Detects political and emotional bias in news articles, helping you understand the perspective behind the reporting.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            <i class="fas fa-check-double fa-3x mb-3 text-primary"></i>
+                            <h5 class="card-title">AI-Powered Fact-Checking</h5>
+                            <p class="card-text">Generates concise summaries and verifies key claims in articles to provide accurate information.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 text-center">
+                        <div class="card-body">
+                            <i class="fas fa-exclamation-triangle fa-3x mb-3 text-primary"></i>
+                            <h5 class="card-title">Misinformation Tracker</h5>
+                            <p class="card-text">Flags potentially misleading trending news and provides real-time alerts about misinformation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h2 class="text-center mb-4">How It Works</h2>
+            <div class="row">
+                <div class="col-md-6 offset-md-3">
+                    <div class="card">
+                        <div class="card-body">
+                            <ol class="mb-0">
+                                <li class="mb-3">We collect news articles from various sources across the political spectrum.</li>
+                                <li class="mb-3">Our AI models analyze the content for bias, sentiment, and factual accuracy.</li>
+                                <li class="mb-3">You get instant insights about article credibility and perspective.</li>
+                                <li>Stay informed with balanced, fact-checked news tailored to your preferences.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
