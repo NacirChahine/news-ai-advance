@@ -9,3 +9,5 @@ beautifulsoup4==4.12.3
 transformers==4.39.0
 newspaper3k==0.2.8
 python-dotenv==1.0.0
+
+Faker~=37.1.0
