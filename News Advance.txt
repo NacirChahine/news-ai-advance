@@ -1,0 +1,11 @@
+News Advance
+
+Project Title: AI-Powered News Credibility Analyzer
+
+Description:
+This project aims to develop a web application that aggregates news articles and applies AI-driven analysis tools to assess their credibility. The system will include:
+
+Bias & Sentiment Analysis – Detects political and emotional bias in news articles.
+AI-Powered Summarization & Fact-Checking – Generates concise summaries and verifies key claims.
+Real-Time Misinformation Tracker – Flags potentially misleading trending news.
+The backend will integrate custom-trained NLP models for text analysis, and a user-friendly interface will provide insights into news credibility. The goal is to help users access more balanced and fact-checked information while combating misinformation.

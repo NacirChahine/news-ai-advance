@@ -1,0 +1,11 @@
+Django==5.2
+nltk==3.8.1
+scikit-learn==1.5.0
+spacy==3.7.4
+pandas==2.2.0
+numpy==1.26.3
+requests==2.31.0
+beautifulsoup4==4.12.3
+transformers==4.39.0
+newspaper3k==0.2.8
+python-dotenv==1.0.0
