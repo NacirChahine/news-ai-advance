@@ -33,6 +33,7 @@ The project is organized into the following Django apps:
 
 - Python 3.8+
 - pip
+- spaCy english model: `python -m spacy download en_core_web_sm`
 
 ### Installation Steps
 
@@ -56,22 +57,28 @@ The project is organized into the following Django apps:
    pip install -r requirements.txt
    ```
 
-5. Run migrations
+5. Download NLP resources
+   ```
+   python -m nltk.downloader vader_lexicon punkt stopwords
+   python -m spacy download en_core_web_sm
+   ```
+
+6. Run migrations
    ```
    python manage.py migrate
    ```
 
-6. Create a superuser (for admin access)
+7. Create a superuser (for admin access)
    ```
    python manage.py createsuperuser
    ```
 
-7. Start the development server
+8. Start the development server
    ```
    python manage.py runserver
    ```
 
-8. Access the site at http://127.0.0.1:8000
+9. Access the site at http://127.0.0.1:8000
 
 ## Running the Project
 
@@ -81,16 +88,53 @@ After installation, you can run the project using:
 python manage.py runserver
 ```
 
-Access the admin interface at http://127.0.0.1:8000/admin to add news sources and articles.
+### Generating Test Data
+
+To populate the site with test data for development purposes:
+
+```
+python manage.py generate_test_data --sources 10 --articles 30 --users 5
+```
+
+### News Fetching
+
+To fetch news articles from configured sources:
+
+```
+python manage.py fetch_news
+```
+
+### Analyzing Articles
+
+To analyze articles for bias and sentiment:
+
+```
+python manage.py analyze_articles
+```
 
 ## Features
 
-- User authentication and profile management
-- News aggregation from various sources
-- AI analysis of news articles for bias and sentiment
-- Fact-checking of claims in articles
-- Misinformation tracking and alerts
-- User preferences for personalized news experience
+- **User System**
+  - User authentication and profile management
+  - Personalized news preferences
+  - Saved articles with notes
+
+- **News Collection**
+  - Multi-source aggregation using newspaper3k
+  - Article preprocessing and content extraction
+  - Automatic summarization
+
+- **Analysis Tools**
+  - Political bias detection
+  - Sentiment analysis using VADER
+  - Readability scoring
+  - Named entity recognition
+  - Topic extraction
+
+- **Misinformation Tracking**
+  - Real-time alerts for misleading content
+  - Fact-checking of claims
+  - Source reliability scoring
 
 ## License
 

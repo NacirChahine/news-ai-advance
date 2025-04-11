@@ -1,0 +1,309 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}User Preferences{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row">
+        <!-- Left sidebar with navigation -->
+        <div class="col-lg-3 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Account Settings</h5>
+                    <div class="nav flex-column nav-pills mt-3" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+                        <button class="nav-link active text-start" id="v-pills-news-tab" data-bs-toggle="pill" data-bs-target="#v-pills-news" type="button" role="tab" aria-controls="v-pills-news" aria-selected="true">
+                            <i class="bi bi-newspaper me-2"></i>News Preferences
+                        </button>
+                        <button class="nav-link text-start" id="v-pills-notifications-tab" data-bs-toggle="pill" data-bs-target="#v-pills-notifications" type="button" role="tab" aria-controls="v-pills-notifications" aria-selected="false">
+                            <i class="bi bi-bell me-2"></i>Notifications
+                        </button>
+                        <button class="nav-link text-start" id="v-pills-sources-tab" data-bs-toggle="pill" data-bs-target="#v-pills-sources" type="button" role="tab" aria-controls="v-pills-sources" aria-selected="false">
+                            <i class="bi bi-bookmark me-2"></i>Preferred Sources
+                        </button>
+                        <button class="nav-link text-start" id="v-pills-account-tab" data-bs-toggle="pill" data-bs-target="#v-pills-account" type="button" role="tab" aria-controls="v-pills-account" aria-selected="false">
+                            <i class="bi bi-person me-2"></i>Account Information
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-grid gap-2 mt-3">
+                <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Profile
+                </a>
+            </div>
+        </div>
+        
+        <!-- Right content area -->
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="tab-content" id="v-pills-tabContent">
+                        <!-- News Preferences Tab -->
+                        <div class="tab-pane fade show active" id="v-pills-news" role="tabpanel" aria-labelledby="v-pills-news-tab">
+                            <h4 class="mb-4">News Preferences</h4>
+                            
+                            <form method="post" action="{% url 'accounts:preferences' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="news_preferences">
+                                
+                                <div class="mb-4">
+                                    <label class="form-label">Political Balance</label>
+                                    <div class="form-text mb-2">Choose how you'd like to see political viewpoints in your news feed</div>
+                                    
+                                    <select name="political_filter" class="form-select">
+                                        <option value="all" {% if preferences.political_filter == 'all' %}selected{% endif %}>
+                                            Show all political viewpoints
+                                        </option>
+                                        <option value="balanced" {% if preferences.political_filter == 'balanced' %}selected{% endif %}>
+                                            Balanced mix of viewpoints
+                                        </option>
+                                        <option value="neutral_only" {% if preferences.political_filter == 'neutral_only' %}selected{% endif %}>
+                                            Prioritize neutral content
+                                        </option>
+                                        <option value="diverse" {% if preferences.political_filter == 'diverse' %}selected{% endif %}>
+                                            Diverse viewpoints (avoid echo chambers)
+                                        </option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="form-label">Content Filters</label>
+                                    <div class="form-text mb-2">Select content types you'd like to see</div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="show_politics" id="show_politics" 
+                                               {% if preferences.show_politics %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_politics">
+                                            Politics
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="show_business" id="show_business" 
+                                               {% if preferences.show_business %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_business">
+                                            Business & Economy
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="show_tech" id="show_tech" 
+                                               {% if preferences.show_tech %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_tech">
+                                            Technology
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="show_health" id="show_health" 
+                                               {% if preferences.show_health %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_health">
+                                            Health & Science
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="show_entertainment" id="show_entertainment" 
+                                               {% if preferences.show_entertainment %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_entertainment">
+                                            Entertainment & Culture
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="form-label">Analysis Preferences</label>
+                                    <div class="form-text mb-2">Choose how analysis features are displayed</div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="show_bias_analysis" id="show_bias_analysis" 
+                                               {% if preferences.show_bias_analysis %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_bias_analysis">
+                                            Show political bias analysis
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="show_sentiment_analysis" id="show_sentiment_analysis" 
+                                               {% if preferences.show_sentiment_analysis %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_sentiment_analysis">
+                                            Show sentiment analysis
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="show_fact_check" id="show_fact_check" 
+                                               {% if preferences.show_fact_check %}checked{% endif %}>
+                                        <label class="form-check-label" for="show_fact_check">
+                                            Show fact checking results
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Save News Preferences</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Notifications Tab -->
+                        <div class="tab-pane fade" id="v-pills-notifications" role="tabpanel" aria-labelledby="v-pills-notifications-tab">
+                            <h4 class="mb-4">Notification Settings</h4>
+                            
+                            <form method="post" action="{% url 'accounts:preferences' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="notification_preferences">
+                                
+                                <div class="mb-4">
+                                    <label class="form-label">Email Notifications</label>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="email_newsletter" id="email_newsletter" 
+                                               {% if preferences.email_newsletter %}checked{% endif %}>
+                                        <label class="form-check-label" for="email_newsletter">
+                                            Weekly news digest
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="email_trending" id="email_trending" 
+                                               {% if preferences.email_trending %}checked{% endif %}>
+                                        <label class="form-check-label" for="email_trending">
+                                            Trending news alerts
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="email_misinformation" id="email_misinformation" 
+                                               {% if preferences.email_misinformation %}checked{% endif %}>
+                                        <label class="form-check-label" for="email_misinformation">
+                                            Misinformation alerts
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-4">
+                                    <label class="form-label">Browser Notifications</label>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="browser_trending" id="browser_trending" 
+                                               {% if preferences.browser_trending %}checked{% endif %}>
+                                        <label class="form-check-label" for="browser_trending">
+                                            Trending news alerts
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" name="browser_misinformation" id="browser_misinformation" 
+                                               {% if preferences.browser_misinformation %}checked{% endif %}>
+                                        <label class="form-check-label" for="browser_misinformation">
+                                            Misinformation alerts
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Preferred Sources Tab -->
+                        <div class="tab-pane fade" id="v-pills-sources" role="tabpanel" aria-labelledby="v-pills-sources-tab">
+                            <h4 class="mb-4">Preferred News Sources</h4>
+                            
+                            <form method="post" action="{% url 'accounts:preferences' %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="preferred_sources">
+                                
+                                <div class="mb-3">
+                                    <div class="form-text mb-3">Select the news sources you trust and want to see more content from:</div>
+                                    
+                                    <div class="row">
+                                        {% for source in all_sources %}
+                                        <div class="col-md-6 mb-2">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="preferred_sources" 
+                                                       value="{{ source.id }}" id="source{{ source.id }}"
+                                                       {% if source in user.profile.preferred_sources.all %}checked{% endif %}>
+                                                <label class="form-check-label" for="source{{ source.id }}">
+                                                    {{ source.name }}
+                                                    <small class="text-muted d-block">
+                                                        Reliability: {{ source.reliability_score|floatformat:0 }}/100
+                                                    </small>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Save Preferred Sources</button>
+                                </div>
+                            </form>
+                        </div>
+                        
+                        <!-- Account Information Tab -->
+                        <div class="tab-pane fade" id="v-pills-account" role="tabpanel" aria-labelledby="v-pills-account-tab">
+                            <h4 class="mb-4">Account Information</h4>
+                            
+                            <form method="post" action="{% url 'accounts:preferences' %}" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <input type="hidden" name="form_type" value="account_info">
+                                
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">Username</label>
+                                    <input type="text" class="form-control" id="username" value="{{ user.username }}" disabled>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" name="email" value="{{ user.email }}">
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="first_name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user.first_name }}">
+                                    </div>
+                                    
+                                    <div class="col-md-6 mb-3">
+                                        <label for="last_name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user.last_name }}">
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="bio" class="form-label">Bio</label>
+                                    <textarea class="form-control" id="bio" name="bio" rows="3">{{ user.profile.bio }}</textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="avatar" class="form-label">Profile Picture</label>
+                                    <input type="file" class="form-control" id="avatar" name="avatar">
+                                    {% if user.profile.avatar %}
+                                    <div class="form-text">Current: {{ user.profile.avatar.name }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary">Update Account Information</button>
+                                </div>
+                            </form>
+                            
+                            <hr class="my-4">
+                            
+                            <h5>Password</h5>
+                            <p>Want to change your password?</p>
+                            <a href="{% url 'accounts:password_change' %}" class="btn btn-outline-secondary">Change Password</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Real-Time Misinformation Tracker{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3">Real-Time Misinformation Tracker</h1>
+            <p class="lead">
+                Stay informed about potentially misleading news stories currently trending online.
+                Our AI-powered system identifies and tracks misinformation across various platforms.
+            </p>
+        </div>
+    </div>
+    
+    <!-- Alert summary stats -->
+    <div class="row mb-5">
+        <div class="col-md-3">
+            <div class="card text-white bg-danger h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Critical Alerts</h5>
+                    <h2 class="display-4">{{ critical_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-warning text-dark h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">High Priority</h5>
+                    <h2 class="display-4">{{ high_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info text-dark h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Medium Priority</h5>
+                    <h2 class="display-4">{{ medium_count }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success h-100">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Low Priority</h5>
+                    <h2 class="display-4">{{ low_count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Active alerts -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Active Misinformation Alerts</h5>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="showResolved" {% if show_resolved %}checked{% endif %}>
+                            <label class="form-check-label" for="showResolved">Show Resolved</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for alert in active_alerts %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    {% if alert.severity == 'critical' %}
+                                    <span class="badge bg-danger p-2">Critical</span>
+                                    {% elif alert.severity == 'high' %}
+                                    <span class="badge bg-warning text-dark p-2">High</span>
+                                    {% elif alert.severity == 'medium' %}
+                                    <span class="badge bg-info text-dark p-2">Medium</span>
+                                    {% else %}
+                                    <span class="badge bg-success p-2">Low</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1">{{ alert.title }}</h5>
+                                    <p class="mb-1">{{ alert.description }}</p>
+                                    <small class="text-muted">Detected {{ alert.detected_at|timesince }} ago</small>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-outline-primary btn-sm view-details" 
+                                            data-id="{{ alert.id }}" data-bs-toggle="modal" data-bs-target="#alertDetailModal">
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center p-4">
+                            <p class="text-muted mb-0">No active misinformation alerts at this time</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resolved alerts (initially hidden) -->
+    <div class="row mb-5 {% if not show_resolved %}d-none{% endif %}" id="resolvedAlertsSection">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Recently Resolved Alerts</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for alert in resolved_alerts %}
+                        <div class="list-group-item">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <span class="badge bg-secondary p-2">Resolved</span>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="mb-1">{{ alert.title }}</h5>
+                                    <p class="mb-1">{{ alert.description }}</p>
+                                    <small class="text-muted">Resolved {{ alert.resolved_at|timesince }} ago</small>
+                                </div>
+                                <div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm view-details" 
+                                            data-id="{{ alert.id }}" data-bs-toggle="modal" data-bs-target="#alertDetailModal">
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center p-4">
+                            <p class="text-muted mb-0">No resolved alerts in the past 30 days</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- How it works section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h5 class="card-title">How Our Misinformation Tracker Works</h5>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-3 text-center mb-4 mb-md-0">
+                            <div class="p-3">
+                                <i class="bi bi-search fs-1 text-primary mb-3"></i>
+                                <h6>Continuous Monitoring</h6>
+                                <p class="small text-muted">We continuously scan thousands of news sources and social media platforms for potentially misleading content.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-4 mb-md-0">
+                            <div class="p-3">
+                                <i class="bi bi-graph-up fs-1 text-primary mb-3"></i>
+                                <h6>Pattern Detection</h6>
+                                <p class="small text-muted">Our AI algorithms identify unusual patterns of information spread and viral content with questionable sources.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-4 mb-md-0">
+                            <div class="p-3">
+                                <i class="bi bi-shield-check fs-1 text-primary mb-3"></i>
+                                <h6>Fact Verification</h6>
+                                <p class="small text-muted">Claims are cross-referenced with trusted sources and fact-checking organizations to verify accuracy.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="p-3">
+                                <i class="bi bi-exclamation-triangle fs-1 text-primary mb-3"></i>
+                                <h6>Alert Generation</h6>
+                                <p class="small text-muted">When misinformation is detected, we create alerts with proper context and related articles to keep you informed.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alert Detail Modal -->
+<div class="modal fade" id="alertDetailModal" tabindex="-1" aria-labelledby="alertDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertDetailModalLabel">Alert Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertDetailContent">
+                    <div class="text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading alert details...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Toggle resolved alerts section
+        $('#showResolved').change(function() {
+            if ($(this).is(':checked')) {
+                $('#resolvedAlertsSection').removeClass('d-none');
+            } else {
+                $('#resolvedAlertsSection').addClass('d-none');
+            }
+            
+            // Update URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            urlParams.set('show_resolved', $(this).is(':checked') ? '1' : '0');
+            window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
+        });
+        
+        // Load alert details in modal
+        $('.view-details').click(function() {
+            const alertId = $(this).data('id');
+            
+            // Clear previous content and show loading spinner
+            $('#alertDetailContent').html(`
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading alert details...</p>
+                </div>
+            `);
+            
+            // Fetch alert details
+            $.ajax({
+                url: `/news/analysis/misinformation/${alertId}/details/`,
+                type: 'GET',
+                success: function(response) {
+                    $('#alertDetailContent').html(response);
+                },
+                error: function() {
+                    $('#alertDetailContent').html(`
+                        <div class="alert alert-danger">
+                            <p class="mb-0">Error loading alert details. Please try again later.</p>
+                        </div>
+                    `);
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}
