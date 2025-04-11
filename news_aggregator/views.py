@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import JsonResponse
 from .models import NewsArticle, NewsSource, UserSavedArticle
 
 def latest_news(request):
@@ -105,3 +106,32 @@ def save_article(request, article_id):
     if next_url == 'article_detail':
         return redirect('news_aggregator:article_detail', article_id=article.id)
     return redirect(next_url)
+
+
+@login_required
+def save_article_ajax(request):
+    """AJAX view to save or unsave an article for the logged-in user"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
+    
+    # Get the article ID from the request
+    article_id = request.POST.get('article_id')
+    if not article_id:
+        return JsonResponse({'error': 'Article ID is required'}, status=400)
+    
+    try:
+        article = NewsArticle.objects.get(pk=article_id)
+    except NewsArticle.DoesNotExist:
+        return JsonResponse({'error': 'Article not found'}, status=404)
+    
+    # Check if the article is already saved
+    saved_article = UserSavedArticle.objects.filter(user=request.user, article=article)
+    
+    if saved_article.exists():
+        # If it exists, remove it (unsave)
+        saved_article.delete()
+        return JsonResponse({'saved': False, 'message': 'Article removed from your saved list'})
+    else:
+        # If it doesn't exist, create it (save)
+        UserSavedArticle.objects.create(user=request.user, article=article)
+        return JsonResponse({'saved': True, 'message': 'Article saved to your collection'})

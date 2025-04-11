@@ -1,15 +1,40 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from news_aggregator.models import NewsArticle
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
+from news_aggregator.models import NewsArticle, UserSavedArticle
 from .models import BiasAnalysis, SentimentAnalysis, FactCheckResult, MisinformationAlert
+from .utils import analyze_sentiment, extract_named_entities, calculate_readability_score, extract_main_topics
 
 def misinformation_tracker(request):
     """View to display the misinformation tracker dashboard"""
-    # Get active misinformation alerts
-    alerts = MisinformationAlert.objects.filter(is_active=True).order_by('-detected_at')
+    # Check if we should show resolved alerts
+    show_resolved = request.GET.get('show_resolved', '0') == '1'
+    
+    # Get active alerts
+    active_alerts = MisinformationAlert.objects.filter(is_active=True).order_by('-severity', '-detected_at')
+    
+    # Get recently resolved alerts if requested
+    resolved_alerts = []
+    if show_resolved:
+        resolved_alerts = MisinformationAlert.objects.filter(
+            is_active=False
+        ).order_by('-resolved_at')[:10]
+    
+    # Count alerts by severity
+    critical_count = MisinformationAlert.objects.filter(severity='critical', is_active=True).count()
+    high_count = MisinformationAlert.objects.filter(severity='high', is_active=True).count()
+    medium_count = MisinformationAlert.objects.filter(severity='medium', is_active=True).count()
+    low_count = MisinformationAlert.objects.filter(severity='low', is_active=True).count()
     
     context = {
-        'alerts': alerts,
+        'active_alerts': active_alerts,
+        'resolved_alerts': resolved_alerts,
+        'show_resolved': show_resolved,
+        'critical_count': critical_count,
+        'high_count': high_count,
+        'medium_count': medium_count,
+        'low_count': low_count,
     }
     return render(request, 'news_analysis/misinformation_tracker.html', context)
 
@@ -60,3 +85,54 @@ def fact_check(request, article_id):
         'fact_checks': fact_checks,
     }
     return render(request, 'news_analysis/fact_check.html', context)
+
+
+def article_analysis(request, article_id):
+    """Comprehensive view to display all analysis for a specific article"""
+    article = get_object_or_404(NewsArticle, pk=article_id)
+    
+    # Get analysis data if it exists
+    try:
+        bias_analysis = BiasAnalysis.objects.get(article=article)
+    except BiasAnalysis.DoesNotExist:
+        bias_analysis = None
+        
+    try:
+        sentiment_analysis = SentimentAnalysis.objects.get(article=article)
+    except SentimentAnalysis.DoesNotExist:
+        sentiment_analysis = None
+    
+    # Get fact checks if they exist
+    fact_checks = FactCheckResult.objects.filter(article=article)
+    
+    # Check if user has saved this article
+    is_saved = False
+    if request.user.is_authenticated:
+        is_saved = UserSavedArticle.objects.filter(user=request.user, article=article).exists()
+    
+    # Get related articles (same source, similar topics)
+    related_articles = NewsArticle.objects.filter(
+        Q(source=article.source) | 
+        Q(title__icontains=article.title.split()[0]) |
+        Q(title__icontains=article.title.split()[-1])
+    ).exclude(id=article.id).distinct()[:5]
+    
+    context = {
+        'article': article,
+        'bias_analysis': bias_analysis,
+        'sentiment_analysis': sentiment_analysis,
+        'fact_checks': fact_checks,
+        'is_saved': is_saved,
+        'related_articles': related_articles,
+    }
+    return render(request, 'news_analysis/article_analysis.html', context)
+
+
+def alert_detail(request, alert_id):
+    """View to return alert details for AJAX requests"""
+    alert = get_object_or_404(MisinformationAlert, pk=alert_id)
+    
+    context = {
+        'alert': alert,
+    }
+    return render(request, 'news_analysis/alert_detail.html', context)
