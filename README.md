@@ -1,3 +1,4 @@
+<!-- 🔄 Synced with AI_PROJECT_DOCS.md → Keep parity for AI/human consistency. -->  
 # News Advance
 
 An AI-powered news credibility analyzer built with Django.

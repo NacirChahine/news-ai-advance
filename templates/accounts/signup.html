@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Sign Up | News Advance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 offset-md-3">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Create an Account</h4>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                <p>There were errors in your form. Please correct them and try again.</p>
+                                {{ form.errors }}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="id_username" class="form-label">Username</label>
+                            <input type="text" name="username" id="id_username" class="form-control" required {% if form.username.value %}value="{{ form.username.value }}"{% endif %}>
+                            {% if form.username.errors %}
+                                <div class="text-danger">{{ form.username.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_password1" class="form-label">Password</label>
+                            <input type="password" name="password1" id="id_password1" class="form-control" required>
+                            {% if form.password1.errors %}
+                                <div class="text-danger">{{ form.password1.errors }}</div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Your password must contain at least 8 characters and can't be entirely numeric.
+                            </small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_password2" class="form-label">Confirm Password</label>
+                            <input type="password" name="password2" id="id_password2" class="form-control" required>
+                            {% if form.password2.errors %}
+                                <div class="text-danger">{{ form.password2.errors }}</div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus me-2"></i>Sign Up
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer">
+                    <p class="mb-0">Already have an account? <a href="{% url 'accounts:login' %}">Login here</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

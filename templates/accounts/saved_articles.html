@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+
+{% block title %}Saved Articles | News Advance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fas fa-bookmark me-2"></i>Your Saved Articles</h4>
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-light">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Profile
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if saved_articles %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Article</th>
+                                        <th>Source</th>
+                                        <th>Saved On</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for saved in saved_articles %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'news_aggregator:article_detail' saved.article.id %}">
+                                                    {{ saved.article.title }}
+                                                </a>
+                                                {% if saved.article.is_analyzed %}
+                                                    <div class="mt-1">
+                                                        {% if saved.article.bias_analysis %}
+                                                            <span class="badge 
+                                                                {% if saved.article.bias_analysis.political_leaning == 'left' %}bg-primary
+                                                                {% elif saved.article.bias_analysis.political_leaning == 'center-left' %}bg-info
+                                                                {% elif saved.article.bias_analysis.political_leaning == 'center' %}bg-success
+                                                                {% elif saved.article.bias_analysis.political_leaning == 'center-right' %}bg-warning text-dark
+                                                                {% elif saved.article.bias_analysis.political_leaning == 'right' %}bg-danger
+                                                                {% else %}bg-secondary{% endif %} me-1">
+                                                                {{ saved.article.bias_analysis.get_political_leaning_display }}
+                                                            </span>
+                                                        {% endif %}
+                                                        
+                                                        {% if saved.article.sentiment_analysis %}
+                                                            <span class="badge 
+                                                                {% if saved.article.sentiment_analysis.sentiment_score > 0.3 %}bg-success
+                                                                {% elif saved.article.sentiment_analysis.sentiment_score < -0.3 %}bg-danger
+                                                                {% else %}bg-secondary{% endif %} me-1">
+                                                                {% if saved.article.sentiment_analysis.sentiment_score > 0.3 %}Positive
+                                                                {% elif saved.article.sentiment_analysis.sentiment_score < -0.3 %}Negative
+                                                                {% else %}Neutral{% endif %}
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'news_aggregator:source_detail' saved.article.source.id %}">
+                                                    {{ saved.article.source.name }}
+                                                </a>
+                                            </td>
+                                            <td>{{ saved.saved_at|date:"M d, Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'news_aggregator:article_detail' saved.article.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-book-reader"></i> Read
+                                                </a>
+                                                <a href="{% url 'news_aggregator:save_article' saved.article.id %}?next=accounts:saved_articles" class="btn btn-sm btn-outline-danger ms-1">
+                                                    <i class="fas fa-trash"></i> Remove
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            You haven't saved any articles yet. When you find interesting articles, click the "Save" button to collect them here.
+                        </div>
+                        <div class="text-center mt-4">
+                            <a href="{% url 'news_aggregator:latest' %}" class="btn btn-primary">
+                                <i class="fas fa-newspaper me-2"></i>Browse Latest News
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if saved_articles %}
+                    <div class="card-footer">
+                        <div class="text-muted">
+                            <small>You have {{ saved_articles.count }} saved article{{ saved_articles.count|pluralize }}</small>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
