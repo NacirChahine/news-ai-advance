@@ -7,7 +7,7 @@ from news_analysis.models import BiasAnalysis, SentimentAnalysis
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import spacy
-import random  # Only for demo purposes - real implementation would use trained models
+import random  # todo:nc - Only for demo purposes - real implementation would use trained models
 
 # Download necessary NLTK data
 try:

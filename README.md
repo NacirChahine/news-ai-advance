@@ -39,7 +39,7 @@ The project is organized into the following Django apps:
 
 1. Clone the repository
    ```
-   git clone <repository-url>
+   git clone https://github.com/NacirChahine/news-advance.git
    cd newsAdvance
    ```
 
@@ -57,7 +57,7 @@ The project is organized into the following Django apps:
    pip install -r requirements.txt
    ```
 
-5. Download NLP resources
+5. Download NLP (Natural Language Processing) resources
    ```
    python -m nltk.downloader vader_lexicon punkt stopwords
    python -m spacy download en_core_web_sm
@@ -137,6 +137,51 @@ python manage.py analyze_articles
   - Fact-checking of claims
   - Source reliability scoring
 
-## License
+## Testing the Analysis Pipeline
 
-This project is licensed under the MIT License.
+### Adding and Analyzing Articles
+
+1. **Add an Article via Admin Panel**
+   - Go to the admin panel at `/admin/` (typically http://127.0.0.1:8000/admin/)
+   - Log in with your admin credentials
+   - Navigate to "News articles" under the "News_aggregator" section
+   - Click "Add News article" and fill in the required fields
+   - Make sure to leave `is_analyzed` unchecked
+   - Save the article
+
+2. **Run the Analysis Command**
+   ```
+   python manage.py analyze_articles
+   ```
+
+   Options:
+   ```
+   # To analyze a specific article by ID
+   python manage.py analyze_articles --article_id 123
+
+   # To limit the number of articles processed
+   python manage.py analyze_articles --limit 10
+
+   # To force reanalysis of previously analyzed articles
+   python manage.py analyze_articles --force
+   ```
+
+3. **Verify the Results**
+   - Return to the admin panel
+   - Check that your article now has `is_analyzed` set to True
+   - Navigate to "Bias analyses" and "Sentiment analyses" under the "News_analysis" section
+   - You should see entries for your article with the analysis results
+
+### Using Test Data Generator
+
+For testing with multiple articles at once:
+
+```
+python manage.py generate_test_data --sources 5 --articles 10 --users 2
+```
+
+This will create:
+- 5 news sources
+- 10 articles per source (50 total)
+- 2 test users
+- Analysis data for most articles
