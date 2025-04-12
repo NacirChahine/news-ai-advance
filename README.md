@@ -106,43 +106,10 @@ python manage.py fetch_news
 
 ### Analyzing Articles
 
-To analyze articles for bias and sentiment:
-
-```
-python manage.py analyze_articles
-```
-
-## Features
-
-### News Aggregation
-- Collection and storage of news articles from multiple sources
-- Source credibility ratings and filtering
-- Personalized news feed based on topics of interest
-- Save articles to your personal collection with notes
-
-### News Analysis
-- Political bias detection and visualization using advanced NLP techniques
-- Sentiment analysis to detect emotional tone (positive, negative, neutral)
-- Named entity recognition and extraction
-- Readability scoring and complexity analysis
-- Visual indicators for source reliability and content bias
-
-### User System
-  - User authentication and profile management
-  - Personalized news preferences
-  - Saved articles with notes
-
-### Misinformation Tracking
-  - Real-time alerts for misleading content
-  - Fact-checking of claims
-  - Source reliability scoring
-
-## Testing the Analysis Pipeline
-
-### Adding and Analyzing Articles
+To add and analyze articles for bias and sentiment:
 
 1. **Add an Article via Admin Panel**
-   - Go to the admin panel at `/admin/` (typically http://127.0.0.1:8000/admin/)
+   - Go to the admin panel at `/admin/`
    - Log in with your admin credentials
    - Navigate to "News articles" under the "News_aggregator" section
    - Click "Add News article" and fill in the required fields
@@ -172,7 +139,7 @@ python manage.py analyze_articles
    - Navigate to "Bias analyses" and "Sentiment analyses" under the "News_analysis" section
    - You should see entries for your article with the analysis results
 
-### Using Test Data Generator
+#### Using Test Data Generator
 
 For testing with multiple articles at once:
 
@@ -185,3 +152,29 @@ This will create:
 - 10 articles per source (50 total)
 - 2 test users
 - Analysis data for most articles
+
+
+## Features
+
+### News Aggregation
+- Collection and storage of news articles from multiple sources
+- Source credibility ratings and filtering
+- Personalized news feed based on topics of interest
+- Save articles to your personal collection with notes
+
+### News Analysis
+- Political bias detection and visualization using advanced NLP techniques
+- Sentiment analysis to detect emotional tone (positive, negative, neutral)
+- Named entity recognition and extraction
+- Readability scoring and complexity analysis
+- Visual indicators for source reliability and content bias
+
+### User System
+  - User authentication and profile management
+  - Personalized news preferences
+  - Saved articles with notes
+
+### Misinformation Tracking
+  - Real-time alerts for misleading content
+  - Fact-checking of claims
+  - Source reliability scoring
