@@ -250,12 +250,12 @@ def change_password(request):
             # Update session to prevent user from being logged out
             update_session_auth_hash(request, user)
             messages.success(request, 'Your password was successfully updated!')
-            return redirect('accounts:profile')  # Redirect to profile instead of password_change_done
+            return redirect('accounts:profile')
         else:
             messages.error(request, 'Please correct the error below.')
     else:
         form = PasswordChangeForm(request.user)
-
+    
     return render(request, 'accounts/password_change.html', {'form': form})
 
 def forgot_password(request):

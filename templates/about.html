@@ -81,9 +81,11 @@
             <p>
                 Ready to experience more balanced news consumption? Sign up for a free account to access all features, customize your news feed, and receive personalized insights.
             </p>
-            <a href="{% url 'accounts:signup' %}" class="btn btn-primary">
-                <i class="fas fa-user-plus me-2"></i>Sign Up Now
-            </a>
+            {% if not user.is_authenticated %}
+                <a href="{% url 'accounts:signup' %}" class="btn btn-primary">
+                    <i class="fas fa-user-plus me-2"></i>Sign Up Now
+                </a>
+            {% endif %}
         </div>
     </div>
 </div>
