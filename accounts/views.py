@@ -1,11 +1,14 @@
 from django.contrib import messages
-from django.contrib.auth import logout
+from django.contrib.auth import logout, get_user_model
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm
+from django.contrib.auth.forms import UserCreationForm, PasswordChangeForm, SetPasswordForm
 from django.contrib.auth import update_session_auth_hash
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from news_aggregator.models import UserSavedArticle
 from django.core.files.storage import default_storage
+from django.core.mail import send_mail
+from django.conf import settings
+from .models import PasswordResetOTP
 import os
 
 def signup(request):
@@ -252,5 +255,86 @@ def change_password(request):
             messages.error(request, 'Please correct the error below.')
     else:
         form = PasswordChangeForm(request.user)
-    
+
     return render(request, 'accounts/password_change.html', {'form': form})
+
+def forgot_password(request):
+    """View for initiating password reset process"""
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        User = get_user_model()
+
+        # Check if user with this email exists
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            messages.error(request, 'No account found with this email address.')
+            return render(request, 'accounts/forgot_password.html')
+
+        # Generate OTP
+        otp_obj = PasswordResetOTP.generate_otp(user)
+
+        # Send email with OTP
+        subject = 'Password Reset OTP'
+        message = f'Your OTP for password reset is: {otp_obj.otp}\n\nThis OTP will expire in 10 minutes.'
+        from_email = settings.DEFAULT_FROM_EMAIL
+        recipient_list = [user.email]
+
+        try:
+            send_mail(subject, message, from_email, recipient_list)
+            messages.success(request, 'An OTP has been sent to your email address.')
+            return redirect('accounts:verify_otp', user_id=user.id)
+        except Exception as e:
+            messages.error(request, f'Failed to send OTP email. Please try again later. Error: {str(e)}')
+            return render(request, 'accounts/forgot_password.html')
+
+    return render(request, 'accounts/forgot_password.html')
+
+def verify_otp(request, user_id):
+    """View for verifying OTP"""
+    User = get_user_model()
+    user = get_object_or_404(User, id=user_id)
+
+    if request.method == 'POST':
+        otp = request.POST.get('otp', '').strip()
+
+        # Find the latest valid OTP for this user
+        try:
+            otp_obj = PasswordResetOTP.objects.filter(
+                user=user,
+                otp=otp,
+                is_used=False
+            ).latest('created_at')
+
+            if otp_obj.is_valid():
+                # Mark OTP as used
+                otp_obj.is_used = True
+                otp_obj.save()
+
+                # Redirect to password reset page
+                return redirect('accounts:reset_password', user_id=user.id, otp_id=otp_obj.id)
+            else:
+                messages.error(request, 'OTP has expired. Please request a new one.')
+        except PasswordResetOTP.DoesNotExist:
+            messages.error(request, 'Invalid OTP. Please try again.')
+
+    return render(request, 'accounts/verify_otp.html', {'user_id': user_id})
+
+def reset_password(request, user_id, otp_id):
+    """View for setting new password after OTP verification"""
+    User = get_user_model()
+    user = get_object_or_404(User, id=user_id)
+    otp_obj = get_object_or_404(PasswordResetOTP, id=otp_id, user=user, is_used=True)
+
+    if request.method == 'POST':
+        form = SetPasswordForm(user, request.POST)
+        if form.is_valid():
+            user = form.save()
+            messages.success(request, 'Your password has been reset successfully. You can now log in with your new password.')
+            return redirect('accounts:login')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = SetPasswordForm(user)
+
+    return render(request, 'accounts/reset_password.html', {'form': form})

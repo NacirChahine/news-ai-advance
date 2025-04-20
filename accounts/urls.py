@@ -16,4 +16,7 @@ urlpatterns = [
     path('delete-saved/', views.delete_saved, name='delete_saved'),
     path('bulk-delete-saved/', views.bulk_delete_saved, name='bulk_delete_saved'),
     path('password-change/', views.change_password, name='password_change'),
+    path('forgot-password/', views.forgot_password, name='forgot_password'),
+    path('verify-otp/<int:user_id>/', views.verify_otp, name='verify_otp'),
+    path('reset-password/<int:user_id>/<int:otp_id>/', views.reset_password, name='reset_password'),
 ]

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Verify OTP{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <h4 class="mb-4 text-center">Verify OTP</h4>
+                    <p class="text-center mb-4">Enter the 6-digit OTP sent to your email address.</p>
+                    
+                    {% if messages %}
+                    <div class="mb-4">
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-4">
+                            <label for="otp" class="form-label">One-Time Password (OTP)</label>
+                            <input type="text" name="otp" id="otp" class="form-control" maxlength="6" pattern="[0-9]{6}" required>
+                            <div class="form-text">
+                                Please enter the 6-digit code sent to your email.
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Verify OTP</button>
+                            <a href="{% url 'accounts:forgot_password' %}" class="btn btn-outline-secondary">Request New OTP</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
