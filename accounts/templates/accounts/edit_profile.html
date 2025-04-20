@@ -11,8 +11,8 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body text-center">
                     <div class="mb-3">
-                        {% if user.profile.avatar %}
-                        <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }}" class="rounded-circle img-fluid" style="width: 120px; height: 120px; object-fit: cover;">
+                        {% if user.profile.profile_picture.url %}
+                        <img src="{{ user.profile.profile_picture.url }}" alt="{{ user.username }}" class="img-fluid rounded-circle mb-3" style="max-width: 150px;">
                         {% else %}
                         <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center mx-auto" style="width: 120px; height: 120px;">
                             <span class="display-4 text-white">{{ user.username.0|upper }}</span>

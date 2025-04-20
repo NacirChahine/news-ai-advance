@@ -9,7 +9,6 @@ from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.conf import settings
 from .models import PasswordResetOTP
-import os
 
 def signup(request):
     """User registration view"""
@@ -192,7 +191,7 @@ def bulk_delete_saved(request):
 def edit_profile(request):
     """View for editing user profile"""
     user = request.user
-    profile = user.profile
+    user_profile = user.profile
 
     if request.method == 'POST':
         # Get form data
@@ -208,29 +207,29 @@ def edit_profile(request):
         user.save()
 
         # Update profile information
-        profile.bio = bio
+        user_profile.bio = bio
 
-        # Handle avatar upload
+        # Handle profile picture upload
         if request.FILES.get('avatar'):
-            # Delete old avatar if it exists
-            if profile.avatar:
+            # Delete the old profile picture if it exists
+            if user_profile.profile_picture:
                 try:
-                    default_storage.delete(profile.avatar.path)
+                    default_storage.delete(user_profile.profile_picture.path)
                 except:
                     pass  # File might not exist
 
-            # Save new avatar
+            # Save the new profile picture
             avatar = request.FILES['avatar']
-            filename = f"avatars/{user.username}_{avatar.name}"
-            profile.avatar = default_storage.save(filename, avatar)
+            filename = f"profile_pics/{user.username}_{avatar.name}"
+            user_profile.profile_picture = default_storage.save(filename, avatar)
 
-        profile.save()
+        user_profile.save()
         messages.success(request, 'Profile updated successfully.')
         return redirect('accounts:profile')
 
     context = {
         'user': user,
-        'profile': profile,
+        'profile': user_profile,
     }
     return render(request, 'accounts/edit_profile.html', context)
 
