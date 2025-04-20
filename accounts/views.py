@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import render, redirect
 from news_aggregator.models import UserSavedArticle
+from django.core.files.storage import default_storage
+import os
 
 def signup(request):
     """User registration view"""
@@ -15,7 +17,7 @@ def signup(request):
             return redirect('accounts:login')
     else:
         form = UserCreationForm()
-    
+
     return render(request, 'accounts/signup.html', {'form': form})
 
 @login_required
@@ -23,7 +25,7 @@ def profile(request):
     """User profile view"""
     user = request.user
     profile = user.profile
-    
+
     context = {
         'user': user,
         'profile': profile,
@@ -35,7 +37,7 @@ def preferences(request):
     """User preferences view"""
     user = request.user
     preferences = user.preferences
-    
+
     context = {
         'user': user,
         'preferences': preferences,
@@ -46,16 +48,16 @@ def preferences(request):
 def saved_articles(request):
     """View for user's saved articles"""
     user = request.user
-    
+
     # Get filter parameters
     date_filter = request.GET.get('date_filter', 'all')
     source_filter = request.GET.get('source_filter', 'all')
     sort_by = request.GET.get('sort_by', 'saved_newest')
     search_query = request.GET.get('search_query', '')
-    
+
     # Start with all saved articles for this user
     saved_articles = UserSavedArticle.objects.filter(user=user)
-    
+
     # Apply date filter
     from django.utils import timezone
     import datetime
@@ -74,11 +76,11 @@ def saved_articles(request):
     elif date_filter == 'year':
         year_ago = timezone.now() - datetime.timedelta(days=365)
         saved_articles = saved_articles.filter(saved_at__gte=year_ago)
-    
+
     # Apply source filter
     if source_filter != 'all':
         saved_articles = saved_articles.filter(article__source_id=source_filter)
-    
+
     # Apply search filter
     if search_query:
         from django.db.models import Q
@@ -87,7 +89,7 @@ def saved_articles(request):
             Q(article__content__icontains=search_query) |
             Q(notes__icontains=search_query)
         )
-    
+
     # Apply sorting
     if sort_by == 'saved_newest':
         saved_articles = saved_articles.order_by('-saved_at')
@@ -99,17 +101,17 @@ def saved_articles(request):
         saved_articles = saved_articles.order_by('article__published_date')
     elif sort_by == 'alphabetical':
         saved_articles = saved_articles.order_by('article__title')
-    
+
     # Get sources for filter dropdown
     from news_aggregator.models import NewsSource
     sources = NewsSource.objects.all()
-    
+
     # Paginate results
     from django.core.paginator import Paginator
     paginator = Paginator(saved_articles, 10)  # Show 10 saved articles per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
     context = {
         'saved_articles': page_obj,
         'sources': sources,
@@ -128,10 +130,10 @@ def update_saved_notes(request):
     """View to update notes for a saved article"""
     if request.method != 'POST':
         return redirect('accounts:saved_articles')
-    
+
     saved_id = request.POST.get('saved_id')
     notes = request.POST.get('notes', '')
-    
+
     try:
         saved_article = UserSavedArticle.objects.get(id=saved_id, user=request.user)
         saved_article.notes = notes
@@ -139,7 +141,7 @@ def update_saved_notes(request):
         messages.success(request, 'Notes updated successfully.')
     except UserSavedArticle.DoesNotExist:
         messages.error(request, 'Saved article not found.')
-    
+
     return redirect('accounts:saved_articles')
 
 
@@ -148,16 +150,16 @@ def delete_saved(request):
     """View to delete a saved article"""
     if request.method != 'POST':
         return redirect('accounts:saved_articles')
-    
+
     saved_id = request.POST.get('saved_id')
-    
+
     try:
         saved_article = UserSavedArticle.objects.get(id=saved_id, user=request.user)
         saved_article.delete()
         messages.success(request, 'Article removed from saved list.')
     except UserSavedArticle.DoesNotExist:
         messages.error(request, 'Saved article not found.')
-    
+
     return redirect('accounts:saved_articles')
 
 
@@ -166,21 +168,67 @@ def bulk_delete_saved(request):
     """View to delete multiple saved articles at once"""
     if request.method != 'POST':
         return redirect('accounts:saved_articles')
-    
+
     selected_articles = request.POST.getlist('selected_articles')
-    
+
     if not selected_articles:
         messages.warning(request, 'No articles were selected.')
         return redirect('accounts:saved_articles')
-    
+
     # Delete selected articles
     deleted_count = UserSavedArticle.objects.filter(
         id__in=selected_articles, 
         user=request.user
     ).delete()[0]
-    
+
     messages.success(request, f'{deleted_count} articles removed from saved list.')
     return redirect('accounts:saved_articles')
+
+@login_required
+def edit_profile(request):
+    """View for editing user profile"""
+    user = request.user
+    profile = user.profile
+
+    if request.method == 'POST':
+        # Get form data
+        first_name = request.POST.get('first_name', '')
+        last_name = request.POST.get('last_name', '')
+        email = request.POST.get('email', '')
+        bio = request.POST.get('bio', '')
+
+        # Update user information
+        user.first_name = first_name
+        user.last_name = last_name
+        user.email = email
+        user.save()
+
+        # Update profile information
+        profile.bio = bio
+
+        # Handle avatar upload
+        if request.FILES.get('avatar'):
+            # Delete old avatar if it exists
+            if profile.avatar:
+                try:
+                    default_storage.delete(profile.avatar.path)
+                except:
+                    pass  # File might not exist
+
+            # Save new avatar
+            avatar = request.FILES['avatar']
+            filename = f"avatars/{user.username}_{avatar.name}"
+            profile.avatar = default_storage.save(filename, avatar)
+
+        profile.save()
+        messages.success(request, 'Profile updated successfully.')
+        return redirect('accounts:profile')
+
+    context = {
+        'user': user,
+        'profile': profile,
+    }
+    return render(request, 'accounts/edit_profile.html', context)
 
 def logout_view(request):
     """Custom logout view that supports both GET and POST requests"""
