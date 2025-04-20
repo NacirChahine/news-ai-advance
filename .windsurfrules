@@ -1,0 +1,11 @@
+You are responsible for maintaining perfect synchronization between README.md (for humans) and AI_PROJECT_DOCS.md (for AI context). Key rules:
+
+Updates: Any change to project scope, setup, APIs, or workflows must be reflected in both files.
+
+Detail: AI_PROJECT_DOCS.md should include additional technical depth (e.g., architecture, edge cases) beyond README.md.
+
+Validation: Before finalizing edits, cross-check:
+Do both files describe the same core functionality?
+Are examples/commands consistent?
+
+Flag: If conflicts arise, ask for human clarification before proceeding.
