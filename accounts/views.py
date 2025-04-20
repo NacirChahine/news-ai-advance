@@ -1,8 +1,8 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from .models import UserProfile, UserPreferences
+from django.contrib.auth import logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import UserCreationForm
+from django.shortcuts import render, redirect
 from news_aggregator.models import UserSavedArticle
 
 def signup(request):
@@ -181,3 +181,9 @@ def bulk_delete_saved(request):
     
     messages.success(request, f'{deleted_count} articles removed from saved list.')
     return redirect('accounts:saved_articles')
+
+def logout_view(request):
+    """Custom logout view that supports both GET and POST requests"""
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('accounts:login')

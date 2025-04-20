@@ -71,7 +71,7 @@
                                                 <a href="{% url 'news_aggregator:article_detail' saved.article.id %}" class="btn btn-sm btn-outline-primary">
                                                     <i class="fas fa-book-reader"></i> Read
                                                 </a>
-                                                <a href="{% url 'news_aggregator:save_article' saved.article.id %}?next=accounts:saved_articles" class="btn btn-sm btn-outline-danger ms-1">
+                                                <a href="{% url 'news_aggregator:save_article_by_id' saved.article.id %}?next=accounts:saved_articles" class="btn btn-sm btn-outline-danger ms-1">
                                                     <i class="fas fa-trash"></i> Remove
                                                 </a>
                                             </td>
