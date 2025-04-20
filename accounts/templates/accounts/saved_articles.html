@@ -1,360 +1,106 @@
-{% extends "base.html" %}
-{% load static %}
+{% extends 'base.html' %}
 
-{% block title %}Saved Articles{% endblock %}
+{% block title %}Saved Articles | News Advance{% endblock %}
 
 {% block content %}
-<div class="container my-5">
+<div class="container">
     <div class="row">
-        <!-- Left sidebar with filtering options -->
-        <div class="col-lg-3 mb-4">
-            <div class="card border-0 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Filter Saved Articles</h5>
-                    
-                    <form method="get" action="{% url 'accounts:saved_articles' %}" id="filterForm">
-                        <div class="mb-3 mt-3">
-                            <label class="form-label">By Date</label>
-                            <select name="date_filter" class="form-select" onchange="document.getElementById('filterForm').submit()">
-                                <option value="all" {% if date_filter == 'all' %}selected{% endif %}>All Time</option>
-                                <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
-                                <option value="week" {% if date_filter == 'week' %}selected{% endif %}>This Week</option>
-                                <option value="month" {% if date_filter == 'month' %}selected{% endif %}>This Month</option>
-                                <option value="quarter" {% if date_filter == 'quarter' %}selected{% endif %}>Last 3 Months</option>
-                                <option value="year" {% if date_filter == 'year' %}selected{% endif %}>This Year</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">By Source</label>
-                            <select name="source_filter" class="form-select" onchange="document.getElementById('filterForm').submit()">
-                                <option value="all" {% if source_filter == 'all' %}selected{% endif %}>All Sources</option>
-                                {% for source in sources %}
-                                <option value="{{ source.id }}" {% if source_filter == source.id|stringformat:"i" %}selected{% endif %}>
-                                    {{ source.name }}
-                                </option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Sort By</label>
-                            <select name="sort_by" class="form-select" onchange="document.getElementById('filterForm').submit()">
-                                <option value="saved_newest" {% if sort_by == 'saved_newest' %}selected{% endif %}>Recently Saved</option>
-                                <option value="saved_oldest" {% if sort_by == 'saved_oldest' %}selected{% endif %}>Oldest Saved</option>
-                                <option value="published_newest" {% if sort_by == 'published_newest' %}selected{% endif %}>Recently Published</option>
-                                <option value="published_oldest" {% if sort_by == 'published_oldest' %}selected{% endif %}>Oldest Published</option>
-                                <option value="alphabetical" {% if sort_by == 'alphabetical' %}selected{% endif %}>Alphabetical</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Search</label>
-                            <div class="input-group">
-                                <input type="text" name="search_query" class="form-control" placeholder="Search saved articles" value="{{ search_query }}">
-                                <button class="btn btn-outline-primary" type="submit">
-                                    <i class="bi bi-search"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                    
-                    <div class="d-grid gap-2 mt-3">
-                        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Back to Profile
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fas fa-bookmark me-2"></i>Your Saved Articles</h4>
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-light">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Profile
                         </a>
                     </div>
                 </div>
-            </div>
-        </div>
-        
-        <!-- Right content area with saved articles -->
-        <div class="col-lg-9">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Saved Articles {% if saved_articles %}({{ saved_articles.count }}){% endif %}</h5>
+                <div class="card-body">
                     {% if saved_articles %}
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="actionsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            Actions
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="actionsDropdown">
-                            <li><a class="dropdown-item" href="#" id="selectAllBtn">Select All</a></li>
-                            <li><a class="dropdown-item" href="#" id="unselectAllBtn">Unselect All</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-danger" href="#" id="deleteSelectedBtn">Delete Selected</a></li>
-                        </ul>
-                    </div>
-                    {% endif %}
-                </div>
-                
-                <div class="card-body p-0">
-                    {% if saved_articles %}
-                    <form id="bulkActionForm" method="post" action="{% url 'accounts:bulk_delete_saved' %}">
-                        {% csrf_token %}
-                        <div class="list-group list-group-flush">
-                            {% for saved in saved_articles %}
-                            <div class="list-group-item">
-                                <div class="row align-items-center">
-                                    <div class="col-auto">
-                                        <div class="form-check">
-                                            <input class="form-check-input article-checkbox" type="checkbox" name="selected_articles" value="{{ saved.id }}" id="check{{ saved.id }}">
-                                            <label class="form-check-label" for="check{{ saved.id }}"></label>
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="col">
-                                        <div class="row">
-                                            {% if saved.article.image_url %}
-                                            <div class="col-md-3 mb-2 mb-md-0">
-                                                <img src="{{ saved.article.image_url }}" alt="{{ saved.article.title }}" class="img-fluid rounded">
-                                            </div>
-                                            <div class="col-md-9">
-                                            {% else %}
-                                            <div class="col-12">
-                                            {% endif %}
-                                                <div class="d-flex justify-content-between align-items-start mb-1">
-                                                    <a href="{% url 'news_aggregator:article_detail' saved.article.id %}" class="text-decoration-none">
-                                                        <h6 class="mb-0">{{ saved.article.title }}</h6>
-                                                    </a>
-                                                    <div class="dropdown ms-2">
-                                                        <button class="btn btn-sm btn-link text-muted p-0" type="button" id="actionDropdown{{ saved.id }}" data-bs-toggle="dropdown" aria-expanded="false">
-                                                            <i class="bi bi-three-dots-vertical"></i>
-                                                        </button>
-                                                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown{{ saved.id }}">
-                                                            <li><a class="dropdown-item" href="{% url 'news_aggregator:article_detail' saved.article.id %}">View Article</a></li>
-                                                            <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editNotesModal" data-saved-id="{{ saved.id }}" data-notes="{{ saved.notes }}">Edit Notes</a></li>
-                                                            <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-saved-id="{{ saved.id }}">Remove</a></li>
-                                                        </ul>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Article</th>
+                                        <th>Source</th>
+                                        <th>Saved On</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for saved in saved_articles %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'news_aggregator:article_detail' saved.article.id %}">
+                                                    {{ saved.article.title }}
+                                                </a>
+                                                {% if saved.article.is_analyzed %}
+                                                    <div class="mt-1">
+                                                        {% if saved.article.bias_analysis %}
+                                                            <span class="badge 
+                                                                {% if saved.article.bias_analysis.political_leaning == 'left' %}bg-primary
+                                                                {% elif saved.article.bias_analysis.political_leaning == 'center-left' %}bg-info
+                                                                {% elif saved.article.bias_analysis.political_leaning == 'center' %}bg-success
+                                                                {% elif saved.article.bias_analysis.political_leaning == 'center-right' %}bg-warning text-dark
+                                                                {% elif saved.article.bias_analysis.political_leaning == 'right' %}bg-danger
+                                                                {% else %}bg-secondary{% endif %} me-1">
+                                                                {{ saved.article.bias_analysis.get_political_leaning_display }}
+                                                            </span>
+                                                        {% endif %}
+                                                        
+                                                        {% if saved.article.sentiment_analysis %}
+                                                            <span class="badge 
+                                                                {% if saved.article.sentiment_analysis.sentiment_score > 0.3 %}bg-success
+                                                                {% elif saved.article.sentiment_analysis.sentiment_score < -0.3 %}bg-danger
+                                                                {% else %}bg-secondary{% endif %} me-1">
+                                                                {% if saved.article.sentiment_analysis.sentiment_score > 0.3 %}Positive
+                                                                {% elif saved.article.sentiment_analysis.sentiment_score < -0.3 %}Negative
+                                                                {% else %}Neutral{% endif %}
+                                                            </span>
+                                                        {% endif %}
                                                     </div>
-                                                </div>
-                                                
-                                                <div class="d-flex align-items-center mb-2 small text-muted">
-                                                    <span>{{ saved.article.source.name }}</span>
-                                                    <span class="mx-2">•</span>
-                                                    <span>{{ saved.article.published_date|date:"M j, Y" }}</span>
-                                                    <span class="mx-2">•</span>
-                                                    <span>Saved {{ saved.saved_at|timesince }} ago</span>
-                                                </div>
-                                                
-                                                {% if saved.article.biasanalysis or saved.article.sentimentanalysis %}
-                                                <div class="d-flex flex-wrap mb-2">
-                                                    {% if saved.article.biasanalysis %}
-                                                    <span class="badge 
-                                                        {% if saved.article.biasanalysis.political_leaning == 'left' %}bg-danger{% endif %}
-                                                        {% if saved.article.biasanalysis.political_leaning == 'center-left' %}bg-warning text-dark{% endif %}
-                                                        {% if saved.article.biasanalysis.political_leaning == 'center' %}bg-success{% endif %}
-                                                        {% if saved.article.biasanalysis.political_leaning == 'center-right' %}bg-warning text-dark{% endif %}
-                                                        {% if saved.article.biasanalysis.political_leaning == 'right' %}bg-danger{% endif %}
-                                                        me-2 mb-1">
-                                                        {{ saved.article.biasanalysis.get_political_leaning_display }}
-                                                    </span>
-                                                    {% endif %}
-                                                    
-                                                    {% if saved.article.sentimentanalysis %}
-                                                    {% with sentiment=saved.article.sentimentanalysis.sentiment_score %}
-                                                    <span class="badge 
-                                                          {% if sentiment > 0.1 %}bg-success{% elif sentiment < -0.1 %}bg-danger{% else %}bg-secondary{% endif %} me-2 mb-1">
-                                                        {% if sentiment > 0.1 %}Positive{% elif sentiment < -0.1 %}Negative{% else %}Neutral{% endif %}
-                                                    </span>
-                                                    {% endwith %}
-                                                    {% endif %}
-                                                </div>
                                                 {% endif %}
-                                                
-                                                {% if saved.notes %}
-                                                <div class="bg-light p-2 rounded small mt-2">
-                                                    <i class="bi bi-sticky"></i> {{ saved.notes }}
-                                                </div>
-                                                {% endif %}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'news_aggregator:source_detail' saved.article.source.id %}">
+                                                    {{ saved.article.source.name }}
+                                                </a>
+                                            </td>
+                                            <td>{{ saved.saved_at|date:"M d, Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'news_aggregator:article_detail' saved.article.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-book-reader"></i> Read
+                                                </a>
+                                                <a href="{% url 'news_aggregator:save_article_by_id' saved.article.id %}?next=accounts:saved_articles" class="btn btn-sm btn-outline-danger ms-1">
+                                                    <i class="fas fa-trash"></i> Remove
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                    </form>
-                    
-                    <!-- Pagination -->
-                    {% if is_paginated %}
-                    <div class="d-flex justify-content-center py-3">
-                        <nav aria-label="Page navigation">
-                            <ul class="pagination mb-0">
-                                {% if page_obj.has_previous %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page=1{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="First">
-                                        <span aria-hidden="true">&laquo;&laquo;</span>
-                                    </a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Previous">
-                                        <span aria-hidden="true">&laquo;</span>
-                                    </a>
-                                </li>
-                                {% endif %}
-                                
-                                {% for num in page_obj.paginator.page_range %}
-                                {% if page_obj.number == num %}
-                                <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
-                                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ num }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ num }}</a>
-                                </li>
-                                {% endif %}
-                                {% endfor %}
-                                
-                                {% if page_obj.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Next">
-                                        <span aria-hidden="true">&raquo;</span>
-                                    </a>
-                                </li>
-                                <li class="page-item">
-                                    <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% for key, value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" aria-label="Last">
-                                        <span aria-hidden="true">&raquo;&raquo;</span>
-                                    </a>
-                                </li>
-                                {% endif %}
-                            </ul>
-                        </nav>
-                    </div>
-                    {% endif %}
-                    
                     {% else %}
-                    <div class="text-center p-5">
-                        <i class="bi bi-bookmark text-muted display-1"></i>
-                        <h5 class="mt-3">No saved articles</h5>
-                        <p class="text-muted">You haven't saved any articles yet. When you find interesting articles, click the "Save" button to add them here.</p>
-                        <a href="{% url 'news_aggregator:latest_news' %}" class="btn btn-primary mt-2">Browse Latest News</a>
-                    </div>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            You haven't saved any articles yet. When you find interesting articles, click the "Save" button to collect them here.
+                        </div>
+                        <div class="text-center mt-4">
+                            <a href="{% url 'news_aggregator:latest' %}" class="btn btn-primary">
+                                <i class="fas fa-newspaper me-2"></i>Browse Latest News
+                            </a>
+                        </div>
                     {% endif %}
                 </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Notes Modal -->
-<div class="modal fade" id="editNotesModal" tabindex="-1" aria-labelledby="editNotesModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="editNotesModalLabel">Edit Notes</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form id="editNotesForm" method="post" action="{% url 'accounts:update_saved_notes' %}">
-                {% csrf_token %}
-                <div class="modal-body">
-                    <input type="hidden" name="saved_id" id="editSavedId">
-                    <div class="mb-3">
-                        <label for="notes" class="form-label">Your Notes</label>
-                        <textarea class="form-control" id="notes" name="notes" rows="4"></textarea>
+                {% if saved_articles %}
+                    <div class="card-footer">
+                        <div class="text-muted">
+                            <small>You have {{ saved_articles.count }} saved article{{ saved_articles.count|pluralize }}</small>
+                        </div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Notes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- Confirm Delete Modal -->
-<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirm Removal</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to remove this article from your saved list?</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <form id="deleteSingleForm" method="post" action="{% url 'accounts:delete_saved' %}">
-                    {% csrf_token %}
-                    <input type="hidden" name="saved_id" id="deleteSavedId">
-                    <button type="submit" class="btn btn-danger">Remove</button>
-                </form>
+                {% endif %}
             </div>
         </div>
     </div>
 </div>
-
-<!-- Confirm Bulk Delete Modal -->
-<div class="modal fade" id="confirmBulkDeleteModal" tabindex="-1" aria-labelledby="confirmBulkDeleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmBulkDeleteModalLabel">Confirm Bulk Removal</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Are you sure you want to remove all selected articles from your saved list?</p>
-                <p class="text-danger"><strong>This action cannot be undone.</strong></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmBulkDelete">Remove Selected</button>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-    $(document).ready(function() {
-        // Edit notes modal
-        $('#editNotesModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var savedId = button.data('saved-id');
-            var notes = button.data('notes');
-            
-            $('#editSavedId').val(savedId);
-            $('#notes').val(notes);
-        });
-        
-        // Delete modal
-        $('#confirmDeleteModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget);
-            var savedId = button.data('saved-id');
-            $('#deleteSavedId').val(savedId);
-        });
-        
-        // Select all button
-        $('#selectAllBtn').click(function(e) {
-            e.preventDefault();
-            $('.article-checkbox').prop('checked', true);
-        });
-        
-        // Unselect all button
-        $('#unselectAllBtn').click(function(e) {
-            e.preventDefault();
-            $('.article-checkbox').prop('checked', false);
-        });
-        
-        // Delete selected button
-        $('#deleteSelectedBtn').click(function(e) {
-            e.preventDefault();
-            
-            // Check if any articles are selected
-            if ($('.article-checkbox:checked').length === 0) {
-                alert('Please select at least one article to remove.');
-                return;
-            }
-            
-            // Show confirmation modal
-            $('#confirmBulkDeleteModal').modal('show');
-        });
-        
-        // Confirm bulk delete button
-        $('#confirmBulkDelete').click(function() {
-            $('#bulkActionForm').submit();
-        });
-    });
-</script>
 {% endblock %}
