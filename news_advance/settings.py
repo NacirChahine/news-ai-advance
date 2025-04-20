@@ -140,4 +140,6 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'tonetest800@gmail.com'
 EMAIL_HOST_PASSWORD = 'sfvwtlrbckvrxpae'
-DEFAULT_FROM_EMAIL = 'test@gmail.com'
+DEFAULT_FROM_EMAIL = 'nacwork85@gmail.com'
+
+OLLAMA_ENDPOINT = 'http://localhost:11434/api/generate'

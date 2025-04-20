@@ -11,4 +11,7 @@ transformers==4.39.0
 newspaper3k==0.2.8
 python-dotenv==1.0.0
 
+# For Ollama integration
+# No additional packages required as requests is already included
+
 Faker~=37.1.0

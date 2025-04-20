@@ -15,7 +15,7 @@ News Advance is a web application that aggregates news articles and applies AI-d
 
 - **Backend**: Django 5.2
 - **Database**: SQLite (Development) / PostgreSQL (Production)
-- **NLP/AI**: NLTK, spaCy, scikit-learn, Transformers
+- **NLP/AI**: NLTK, spaCy, scikit-learn, Transformers, Ollama (local LLMs)
 - **Frontend**: Bootstrap 5, HTML/CSS, JavaScript
 - **Data Gathering**: Newspaper3k, Requests, BeautifulSoup4
 
@@ -168,6 +168,7 @@ This will create:
 - Named entity recognition and extraction
 - Readability scoring and complexity analysis
 - Visual indicators for source reliability and content bias
+- Advanced AI analysis using local LLMs via Ollama integration
 
 ### User System
   - User authentication and profile management
@@ -178,3 +179,20 @@ This will create:
   - Real-time alerts for misleading content
   - Fact-checking of claims
   - Source reliability scoring
+
+## Ollama Integration
+
+News Advance now supports integration with [Ollama](https://ollama.ai/) for advanced AI analysis using local large language models (LLMs). This integration provides:
+
+- Enhanced article summarization
+- More nuanced sentiment analysis
+- Advanced political bias detection
+- Key insights extraction from articles
+
+### Setting Up Ollama
+
+1. Install Ollama from [https://ollama.ai/download](https://ollama.ai/download)
+2. Download recommended models (e.g., `ollama pull llama3`)
+3. Start the Ollama service
+
+For detailed instructions on setting up and using Ollama with News Advance, see the [OLLAMA_INTEGRATION.md](OLLAMA_INTEGRATION.md) documentation.
