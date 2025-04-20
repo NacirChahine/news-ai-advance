@@ -18,9 +18,9 @@
                             <li class="breadcrumb-item active" aria-current="page">{{ article.title|truncatechars:30 }}</li>
                         </ol>
                     </nav>
-                    
+
                     <h1 class="mb-3">{{ article.title }}</h1>
-                    
+
                     <div class="d-flex justify-content-between mb-3">
                         <div>
                             <span class="text-muted">
@@ -38,12 +38,12 @@
                         <div>
                             {% if user.is_authenticated %}
                                 {% if user_saved %}
-                                    <a href="{% url 'news_aggregator:save_article_by_id' article.id %}?next=news_aggregator:article_detail" class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-bookmark"></i> Unsave
+                                    <a href="#" class="btn btn-sm btn-outline-danger save-article-btn" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
+                                        <i class="fas fa-bookmark"></i> <span>Unsave</span>
                                     </a>
                                 {% else %}
-                                    <a href="{% url 'news_aggregator:save_article_by_id' article.id %}?next=news_aggregator:article_detail" class="btn btn-sm btn-outline-primary">
-                                        <i class="far fa-bookmark"></i> Save
+                                    <a href="#" class="btn btn-sm btn-outline-primary save-article-btn" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
+                                        <i class="far fa-bookmark"></i> <span>Save</span>
                                     </a>
                                 {% endif %}
                             {% endif %}
@@ -52,25 +52,25 @@
                             </a>
                         </div>
                     </div>
-                    
+
                     {% if article.image_url %}
                         <img src="{{ article.image_url }}" class="img-fluid rounded mb-4" alt="{{ article.title }}">
                     {% endif %}
-                    
+
                     {% if article.is_summarized and article.summary %}
                         <div class="alert alert-info mb-4">
                             <h5><i class="fas fa-file-alt me-2"></i>AI-Generated Summary</h5>
                             <p class="mb-0">{{ article.summary }}</p>
                         </div>
                     {% endif %}
-                    
+
                     <div class="article-content">
                         {{ article.content|linebreaks }}
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Analysis sidebar -->
         <div class="col-lg-4">
             <!-- Credibility Analysis -->
@@ -110,7 +110,7 @@
                                 </p>
                             </div>
                         {% endif %}
-                        
+
                         <!-- Sentiment Analysis -->
                         {% if article.sentiment_analysis %}
                             <div class="mb-4">
@@ -142,7 +142,7 @@
                                 </p>
                             </div>
                         {% endif %}
-                        
+
                         <!-- Fact Checks -->
                         {% if article.fact_checks.exists %}
                             <div class="mb-4">
@@ -187,7 +187,7 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <!-- Related Articles -->
             {% if related_articles %}
                 <div class="card mb-4">
@@ -206,7 +206,7 @@
                     </div>
                 </div>
             {% endif %}
-            
+
             <!-- Source Information -->
             <div class="card">
                 <div class="card-header bg-info text-white">
@@ -246,7 +246,7 @@
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
-        
+
         // Additional article-specific JS could go here
     });
 </script>
