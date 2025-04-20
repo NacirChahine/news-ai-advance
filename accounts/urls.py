@@ -15,6 +15,5 @@ urlpatterns = [
     path('update-saved-notes/', views.update_saved_notes, name='update_saved_notes'),
     path('delete-saved/', views.delete_saved, name='delete_saved'),
     path('bulk-delete-saved/', views.bulk_delete_saved, name='bulk_delete_saved'),
-    path('password-change/', auth_views.PasswordChangeView.as_view(template_name='accounts/password_change.html'), name='password_change'),
-    path('password-change/done/', auth_views.PasswordChangeDoneView.as_view(template_name='accounts/password_change_done.html'), name='password_change_done'),
+    path('password-change/', views.change_password, name='password_change'),
 ]
