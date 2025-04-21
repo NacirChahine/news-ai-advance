@@ -101,7 +101,6 @@ python manage.py generate_test_data --sources 10 --articles 30 --users 5
 To fetch news articles from configured sources:
 
 ```
-# not implemented yet
 python manage.py fetch_news
 ```
 
