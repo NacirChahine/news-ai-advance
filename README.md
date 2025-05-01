@@ -131,6 +131,11 @@ To add and analyze articles for bias and sentiment:
 
    # To force reanalysis of previously analyzed articles
    python manage.py analyze_articles --force
+   
+   # To chose an AI model for analysis
+   python manage.py analyze_articles --model llama3
+   python manage.py analyze_articles --model qwen3:1.7b
+   python manage.py analyze_articles --model deepseek-r1:8b
    ```
 
 3. **Verify the Results**

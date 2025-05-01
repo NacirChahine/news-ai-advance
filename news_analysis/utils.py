@@ -280,7 +280,10 @@ Summary:"""
     response = query_ollama(prompt, model=model, system_prompt=system_prompt, max_tokens=500)
 
     if response and "response" in response:
-        return response["response"].strip()
+        # Remove thinking tags if present
+        response_text = response["response"].strip()
+        response_text = re.sub(r'<think>.*?</think>', '', response_text, flags=re.DOTALL)
+        return response_text
     return None
 
 
