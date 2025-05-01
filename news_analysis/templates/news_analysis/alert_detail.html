@@ -1,121 +1,142 @@
+{% extends 'base.html' %}
 {% load static %}
 
-<div class="alert-detail">
-    <!-- Alert header -->
-    <div class="d-flex align-items-center mb-3">
-        <div class="me-3">
-            {% if alert.severity == 'critical' %}
-            <span class="badge bg-danger p-2">Critical</span>
-            {% elif alert.severity == 'high' %}
-            <span class="badge bg-warning text-dark p-2">High</span>
-            {% elif alert.severity == 'medium' %}
-            <span class="badge bg-info text-dark p-2">Medium</span>
-            {% else %}
-            <span class="badge bg-success p-2">Low</span>
-            {% endif %}
-            
-            {% if not alert.is_active %}
-            <span class="badge bg-secondary ms-2 p-2">Resolved</span>
-            {% endif %}
-        </div>
-        <h5 class="mb-0">{{ alert.title }}</h5>
-    </div>
-    
-    <!-- Alert timestamps -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <small class="text-muted">Detected: {{ alert.detected_at|date:"F j, Y, g:i a" }}</small>
-        </div>
-        {% if not alert.is_active %}
-        <div class="col-md-6">
-            <small class="text-muted">Resolved: {{ alert.resolved_at|date:"F j, Y, g:i a" }}</small>
-        </div>
-        {% endif %}
-    </div>
-    
-    <!-- Alert description -->
-    <div class="mb-4">
-        <h6>Description:</h6>
-        <p>{{ alert.description }}</p>
-    </div>
-    
-    <!-- Resolution details if resolved -->
-    {% if not alert.is_active and alert.resolution_details %}
-    <div class="mb-4">
-        <h6>Resolution:</h6>
-        <p>{{ alert.resolution_details }}</p>
-    </div>
-    {% endif %}
-    
-    <!-- Related articles -->
-    <div class="mb-4">
-        <h6>Related Articles:</h6>
-        {% if alert.related_articles.all %}
-        <div class="list-group">
-            {% for article in alert.related_articles.all %}
-            <a href="{% url 'news_aggregator:article_detail' article.id %}" class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                    <h6 class="mb-1">{{ article.title }}</h6>
-                    <small>{{ article.published_date|date:"M j" }}</small>
-                </div>
-                <p class="mb-1">{{ article.source.name }}</p>
-                <div class="d-flex align-items-center">
-                    {% if article.biasanalysis %}
-                    <small class="me-3">
-                        Bias: 
-                        <span class="badge 
-                            {% if article.biasanalysis.political_leaning == 'left' %}bg-danger{% endif %}
-                            {% if article.biasanalysis.political_leaning == 'center-left' %}bg-warning text-dark{% endif %}
-                            {% if article.biasanalysis.political_leaning == 'center' %}bg-success{% endif %}
-                            {% if article.biasanalysis.political_leaning == 'center-right' %}bg-warning text-dark{% endif %}
-                            {% if article.biasanalysis.political_leaning == 'right' %}bg-danger{% endif %}">
-                            {{ article.biasanalysis.get_political_leaning_display }}
-                        </span>
-                    </small>
-                    {% endif %}
-                    
-                    {% if article.sentimentanalysis %}
-                    <small>
-                        Sentiment: 
-                        {% with sentiment=article.sentimentanalysis.sentiment_score %}
-                        {% if sentiment > 0.1 %}
-                        <span class="badge bg-success">Positive</span>
-                        {% elif sentiment < -0.1 %}
-                        <span class="badge bg-danger">Negative</span>
-                        {% else %}
-                        <span class="badge bg-secondary">Neutral</span>
+{% block title %}{{ alert.title }} | News Advance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <!-- Alert header -->
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="me-3">
+                            {% if alert.severity == 'critical' %}
+                            <span class="badge bg-danger p-2">Critical</span>
+                            {% elif alert.severity == 'high' %}
+                            <span class="badge bg-warning text-dark p-2">High</span>
+                            {% elif alert.severity == 'medium' %}
+                            <span class="badge bg-info text-dark p-2">Medium</span>
+                            {% else %}
+                            <span class="badge bg-success p-2">Low</span>
+                            {% endif %}
+
+                            {% if not alert.is_active %}
+                            <span class="badge bg-secondary ms-2 p-2">Resolved</span>
+                            {% endif %}
+                        </div>
+                        <h3 class="mb-0">{{ alert.title }}</h3>
+                    </div>
+
+                    <!-- Alert timestamps -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <small class="text-muted"><i class="fas fa-clock me-2"></i>Detected: {{ alert.detected_at|date:"F j, Y, g:i a" }}</small>
+                        </div>
+                        {% if not alert.is_active %}
+                        <div class="col-md-6">
+                            <small class="text-muted"><i class="fas fa-check-circle me-2"></i>Resolved: {{ alert.resolved_at|date:"F j, Y, g:i a" }}</small>
+                        </div>
                         {% endif %}
-                        {% endwith %}
-                    </small>
+                    </div>
+
+                    <!-- Alert description -->
+                    <div class="mb-4">
+                        <h5><i class="fas fa-info-circle me-2"></i>Description:</h5>
+                        <p class="lead">{{ alert.description }}</p>
+                    </div>
+
+                    <!-- Resolution details if resolved -->
+                    {% if not alert.is_active and alert.resolution_details %}
+                    <div class="mb-4 p-3 bg-light rounded">
+                        <h5><i class="fas fa-check-double me-2"></i>Resolution:</h5>
+                        <p>{{ alert.resolution_details }}</p>
+                    </div>
                     {% endif %}
                 </div>
-            </a>
-            {% endfor %}
+            </div>
+
+            <!-- Related articles -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-newspaper me-2"></i>Related Articles</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if alert.related_articles.all %}
+                    <div class="list-group">
+                        {% for article in alert.related_articles.all %}
+                        <a href="{% url 'news_aggregator:article_detail' article.id %}" class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ article.title }}</h6>
+                                <small>{{ article.published_date|date:"M j" }}</small>
+                            </div>
+                            <p class="mb-1"><i class="fas fa-globe me-1"></i>{{ article.source.name }}</p>
+                            <div class="d-flex align-items-center">
+                                {% if article.biasanalysis %}
+                                <small class="me-3">
+                                    <i class="fas fa-balance-scale me-1"></i>Bias:
+                                    <span class="badge
+                                        {% if article.biasanalysis.political_leaning == 'left' %}bg-danger{% endif %}
+                                        {% if article.biasanalysis.political_leaning == 'center-left' %}bg-warning text-dark{% endif %}
+                                        {% if article.biasanalysis.political_leaning == 'center' %}bg-success{% endif %}
+                                        {% if article.biasanalysis.political_leaning == 'center-right' %}bg-warning text-dark{% endif %}
+                                        {% if article.biasanalysis.political_leaning == 'right' %}bg-danger{% endif %}">
+                                        {{ article.biasanalysis.get_political_leaning_display }}
+                                    </span>
+                                </small>
+                                {% endif %}
+
+                                {% if article.sentimentanalysis %}
+                                <small>
+                                    <i class="fas fa-heart me-1"></i>Sentiment:
+                                    {% with sentiment=article.sentimentanalysis.sentiment_score %}
+                                    {% if sentiment > 0.1 %}
+                                    <span class="badge bg-success">Positive</span>
+                                    {% elif sentiment < -0.1 %}
+                                    <span class="badge bg-danger">Negative</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">Neutral</span>
+                                    {% endif %}
+                                    {% endwith %}
+                                </small>
+                                {% endif %}
+                            </div>
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted"><i class="fas fa-info-circle me-2"></i>No related articles available</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Fact checking resources -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-check-circle me-2"></i>Fact Checking Resources</h5>
+                </div>
+                <div class="card-body p-4">
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <a href="https://www.factcheck.org" target="_blank" class="text-decoration-none">
+                                <i class="fas fa-external-link-alt me-2"></i>FactCheck.org
+                            </a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="https://www.politifact.com" target="_blank" class="text-decoration-none">
+                                <i class="fas fa-external-link-alt me-2"></i>PolitiFact
+                            </a>
+                        </li>
+                        <li class="list-group-item">
+                            <a href="https://www.snopes.com" target="_blank" class="text-decoration-none">
+                                <i class="fas fa-external-link-alt me-2"></i>Snopes
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
         </div>
-        {% else %}
-        <p class="text-muted">No related articles available</p>
-        {% endif %}
-    </div>
-    
-    <!-- Fact checking resources -->
-    <div>
-        <h6>Fact Checking Resources:</h6>
-        <ul class="list-unstyled">
-            <li class="mb-2">
-                <a href="https://www.factcheck.org" target="_blank" class="text-decoration-none">
-                    <i class="bi bi-link-45deg"></i> FactCheck.org
-                </a>
-            </li>
-            <li class="mb-2">
-                <a href="https://www.politifact.com" target="_blank" class="text-decoration-none">
-                    <i class="bi bi-link-45deg"></i> PolitiFact
-                </a>
-            </li>
-            <li class="mb-2">
-                <a href="https://www.snopes.com" target="_blank" class="text-decoration-none">
-                    <i class="bi bi-link-45deg"></i> Snopes
-                </a>
-            </li>
-        </ul>
     </div>
 </div>
+{% endblock %}
