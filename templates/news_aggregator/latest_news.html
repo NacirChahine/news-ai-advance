@@ -93,7 +93,7 @@
                                 <i class="fas fa-book-reader"></i> Read Article
                             </a>
                             {% if user.is_authenticated %}
-                                {% if article in user.saved_articles.all %}
+                                {% if article.is_saved %}
                                     <a href="#" class="btn btn-sm btn-outline-danger float-end save-article-btn" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
                                         <i class="fas fa-bookmark"></i> <span>Unsave</span>
                                     </a>

@@ -29,6 +29,14 @@ def latest_news(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
+    if request.user.is_authenticated:
+        # Create a set of saved article IDs for efficient lookup
+        saved_article_ids = set(request.user.saved_articles.values_list('article_id', flat=True))
+        
+        # Add a saved flag to each article
+        for article in page_obj:
+            article.is_saved = article.id in saved_article_ids
+    
     context = {
         'page_obj': page_obj,
         'sources': sources,
