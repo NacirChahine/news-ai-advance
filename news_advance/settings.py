@@ -143,3 +143,8 @@ EMAIL_HOST_PASSWORD = 'sfvwtlrbckvrxpae'
 DEFAULT_FROM_EMAIL = 'nacwork85@gmail.com'
 
 OLLAMA_ENDPOINT = 'http://localhost:11434/api/generate'
+
+# ML Models Configuration
+SUMMARIZATION_MODEL_DIR = BASE_DIR / 'news_analysis' / 'ml_models' / 'summarization' / 'trained_model'
+SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'  # Fallback if trained model not available
+USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead

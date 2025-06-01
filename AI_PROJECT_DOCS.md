@@ -215,11 +215,43 @@ Parameters:
 - Pagination and lazy loading for article listings
 - Batch processing for analysis pipelines
 
+## ML Models
+
+### Text Summarization (news_analysis/ml_models/summarization)
+
+The project includes a fine-tuned transformer model for summarizing news articles, trained on the [BBC News Summary dataset](https://huggingface.co/datasets/gopalkalpande/bbc-news-summary).
+
+#### Architecture
+
+- **Base Model**: BART (facebook/bart-base) sequence-to-sequence transformer model
+- **Training Dataset**: BBC News Summary dataset with document-summary pairs
+- **Tokenization**: Maximum input length of 1024 tokens, maximum summary length of 128 tokens
+- **Performance Metrics**: Evaluated using ROUGE-1, ROUGE-2, and ROUGE-L scores
+
+#### Integration
+
+The summarization model is integrated with the existing system through:
+
+- **summarize_article_with_ml_model()**: Primary function for ML-based summarization
+- **summarize_article_with_ai()**: Enhanced to support both ML model and Ollama LLM fallback
+- **SummarizationModel class**: Handles model loading and inference
+
+#### Configuration
+
+Summarization model behavior is controlled through settings:
+
+```python
+# In settings.py
+SUMMARIZATION_MODEL_DIR = BASE_DIR / 'news_analysis' / 'ml_models' / 'summarization' / 'trained_model'
+SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'  # Fallback if trained model not available
+USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
+```
+
 ## Future Development Plans
 
 1. **Advanced NLP Models**:
    - Fine-tuned BERT models for bias detection
-   - Transformer-based summarization
+   - Enhanced transformer-based text analysis
 
 2. **API Development**:
    - RESTful API for third-party integration

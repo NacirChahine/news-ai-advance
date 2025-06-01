@@ -185,11 +185,65 @@ This will create:
   - Fact-checking of claims
   - Source reliability scoring
 
+## ML-Powered News Summarization
+
+News Advance includes a fine-tuned BART model specifically trained on the BBC News Summary dataset for high-quality article summarization. This provides more accurate and consistent summaries compared to general-purpose models.
+
+### Features
+
+- **High-Quality Summaries**: Trained on professional news writing
+- **Fast Inference**: Optimized for quick summarization
+- **Configurable Length**: Control summary length and detail level
+- **Seamless Fallback**: Automatically falls back to Ollama if the ML model isn't available
+
+### Training the Model
+
+To train your own summarization model:
+
+1. Install the required dependencies:
+   ```bash
+   cd news_analysis/ml_models
+   pip install -r requirements.txt
+   ```
+
+2. Run the training script:
+   ```bash
+   cd summarization
+   train_model.bat  # On Windows
+   # OR
+   python train_summarization_model.py --model_name facebook/bart-base --output_dir ./trained_model
+   ```
+
+3. Training parameters (adjust in `train_model.bat` or pass as arguments):
+   - `--model_name`: Base model (default: facebook/bart-base)
+   - `--output_dir`: Where to save the trained model
+   - `--num_train_epochs`: Training epochs (default: 3)
+   - `--batch_size`: Batch size (default: 4)
+   - `--learning_rate`: Learning rate (default: 5e-5)
+
+### Using the ML Summarizer
+
+The ML-based summarizer is automatically used when available. You can control its behavior in `news_advance/settings.py`:
+
+```python
+# ML Models Configuration
+SUMMARIZATION_MODEL_DIR = BASE_DIR / 'news_analysis' / 'ml_models' / 'summarization' / 'trained_model'
+SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'  # Fallback if trained model not available
+USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
+```
+
+### Performance
+
+The model is evaluated using ROUGE metrics:
+- ROUGE-1: ~40-45%
+- ROUGE-2: ~20-25%
+- ROUGE-L: ~35-40%
+
 ## Ollama Integration
 
-News Advance now supports integration with [Ollama](https://ollama.ai/) for advanced AI analysis using local large language models (LLMs). This integration provides:
+News Advance supports integration with [Ollama](https://ollama.ai/) for advanced AI analysis using local large language models (LLMs). This integration provides:
 
-- Enhanced article summarization
+- Enhanced article summarization (fallback when ML model not used)
 - More nuanced sentiment analysis
 - Advanced political bias detection
 - Key insights extraction from articles

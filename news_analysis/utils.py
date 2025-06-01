@@ -249,13 +249,50 @@ def query_ollama(prompt, model="llama3", system_prompt=None, max_tokens=1000):
         return None
 
 
-def summarize_article_with_ai(article_text, model="llama3"):
+def summarize_article_with_ml_model(article_text, max_length=150):
     """
-    Generate a concise summary of an article using Ollama.
+    Generate a summary of an article using the fine-tuned ML model
+    This is a wrapper around the ML model integration.
+    
+    Args:
+        article_text (str): The article text to summarize
+        max_length (int): Maximum length of the generated summary
+    
+    Returns:
+        str: The generated summary, or None if there was an error
+    """
+    try:
+        # Import here to avoid circular imports
+        from news_analysis.ml_models.summarization.django_integration import summarize_article_with_ml_model as ml_summarize
+        return ml_summarize(article_text, max_length=max_length)
+    except ImportError as e:
+        logger.error(f"Error importing ML summarization model: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Error using ML summarization model: {e}")
+        return None
+
+# Check if ML summarization is available
+try:
+    from news_analysis.ml_models.summarization.django_integration import get_model_instance
+    # Test if we can load the model (this won't actually load it yet due to lazy loading)
+    get_model_instance
+    ml_summarization_available = True
+    logger.info("ML-based summarization model is available")
+except ImportError:
+    ml_summarization_available = False
+    logger.warning("ML-based summarization model is not available")
+
+def summarize_article_with_ai(article_text, model="llama3", use_ml_model=None):
+    """
+    Generate a concise summary of an article using either:
+    1. The fine-tuned ML summarization model (if available and selected)
+    2. Ollama LLM API (as fallback or if explicitly selected)
 
     Args:
         article_text (str): The article text to summarize
-        model (str): The Ollama model to use
+        model (str): The model to use - either an Ollama model name or "ml" for the fine-tuned model
+        use_ml_model (bool): If True, use ML model; if False, use Ollama; if None, use settings default
 
     Returns:
         str: The generated summary, or None if there was an error
@@ -263,6 +300,23 @@ def summarize_article_with_ai(article_text, model="llama3"):
     if not article_text:
         return None
 
+    # Check if model is explicitly set to "ml"
+    if model == "ml":
+        use_ml_model = True
+
+    # Determine if we should use the ML model
+    if use_ml_model is None:
+        # Check settings, default to True if ML model is available
+        use_ml_model = getattr(settings, "USE_ML_SUMMARIZATION", ml_summarization_available)
+    
+    # Use the ML model if specified and available
+    if use_ml_model and ml_summarization_available:
+        logger.info("Summarizing article using fine-tuned ML model")
+        return summarize_article_with_ml_model(article_text)
+    
+    # Otherwise fall back to Ollama
+    logger.info(f"Summarizing article using Ollama model: {model}")
+    
     # Truncate very long articles to avoid token limits
     max_chars = 10000
     truncated_text = article_text[:max_chars] + ("..." if len(article_text) > max_chars else "")
