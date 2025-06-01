@@ -12,7 +12,8 @@ from transformers import (
     Seq2SeqTrainingArguments,
     Seq2SeqTrainer,
 )
-from datasets import load_dataset, load_metric
+from datasets import load_dataset
+from evaluate import load as load_metric
 import nltk
 import numpy as np
 

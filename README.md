@@ -180,7 +180,7 @@ This will create:
   - Personalized news preferences
   - Saved articles with notes
 
-### Misinformation Tracking
+### Misinformation Tracking (in progress)
   - Real-time alerts for misleading content
   - Fact-checking of claims
   - Source reliability scoring
