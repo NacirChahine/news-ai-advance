@@ -99,9 +99,9 @@ def download_nltk_dependencies():
 def preprocess_function(examples, tokenizer, max_input_length, max_target_length):
     """Preprocess the dataset for training"""
     # Combine document and summary fields based on dataset structure
-    inputs = examples["document"]
-    targets = examples["summary"]
-    
+    inputs = examples["Articles"]
+    targets = examples["Summaries"]
+
     # Tokenize inputs
     model_inputs = tokenizer(
         inputs, 
@@ -111,12 +111,13 @@ def preprocess_function(examples, tokenizer, max_input_length, max_target_length
     )
     
     # Tokenize targets
-    labels = tokenizer(
-        targets, 
-        max_length=max_target_length, 
-        padding="max_length", 
-        truncation=True
-    )
+    with tokenizer.as_target_tokenizer():
+        labels = tokenizer(
+            targets, 
+            max_length=max_target_length, 
+            padding="max_length", 
+            truncation=True
+        )
     
     # Replace padding token id with -100 so they're ignored in the loss
     labels["input_ids"] = [
@@ -175,6 +176,11 @@ def main():
     logger.info("Loading dataset")
     dataset = load_dataset("gopalkalpande/bbc-news-summary")
     
+    # Split the dataset into train and validation sets if there's no validation set
+    if 'validation' not in dataset:
+        logger.info("Splitting dataset into train and validation sets")
+        dataset = dataset['train'].train_test_split(test_size=0.1, seed=42)
+    
     # Load tokenizer and model
     logger.info(f"Loading tokenizer and model: {args.model_name}")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name)
@@ -186,12 +192,21 @@ def main():
     
     # Preprocess the dataset
     logger.info("Preprocessing the dataset")
+    
+    # Log dataset info once
+    logger.info(f"Dataset structure: {dataset}")
+    logger.info(f"Train features: {dataset['train'].features}")
+    if 'validation' in dataset:
+        logger.info(f"Validation features: {dataset['validation'].features}")
+    
+    def preprocess_batch(examples):
+        return preprocess_function(examples, tokenizer, args.max_input_length, args.max_target_length)
+    
     tokenized_datasets = dataset.map(
-        lambda examples: preprocess_function(
-            examples, tokenizer, args.max_input_length, args.max_target_length
-        ),
+        preprocess_batch,
         batched=True,
         remove_columns=dataset["train"].column_names,
+        desc="Tokenizing dataset"
     )
     
     # Load ROUGE metric
@@ -206,33 +221,37 @@ def main():
         max_length=args.max_input_length
     )
     
-    # Training arguments
-    training_args = Seq2SeqTrainingArguments(
-        output_dir=args.output_dir,
-        evaluation_strategy="steps",
-        eval_steps=args.eval_steps,
-        learning_rate=args.learning_rate,
-        per_device_train_batch_size=args.batch_size,
-        per_device_eval_batch_size=args.batch_size,
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
-        weight_decay=0.01,
-        save_total_limit=3,
-        num_train_epochs=args.num_train_epochs,
-        predict_with_generate=True,
-        fp16=torch.cuda.is_available(),
-        save_steps=args.save_steps,
-        logging_steps=100,
-        load_best_model_at_end=True,
-        metric_for_best_model="rouge2",
-        push_to_hub=False,
-    )
+    # Basic training arguments
+    training_args = {
+        'output_dir': args.output_dir,
+        'evaluation_strategy': 'steps',
+        'eval_steps': args.eval_steps,
+        'learning_rate': args.learning_rate,
+        'per_device_train_batch_size': args.batch_size,
+        'per_device_eval_batch_size': args.batch_size,
+        'gradient_accumulation_steps': args.gradient_accumulation_steps,
+        'weight_decay': 0.01,
+        'save_total_limit': 3,
+        'num_train_epochs': args.num_train_epochs,
+        'predict_with_generate': True,
+        'fp16': torch.cuda.is_available(),
+        'save_steps': args.save_steps,
+        'logging_steps': 100,
+        'load_best_model_at_end': True,
+        'metric_for_best_model': 'rouge2',
+        'push_to_hub': False,
+    }
+    
+    # Create training arguments, filtering out None values
+    training_args = {k: v for k, v in training_args.items() if v is not None}
+    training_args = Seq2SeqTrainingArguments(**training_args)
     
     # Initialize trainer
     trainer = Seq2SeqTrainer(
         model=model,
         args=training_args,
         train_dataset=tokenized_datasets["train"],
-        eval_dataset=tokenized_datasets["test"],
+        eval_dataset=tokenized_datasets["validation"] if 'validation' in tokenized_datasets else None,
         tokenizer=tokenizer,
         data_collator=data_collator,
         compute_metrics=lambda eval_pred: compute_metrics(eval_pred, tokenizer, metric),
