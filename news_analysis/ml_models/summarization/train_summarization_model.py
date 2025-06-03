@@ -190,6 +190,17 @@ def main():
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     
+    # If no validation split exists, create one from the training data
+    if 'validation' not in dataset:
+        logger.info("No validation split found. Splitting training set into train/validation...")
+        split_dataset = dataset['train'].train_test_split(test_size=0.1, seed=42)
+        from datasets import DatasetDict
+        dataset = DatasetDict({
+            'train': split_dataset['train'],
+            'validation': split_dataset['test']
+        })
+        logger.info(f"Created validation set with {len(dataset['validation'])} samples.")
+    
     # Preprocess the dataset
     logger.info("Preprocessing the dataset")
     
@@ -225,6 +236,7 @@ def main():
     training_args = {
         'output_dir': args.output_dir,
         'evaluation_strategy': 'steps',
+        # 'evaluation_strategy': "no",
         'eval_steps': args.eval_steps,
         'learning_rate': args.learning_rate,
         'per_device_train_batch_size': args.batch_size,
