@@ -39,7 +39,7 @@ The project is organized into the following Django apps:
 
 1. Clone the repository
    ```
-   git clone https://github.com/NacirChahine/news-advance.git
+   git clone https://github.com/NacirChahine/news-ai-advance.git
    cd newsAdvance
    ```
 

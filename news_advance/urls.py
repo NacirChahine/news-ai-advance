@@ -19,6 +19,10 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import TemplateView
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+
+# Import admin customization
+from . import admin_customization
 
 urlpatterns = [
     path('admin/', admin.site.urls),

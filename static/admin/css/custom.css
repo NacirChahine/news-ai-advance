@@ -1,0 +1,49 @@
+/* Custom Admin Styles */
+#header {
+    background: #2c3e50;
+    color: #fff;
+}
+
+#branding h1 a:link, #branding h1 a:visited {
+    color: #fff;
+}
+
+.module h2, .module caption, .inline-group h2 {
+    background: #2d87c1;
+}
+
+div.breadcrumbs {
+    background: #2980b9;
+}
+
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+    background: #2c3e50;
+    color: #fff;
+}
+
+.button:hover, input[type=submit]:hover, input[type=button]:hover {
+    background: #34495e;
+}
+
+.object-tools a:link, .object-tools a:visited {
+    background: #27ae60;
+}
+
+.object-tools a:hover {
+    background: #2ecc71;
+}
+
+.selector-changelist .selector-available h2 {
+    background: #3498db;
+}
+
+.selector .selector-available, .selector .selector-chosen {
+    width: 45%;
+}
+
+/* Responsive improvements */
+@media (max-width: 1024px) {
+    .dashboard #content {
+        width: 100%;
+    }
+}
