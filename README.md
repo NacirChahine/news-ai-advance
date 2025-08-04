@@ -15,7 +15,7 @@ News Advance is a web application that aggregates news articles and applies AI-d
 
 - **Backend**: Django 5.2
 - **Database**: SQLite (Development) / PostgreSQL (Production)
-- **NLP/AI**: NLTK, spaCy, scikit-learn, Transformers, Ollama (local LLMs)
+- **NLP/AI**: NLTK, spaCy, scikit-learn, Transformers, PyTorch, Ollama (local LLMs)
 - **Frontend**: Bootstrap 5, HTML/CSS, JavaScript
 - **Data Gathering**: Newspaper3k, Requests, BeautifulSoup4
 
@@ -24,7 +24,7 @@ News Advance is a web application that aggregates news articles and applies AI-d
 The project is organized into the following Django apps:
 
 - **news_aggregator**: Handles news article collection and storage
-- **news_analysis**: Performs AI analysis of news content (bias detection, sentiment analysis)
+- **news_analysis**: Performs AI analysis of news content (bias detection, sentiment analysis, ML summarization)
 - **accounts**: Manages user authentication, saved articles, and user preferences
 
 ## Setup & Installation
@@ -38,13 +38,13 @@ The project is organized into the following Django apps:
 ### Installation Steps
 
 1. Clone the repository
-   ```
+   ```bash
    git clone https://github.com/NacirChahine/news-ai-advance.git
    cd newsAdvance
    ```
 
 2. Set up a virtual environment
-   ```
+   ```bash
    python -m venv venv
    ```
 
@@ -53,28 +53,28 @@ The project is organized into the following Django apps:
    - macOS/Linux: `source venv/bin/activate`
 
 4. Install dependencies
-   ```
+   ```bash
    pip install -r requirements.txt
    ```
 
 5. Download NLP (Natural Language Processing) resources
-   ```
+   ```bash
    python -m nltk.downloader vader_lexicon punkt stopwords
    python -m spacy download en_core_web_sm
    ```
 
 6. Run migrations
-   ```
+   ```bash
    python manage.py migrate
    ```
 
 7. Create a superuser (for admin access)
-   ```
+   ```bash
    python manage.py createsuperuser
    ```
 
 8. Start the development server
-   ```
+   ```bash
    python manage.py runserver
    ```
 
@@ -84,7 +84,7 @@ The project is organized into the following Django apps:
 
 After installation, you can run the project using:
 
-```
+```bash
 python manage.py runserver
 ```
 
@@ -92,7 +92,7 @@ python manage.py runserver
 
 To populate the site with test data for development purposes:
 
-```
+```bash
 python manage.py generate_test_data --sources 10 --articles 30 --users 5
 ```
 
@@ -100,13 +100,13 @@ python manage.py generate_test_data --sources 10 --articles 30 --users 5
 
 To fetch news articles from configured sources:
 
-```
+```bash
 python manage.py fetch_news
 ```
 
 ### Analyzing Articles
 
-To add and analyze articles for bias and sentiment:
+To analyze articles for bias, sentiment, and generate summaries:
 
 1. **Add an Article via Admin Panel**
    - Go to the admin panel at `/admin/`
@@ -117,12 +117,12 @@ To add and analyze articles for bias and sentiment:
    - Save the article
 
 2. **Run the Analysis Command**
-   ```
+   ```bash
    python manage.py analyze_articles
    ```
 
    Options:
-   ```
+   ```bash
    # To analyze a specific article by ID
    python manage.py analyze_articles --article_id 123
 
@@ -132,9 +132,9 @@ To add and analyze articles for bias and sentiment:
    # To force reanalysis of previously analyzed articles
    python manage.py analyze_articles --force
    
-   # To chose an AI model for analysis
+   # To choose an AI model for analysis (requires Ollama)
    python manage.py analyze_articles --model llama3
-   python manage.py analyze_articles --model qwen3:1.7b
+   python manage.py analyze_articles --model qwen2:1.5b
    python manage.py analyze_articles --model deepseek-r1:8b
    ```
 
@@ -148,7 +148,7 @@ To add and analyze articles for bias and sentiment:
 
 For testing with multiple articles at once:
 
-```
+```bash
 python manage.py generate_test_data --sources 5 --articles 10 --users 2
 ```
 
@@ -191,7 +191,7 @@ News Advance includes a fine-tuned BART model specifically trained on the BBC Ne
 
 ### Features
 
-- **High-Quality Summaries**: Trained on professional news writing
+- **High-Quality Summaries**: Trained on professional news writing from BBC dataset
 - **Fast Inference**: Optimized for quick summarization
 - **Configurable Length**: Control summary length and detail level
 - **Seamless Fallback**: Automatically falls back to Ollama if the ML model isn't available
@@ -220,6 +220,8 @@ To train your own summarization model:
    - `--num_train_epochs`: Training epochs (default: 3)
    - `--batch_size`: Batch size (default: 4)
    - `--learning_rate`: Learning rate (default: 5e-5)
+   - `--max_input_length`: Max input tokens (default: 1024)
+   - `--max_target_length`: Max summary tokens (default: 128)
 
 ### Using the ML Summarizer
 
@@ -251,7 +253,59 @@ News Advance supports integration with [Ollama](https://ollama.ai/) for advanced
 ### Setting Up Ollama
 
 1. Install Ollama from [https://ollama.ai/download](https://ollama.ai/download)
-2. Download recommended models (e.g., `ollama pull llama3`)
+2. Download recommended models:
+   ```bash
+   ollama pull llama3
+   ollama pull mistral
+   ollama pull phi
+   ```
 3. Start the Ollama service
 
 For detailed instructions on setting up and using Ollama with News Advance, see the [OLLAMA_INTEGRATION.md](OLLAMA_INTEGRATION.md) documentation.
+
+## Configuration
+
+### Environment Variables
+
+Create a `.env` file in the project root (optional):
+
+```env
+OLLAMA_ENDPOINT=http://localhost:11434/api/generate
+USE_ML_SUMMARIZATION=True
+```
+
+### Django Settings
+
+Key configuration options in `news_advance/settings.py`:
+
+```python
+# Ollama Configuration
+OLLAMA_ENDPOINT = 'http://localhost:11434/api/generate'
+
+# ML Models Configuration
+SUMMARIZATION_MODEL_DIR = BASE_DIR / 'news_analysis' / 'ml_models' / 'summarization' / 'trained_model'
+SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'
+USE_ML_SUMMARIZATION = True
+```
+
+## Documentation
+
+- [AI_PROJECT_DOCS.md](AI_PROJECT_DOCS.md) - Detailed technical documentation for AI context
+- [OLLAMA_INTEGRATION.md](OLLAMA_INTEGRATION.md) - Complete guide for Ollama setup and usage
+- [ML_SUMMARIZATION.md](ML_SUMMARIZATION.md) - Documentation for the custom-trained summarization model
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests for new functionality
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Support
+
+For questions or issues, please open an issue on GitHub or contact the development team.

@@ -10,7 +10,7 @@ An AI-powered news credibility analyzer built with Django. This document provide
 The News Advance system is built on Django 5.2 with a modular architecture organized into specialized apps:
 
 - **news_aggregator**: News collection, storage, and management
-- **news_analysis**: AI analysis pipelines and algorithms (bias detection, sentiment analysis)
+- **news_analysis**: AI analysis pipelines and algorithms (bias detection, sentiment analysis, ML summarization)
 - **accounts**: User authentication, profiles, saved articles, and preference management
 
 ## Data Models
@@ -69,15 +69,65 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 
 1. **Content Preparation**: Text cleaning and normalization
 2. **Bias Analysis**: 
-   - Model-based political leaning detection
+   - AI-powered political leaning detection using Ollama LLMs
    - Language pattern analysis for bias indicators
+   - Fallback to random generation for demo purposes
 3. **Sentiment Analysis**: 
-   - VADER sentiment scoring
-   - Emotional tone classification
-4. **Fact Checking**: 
-   - Claim extraction
-   - Verification against trusted sources
-5. **Source Credibility**: Historical accuracy rating of publishers
+   - Primary: AI-enhanced sentiment analysis via Ollama
+   - Fallback: VADER sentiment scoring
+4. **Summarization**:
+   - Primary: Fine-tuned BART model trained on BBC News Summary dataset
+   - Fallback: Ollama-based summarization
+5. **Key Insights**: AI-powered extraction of important points using Ollama
+6. **Source Credibility**: Historical accuracy rating of publishers
+
+## ML Models
+
+### Text Summarization (news_analysis/ml_models/summarization)
+
+The project includes a fine-tuned BART transformer model for summarizing news articles, trained on the [BBC News Summary dataset](https://huggingface.co/datasets/gopalkalpande/bbc-news-summary).
+
+#### Architecture
+
+- **Base Model**: BART (facebook/bart-base) sequence-to-sequence transformer model
+- **Training Dataset**: BBC News Summary dataset with document-summary pairs
+- **Tokenization**: Maximum input length of 1024 tokens, maximum summary length of 128 tokens
+- **Performance Metrics**: Evaluated using ROUGE-1, ROUGE-2, and ROUGE-L scores
+
+#### Training Configuration
+
+- **Epochs**: 3 (default)
+- **Batch Size**: 4 (default)
+- **Learning Rate**: 5e-5
+- **Max Input Length**: 1024 tokens
+- **Max Target Length**: 128 tokens
+- **Beam Search**: 4 beams for generation
+
+#### Performance Metrics
+
+- ROUGE-1: ~40-45%
+- ROUGE-2: ~20-25%
+- ROUGE-L: ~35-40%
+
+#### Integration
+
+The summarization model is integrated through:
+
+- **summarize_article_with_ml_model()**: Primary function for ML-based summarization
+- **summarize_article_with_ai()**: Enhanced to support both ML model and Ollama LLM fallback
+- **SummarizationModel class**: Handles model loading and inference
+- **Django integration**: Automatic model loading via `django_integration.py`
+
+#### Configuration
+
+Summarization model behavior is controlled through settings:
+
+```python
+# In settings.py
+SUMMARIZATION_MODEL_DIR = BASE_DIR / 'news_analysis' / 'ml_models' / 'summarization' / 'trained_model'
+SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'  # Fallback if trained model not available
+USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
+```
 
 ## Utility Modules
 
@@ -92,10 +142,21 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 
 ### News Analysis Utilities (news_analysis/utils.py)
 
+#### Core Analysis Functions
 - **analyze_sentiment(text)**: Performs sentiment analysis using VADER
 - **extract_named_entities(text, entity_types)**: Identifies named entities using spaCy
 - **extract_main_topics(text, top_n)**: Extracts key topics through frequency analysis
 - **calculate_readability_score(text)**: Computes readability metrics (Flesch Reading Ease, etc.)
+
+#### AI-Enhanced Functions (Ollama Integration)
+- **query_ollama(prompt, model, system_prompt, max_tokens)**: Core function for Ollama API communication
+- **summarize_article_with_ai(text, model, use_ml_model)**: AI-powered summarization with ML/Ollama fallback
+- **analyze_sentiment_with_ai(text, model)**: Enhanced sentiment analysis using Ollama
+- **detect_political_bias_with_ai(text, model)**: Political bias detection using Ollama
+- **extract_key_insights_with_ai(text, model, num_insights)**: Key insights extraction using Ollama
+
+#### ML Model Integration
+- **summarize_article_with_ml_model(text, max_length)**: Wrapper for fine-tuned BART model
 
 ## Management Commands
 
@@ -104,12 +165,15 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - Fetches articles from configured sources using newspaper3k
 - Handles rate limiting, error recovery, and duplicate detection
 - Implements smart scheduling to prioritize frequently updated sources
+- Parameters: `--sources`, `--limit`
 
 ### Analyze Articles (news_analysis/management/commands/analyze_articles.py)
 
 - Processes unanalyzed articles through the analysis pipeline
 - Generates bias, sentiment, and readability metrics
+- Supports AI-enhanced analysis with configurable models
 - Batched processing to handle large article volumes efficiently
+- Parameters: `--article_id`, `--limit`, `--force`, `--model`, `--unanalyzed-only`, `--batch-size`
 
 ### Generate Test Data (news_aggregator/management/commands/generate_test_data.py)
 
@@ -117,6 +181,7 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - Generates sources with varied political leanings
 - Produces articles with realistic bias and sentiment distributions
 - Simulates user interactions and saved articles
+- Parameters: `--sources`, `--articles`, `--users`, `--clear`
 
 ## User Interface
 
@@ -139,6 +204,7 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - Python 3.8+
 - pip
 - spaCy english model: `python -m spacy download en_core_web_sm`
+- Ollama (optional, for AI-enhanced analysis)
 
 ### Dependencies
 
@@ -147,7 +213,10 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - nltk
 - spaCy
 - scikit-learn
-- transformers (optional for advanced NLP)
+- transformers (for ML summarization model)
+- torch (for ML model inference)
+- datasets (for model training)
+- evaluate (for model evaluation)
 - pillow
 - requests
 - beautifulsoup4
@@ -167,6 +236,17 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 6. Create superuser
 7. Start development server
 
+### Optional: Ollama Setup
+
+1. Install Ollama from https://ollama.ai/download
+2. Download recommended models:
+   ```
+   ollama pull llama3
+   ollama pull mistral
+   ollama pull phi
+   ```
+3. Start Ollama service
+
 ## Development Commands
 
 ### Generate Test Data
@@ -175,31 +255,38 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 python manage.py generate_test_data --sources 10 --articles 30 --users 5 --clear
 ```
 
-Parameters:
-- `--sources`: Number of news sources to generate
-- `--articles`: Number of articles per source
-- `--users`: Number of test users to create
-- `--clear`: Whether to clear existing data before generation
-
 ### News Fetching
 
 ```
 python manage.py fetch_news --sources all --limit 10
 ```
 
-Parameters:
-- `--sources`: Source IDs or 'all' for all configured sources
-- `--limit`: Maximum articles to fetch per source
-
 ### Article Analysis
 
 ```
-python manage.py analyze_articles --unanalyzed-only --batch-size 20
+python manage.py analyze_articles --unanalyzed-only --batch-size 20 --model llama3
 ```
 
-Parameters:
-- `--unanalyzed-only`: Process only articles not yet analyzed
-- `--batch-size`: Number of articles to process in each batch
+### ML Model Training
+
+```
+cd news_analysis/ml_models/summarization
+python train_summarization_model.py --model_name facebook/bart-base --output_dir ./trained_model
+```
+
+## Configuration
+
+### Django Settings
+
+```python
+# Ollama Configuration
+OLLAMA_ENDPOINT = 'http://localhost:11434/api/generate'
+
+# ML Models Configuration
+SUMMARIZATION_MODEL_DIR = BASE_DIR / 'news_analysis' / 'ml_models' / 'summarization' / 'trained_model'
+SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'
+USE_ML_SUMMARIZATION = True
+```
 
 ## Testing Strategy
 
@@ -207,6 +294,7 @@ Parameters:
 - Integration tests for analysis pipelines
 - View tests with Django test client
 - End-to-end tests with Selenium
+- ML model evaluation using ROUGE metrics
 
 ## Performance Considerations
 
@@ -214,38 +302,8 @@ Parameters:
 - Caching layer for frequently accessed analysis results
 - Pagination and lazy loading for article listings
 - Batch processing for analysis pipelines
-
-## ML Models
-
-### Text Summarization (news_analysis/ml_models/summarization)
-
-The project includes a fine-tuned transformer model for summarizing news articles, trained on the [BBC News Summary dataset](https://huggingface.co/datasets/gopalkalpande/bbc-news-summary).
-
-#### Architecture
-
-- **Base Model**: BART (facebook/bart-base) sequence-to-sequence transformer model
-- **Training Dataset**: BBC News Summary dataset with document-summary pairs
-- **Tokenization**: Maximum input length of 1024 tokens, maximum summary length of 128 tokens
-- **Performance Metrics**: Evaluated using ROUGE-1, ROUGE-2, and ROUGE-L scores
-
-#### Integration
-
-The summarization model is integrated with the existing system through:
-
-- **summarize_article_with_ml_model()**: Primary function for ML-based summarization
-- **summarize_article_with_ai()**: Enhanced to support both ML model and Ollama LLM fallback
-- **SummarizationModel class**: Handles model loading and inference
-
-#### Configuration
-
-Summarization model behavior is controlled through settings:
-
-```python
-# In settings.py
-SUMMARIZATION_MODEL_DIR = BASE_DIR / 'news_analysis' / 'ml_models' / 'summarization' / 'trained_model'
-SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'  # Fallback if trained model not available
-USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
-```
+- Model caching for ML inference
+- GPU acceleration support for ML models
 
 ## Future Development Plans
 
