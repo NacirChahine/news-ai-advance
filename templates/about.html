@@ -13,28 +13,28 @@
             
             <h2 class="mt-5 mb-3">Our Mission</h2>
             <p>
-                In an era of information overload and increasing concerns about misinformation, News Advance aims to provide a reliable tool for assessing the credibility of news sources and articles. Our mission is to promote media literacy and help users access more balanced, fact-checked information while combating misinformation.
+                In an era of information overload, News Advance aims to provide a reliable tool for assessing news content. Our mission is to promote media literacy and help users access more balanced information through AI-powered analysis.
             </p>
-            
+
             <h2 class="mt-5 mb-3">Technology Behind News Advance</h2>
             <p>
                 News Advance leverages cutting-edge artificial intelligence and natural language processing technologies to analyze news content. Our system works by:
             </p>
             <ul class="list-group list-group-flush mb-4">
                 <li class="list-group-item">
-                    <strong>Data Collection:</strong> Aggregating news articles from a wide variety of sources across the political spectrum.
+                    <strong>Data Collection:</strong> Aggregating news articles from a variety of sources.
                 </li>
                 <li class="list-group-item">
-                    <strong>AI Analysis:</strong> Using advanced NLP models to detect bias, sentiment, and factual accuracy in news content.
+                    <strong>AI Analysis:</strong> Using advanced NLP models to detect bias, sentiment, and generate summaries.
                 </li>
                 <li class="list-group-item">
-                    <strong>Misinformation Detection:</strong> Identifying potential misinformation by cross-referencing articles with verified facts and tracking patterns of misleading content.
+                    <strong>Source Tracking:</strong> Monitoring source reliability and credibility over time.
                 </li>
                 <li class="list-group-item">
-                    <strong>User-Friendly Visualization:</strong> Presenting analysis results in an easy-to-understand format that helps users make informed decisions about the news they consume.
+                    <strong>User-Friendly Visualization:</strong> Presenting analysis results in an easy-to-understand format.
                 </li>
             </ul>
-            
+
             <h2 class="mt-5 mb-3">Key Features</h2>
             <div class="card mb-4">
                 <div class="card-body">
@@ -42,44 +42,44 @@
                         <i class="fas fa-balance-scale text-primary me-2"></i>Bias & Sentiment Analysis
                     </h3>
                     <p class="card-text">
-                        Our AI analyzes news articles for political and emotional bias, helping you understand the perspective behind the reporting. Each article receives a bias score along the political spectrum and a sentiment analysis to gauge emotional tone.
+                        Our AI analyzes news articles for political and emotional bias, helping you understand the perspective behind the reporting. Each article receives a bias score and sentiment analysis.
                     </p>
                 </div>
             </div>
-            
+
             <div class="card mb-4">
                 <div class="card-body">
                     <h3 class="card-title h5">
-                        <i class="fas fa-check-double text-primary me-2"></i>AI-Powered Summarization & Fact-Checking
+                        <i class="fas fa-robot text-primary me-2"></i>AI-Powered Summarization
                     </h3>
                     <p class="card-text">
-                        Get concise summaries of news articles and verification of key claims. Our system cross-references information with trusted sources to provide accuracy assessments and highlight potential misinformation.
+                        Get concise summaries of news articles using our custom-trained ML model based on the BBC News Summary dataset, with advanced AI fallback for enhanced analysis.
                     </p>
                 </div>
             </div>
-            
+
             <div class="card mb-4">
                 <div class="card-body">
                     <h3 class="card-title h5">
-                        <i class="fas fa-exclamation-triangle text-primary me-2"></i>Real-Time Misinformation Tracker
+                        <i class="fas fa-chart-line text-primary me-2"></i>Source Reliability Tracking
                     </h3>
                     <p class="card-text">
-                        Stay informed about trending misinformation with our real-time tracker. The system flags potentially misleading news stories and provides context and corrections to help users navigate controversial topics.
+                        Monitor the reliability of news sources with our scoring system that tracks credibility and accuracy over time.
                     </p>
                 </div>
             </div>
-            
+
             <h2 class="mt-5 mb-3">Our Approach to Media Literacy</h2>
             <p>
-                We believe that access to balanced, fact-checked information is essential for a healthy democracy. Rather than telling users what to believe, News Advance aims to provide tools and insights that help individuals develop their own media literacy skills.
+                We believe that access to analyzed information is essential for informed decision-making. Rather than telling users what to believe, News Advance provides tools and insights that help individuals develop their own media literacy skills.
             </p>
             <p>
-                By highlighting bias, fact-checking claims, and tracking misinformation, we empower users to make more informed decisions about the news they consume and share.
+                By highlighting bias, generating summaries, and tracking source reliability, we empower users to make more informed decisions about the news they consume and share.
             </p>
-            
+
             <h2 class="mt-5 mb-3">Get Started</h2>
             <p>
-                Ready to experience more balanced news consumption? Sign up for a free account to access all features, customize your news feed, and receive personalized insights.
+                Ready to experience enhanced news consumption? Sign up for a free account to access all features, save articles, and customize your preferences.
             </p>
             {% if not user.is_authenticated %}
                 <a href="{% url 'accounts:signup' %}" class="btn btn-primary">

@@ -1,191 +1,64 @@
 {% extends "base.html" %}
 {% load static %}
 
-{% block title %}Real-Time Misinformation Tracker{% endblock %}
+{% block title %}Misinformation Tracker{% endblock %}
 
 {% block content %}
 <div class="container my-5">
     <div class="row mb-4">
         <div class="col-12">
-            <h1 class="mb-3">Real-Time Misinformation Tracker</h1>
+            <h1 class="mb-3">Misinformation Tracker</h1>
             <p class="lead">
-                Stay informed about potentially misleading news stories currently trending online.
-                Our AI-powered system identifies and tracks misinformation across various platforms.
+                Monitor potentially misleading content and track source reliability patterns.
+                This feature is currently in development and will provide enhanced misinformation detection capabilities.
             </p>
         </div>
     </div>
-    
-    <!-- Alert summary stats -->
-    <div class="row mb-5">
-        <div class="col-md-3">
-            <div class="card text-white bg-danger h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Critical Alerts</h5>
-                    <h2 class="display-4">{{ critical_count }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-warning text-dark h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">High Priority</h5>
-                    <h2 class="display-4">{{ high_count }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-info text-dark h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Medium Priority</h5>
-                    <h2 class="display-4">{{ medium_count }}</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card text-white bg-success h-100">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Low Priority</h5>
-                    <h2 class="display-4">{{ low_count }}</h2>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Active alerts -->
-    <div class="row mb-5">
+
+    <!-- Development Notice -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0">Active Misinformation Alerts</h5>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="showResolved" {% if show_resolved %}checked{% endif %}>
-                            <label class="form-check-label" for="showResolved">Show Resolved</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        {% for alert in active_alerts %}
-                        <div class="list-group-item">
-                            <div class="d-flex align-items-center">
-                                <div class="me-3">
-                                    {% if alert.severity == 'critical' %}
-                                    <span class="badge bg-danger p-2">Critical</span>
-                                    {% elif alert.severity == 'high' %}
-                                    <span class="badge bg-warning text-dark p-2">High</span>
-                                    {% elif alert.severity == 'medium' %}
-                                    <span class="badge bg-info text-dark p-2">Medium</span>
-                                    {% else %}
-                                    <span class="badge bg-success p-2">Low</span>
-                                    {% endif %}
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h5 class="mb-1">{{ alert.title }}</h5>
-                                    <p class="mb-1">{{ alert.description }}</p>
-                                    <small class="text-muted">Detected {{ alert.detected_at|timesince }} ago</small>
-                                </div>
-                                <div>
-                                    <button type="button" class="btn btn-outline-primary btn-sm view-details" 
-                                            data-id="{{ alert.id }}" data-bs-toggle="modal" data-bs-target="#alertDetailModal">
-                                        View Details
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="text-center p-4">
-                            <p class="text-muted mb-0">No active misinformation alerts at this time</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Resolved alerts (initially hidden) -->
-    <div class="row mb-5 {% if not show_resolved %}d-none{% endif %}" id="resolvedAlertsSection">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-white">
-                    <h5 class="mb-0">Recently Resolved Alerts</h5>
-                </div>
-                <div class="card-body p-0">
-                    <div class="list-group list-group-flush">
-                        {% for alert in resolved_alerts %}
-                        <div class="list-group-item">
-                            <div class="d-flex align-items-center">
-                                <div class="me-3">
-                                    <span class="badge bg-secondary p-2">Resolved</span>
-                                </div>
-                                <div class="flex-grow-1">
-                                    <h5 class="mb-1">{{ alert.title }}</h5>
-                                    <p class="mb-1">{{ alert.description }}</p>
-                                    <small class="text-muted">Resolved {{ alert.resolved_at|timesince }} ago</small>
-                                </div>
-                                <div>
-                                    <button type="button" class="btn btn-outline-secondary btn-sm view-details" 
-                                            data-id="{{ alert.id }}" data-bs-toggle="modal" data-bs-target="#alertDetailModal">
-                                        View Details
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        {% empty %}
-                        <div class="text-center p-4">
-                            <p class="text-muted mb-0">No resolved alerts in the past 30 days</p>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
+            <div class="alert alert-info">
+                <h5><i class="fas fa-info-circle me-2"></i>Feature in Development</h5>
+                <p class="mb-0">
+                    The misinformation tracker is currently being developed. In the meantime, you can:
+                </p>
+                <ul class="mt-2 mb-0">
+                    <li>View source reliability scores on individual articles</li>
+                    <li>Check bias and sentiment analysis for articles</li>
+                    <li>Monitor news from various sources with different perspectives</li>
+                </ul>
             </div>
         </div>
     </div>
 
-    <!-- How It Works -->
+    <!-- Current Capabilities -->
     <div class="row mt-4">
         <div class="col-md-12">
-            <h2 class="mb-3">How Our Misinformation Tracker Works</h2>
+            <h2 class="mb-3">Current Analysis Capabilities</h2>
             <div class="card">
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h5><i class="fas fa-robot me-2 text-primary"></i>AI-Powered Detection</h5>
-                            <p>Our system uses natural language processing and machine learning algorithms to analyze news content and identify potential misinformation patterns.</p>
+                            <h5><i class="fas fa-balance-scale me-2 text-primary"></i>Bias Detection</h5>
+                            <p>Our system analyzes political bias in articles to help you understand different perspectives.</p>
 
-                            <h5><i class="fas fa-newspaper me-2 text-primary"></i>Cross-Source Verification</h5>
-                            <p>We compare information across multiple sources to identify inconsistencies and potential factual errors.</p>
+                            <h5><i class="fas fa-heart me-2 text-primary"></i>Sentiment Analysis</h5>
+                            <p>We track emotional tone in news articles to identify potentially inflammatory content.</p>
                         </div>
                         <div class="col-md-6">
-                            <h5><i class="fas fa-chart-line me-2 text-primary"></i>Trend Analysis</h5>
-                            <p>By monitoring the spread of news stories, we can identify rapidly spreading misinformation before it reaches a critical mass.</p>
+                            <h5><i class="fas fa-chart-line me-2 text-primary"></i>Source Reliability</h5>
+                            <p>Each news source has a reliability score based on historical accuracy and credibility.</p>
 
-                            <h5><i class="fas fa-shield-alt me-2 text-primary"></i>Expert Review</h5>
-                            <p>Critical alerts are reviewed by human fact-checkers before being published to ensure accuracy.</p>
+                            <h5><i class="fas fa-robot me-2 text-primary"></i>AI Summarization</h5>
+                            <p>Get concise summaries to quickly understand article content and key points.</p>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 
-<!-- Alert Detail Modal -->
-<div class="modal fade" id="alertDetailModal" tabindex="-1" aria-labelledby="alertDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="alertDetailModalLabel">Alert Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div id="alertDetailContent">
-                    <div class="text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                        <p class="mt-2">Loading alert details...</p>
+                    <div class="text-center mt-4">
+                        <a href="{% url 'news_aggregator:latest' %}" class="btn btn-primary">
+                            <i class="fas fa-newspaper me-2"></i>Browse Analyzed Articles
+                        </a>
                     </div>
                 </div>
             </div>
@@ -197,50 +70,8 @@
 {% block extra_js %}
 <script>
     $(document).ready(function() {
-        // Toggle resolved alerts section
-        $('#showResolved').change(function() {
-            if ($(this).is(':checked')) {
-                $('#resolvedAlertsSection').removeClass('d-none');
-            } else {
-                $('#resolvedAlertsSection').addClass('d-none');
-            }
-            
-            // Update URL parameter
-            const urlParams = new URLSearchParams(window.location.search);
-            urlParams.set('show_resolved', $(this).is(':checked') ? '1' : '0');
-            window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
-        });
-        
-        // Load alert details in modal
-        $('.view-details').click(function() {
-            const alertId = $(this).data('id');
-            
-            // Clear previous content and show loading spinner
-            $('#alertDetailContent').html(`
-                <div class="text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2">Loading alert details...</p>
-                </div>
-            `);
-            
-            // Fetch alert details
-            $.ajax({
-                url: `/news/analysis/misinformation/${alertId}/details/`,
-                type: 'GET',
-                success: function(response) {
-                    $('#alertDetailContent').html(response);
-                },
-                error: function() {
-                    $('#alertDetailContent').html(`
-                        <div class="alert alert-danger">
-                            <p class="mb-0">Error loading alert details. Please try again later.</p>
-                        </div>
-                    `);
-                }
-            });
-        });
+        // Placeholder for future misinformation tracker functionality
+        console.log('Misinformation tracker page loaded - feature in development');
     });
 </script>
 {% endblock %}
