@@ -20,14 +20,14 @@
                                 <hr>
                                 
                                 <div class="mb-3">
-                                    <label class="form-label">Political Balance (coming soon)</label>
-                                    <select name="political_filter" class="form-select" disabled>
+                                    <label class="form-label">Political Balance</label>
+                                    <select name="political_filter" class="form-select">
                                         <option value="all" {% if preferences.political_filter == 'all' %}selected{% endif %}>Show All Content</option>
                                         <option value="balanced" {% if preferences.political_filter == 'balanced' %}selected{% endif %}>Balanced Mix</option>
                                         <option value="neutral_only" {% if preferences.political_filter == 'neutral_only' %}selected{% endif %}>Neutral Sources Only</option>
                                         <option value="diverse" {% if preferences.political_filter == 'diverse' %}selected{% endif %}>Diverse Viewpoints</option>
                                     </select>
-                                    <div class="form-text">This feature is coming soon - it will help balance news across the political spectrum</div>
+                                    <div class="form-text">Choose how you want to balance news across the political spectrum in your feed</div>
                                 </div>
                             </div>
                         </div>

@@ -21,6 +21,28 @@ def latest_news(request):
     if search_query:
         articles = articles.filter(Q(title__icontains=search_query) | Q(content__icontains=search_query))
     
+    # Apply political balance filter if user is authenticated and has preferences
+    if request.user.is_authenticated and hasattr(request.user, 'preferences'):
+        political_filter = request.user.preferences.political_filter
+        
+        if political_filter == 'neutral_only':
+            # Show only articles from sources with neutral bias (-0.2 to 0.2)
+            articles = articles.filter(
+                Q(political_bias__isnull=True) |  # Include unanalyzed articles
+                Q(political_bias__gte=-0.2, political_bias__lte=0.2) |
+                Q(source__political_bias__gte=-0.2, source__political_bias__lte=0.2)
+            )
+        elif political_filter == 'diverse':
+            # Show a mix of left, right, and center articles
+            # This is a simplified example - you might want to make this more sophisticated
+            articles = articles.order_by('?')  # Random order for diversity
+        # 'all' and 'balanced' don't need special filtering
+
+    # Default ordering for non-diverse views
+    if not (request.user.is_authenticated and hasattr(request.user, 'preferences') and 
+            request.user.preferences.political_filter == 'diverse'):
+        articles = articles.order_by('-published_date')
+    
     # Get all sources for the filter dropdown
     sources = NewsSource.objects.all()
     

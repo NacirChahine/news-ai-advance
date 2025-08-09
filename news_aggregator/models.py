@@ -9,6 +9,10 @@ class NewsSource(models.Model):
     description = models.TextField(blank=True)
     logo = models.ImageField(upload_to='source_logos/', blank=True, null=True)
     reliability_score = models.FloatField(default=0.0)  # 0-100 score
+    political_bias = models.FloatField(
+        default=0.0,
+        help_text='Average political bias score from -1 (left) to +1 (right)'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -27,6 +31,13 @@ class NewsArticle(models.Model):
     image_url = models.URLField(blank=True)
     fetched_at = models.DateTimeField(auto_now_add=True)
     last_updated = models.DateTimeField(auto_now=True)
+    
+    # Political bias score (-1 to +1, where -1 is left, 0 is neutral, +1 is right)
+    political_bias = models.FloatField(
+        null=True,
+        blank=True,
+        help_text='Political bias score from -1 (left) to +1 (right)'
+    )
     
     # Flags for processing status
     is_analyzed = models.BooleanField(default=False)
