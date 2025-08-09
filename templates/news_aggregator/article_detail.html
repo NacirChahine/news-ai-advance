@@ -75,38 +75,54 @@
         <div class="col-lg-4">
             <!-- Credibility Analysis -->
             <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>AI Analysis</h5>
+                    <button type="button" class="btn btn-sm btn-outline-light" data-bs-toggle="modal" data-bs-target="#aiAnalysisHelp">
+                        <i class="fas fa-info-circle me-1"></i> What do these mean?
+                    </button>
                 </div>
                 <div class="card-body">
                     {% if article.is_analyzed %}
                         <!-- Bias Analysis -->
                         {% if article.bias_analysis %}
                             <div class="mb-4">
-                                <h6>Political Bias</h6>
-                                <div class="d-flex justify-content-between mb-1">
-                                    <span>Left</span>
-                                    <span>Center</span>
-                                    <span>Right</span>
+                                <div class="d-flex align-items-center mb-2">
+                                    <h6 class="mb-0 me-2">Political Bias</h6>
+                                    <i class="fas fa-info-circle text-muted" 
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-placement="top" 
+                                       title="This measures the political leaning of the article's language. -1 is strongly left-leaning, 0 is neutral, and +1 is strongly right-leaning.">
+                                    </i>
                                 </div>
-                                <div class="progress mb-2" style="height: 25px;">
+                                <div class="d-flex justify-content-between mb-1 small text-muted">
+                                    <span>Left Leaning</span>
+                                    <span>Neutral</span>
+                                    <span>Right Leaning</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 20px; background-color: #e9ecef;">
                                     {% with bias_score=article.bias_analysis.bias_score %}
                                         {% with position=bias_score|add:"1"|floatformat:2|mul:50 %}
-                                            <div class="progress-bar 
-                                                {% if bias_score < -0.5 %}bg-primary
-                                                {% elif bias_score < -0.1 %}bg-info
-                                                {% elif bias_score < 0.1 %}bg-success
-                                                {% elif bias_score < 0.5 %}bg-warning
-                                                {% else %}bg-danger{% endif %}"
-                                                style="width: 10px; margin-left: calc({{ position }}% - 5px);">
+                                            <div class="position-relative">
+                                                <div class="position-absolute" style="left: 50%; width: 2px; height: 20px; background-color: #6c757d; z-index: 1;"></div>
+                                                <div class="progress-bar 
+                                                    {% if bias_score < -0.5 %}bg-primary
+                                                    {% elif bias_score < -0.1 %}bg-info
+                                                    {% elif bias_score < 0.1 %}bg-success
+                                                    {% elif bias_score < 0.5 %}bg-warning
+                                                    {% else %}bg-danger{% endif %}
+                                                    position-absolute"
+                                                    style="width: 12px; height: 28px; margin-top: -4px; margin-left: calc({{ position }}% - 6px); z-index: 2;"
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-html="true"
+                                                    title="Bias Score: {{ bias_score|floatformat:2 }}<br>Confidence: {{ article.bias_analysis.confidence|floatformat:2 }}">
+                                                </div>
                                             </div>
                                         {% endwith %}
                                     {% endwith %}
                                 </div>
-                                <p class="mb-0">
+                                <p class="mb-0 small text-muted">
                                     <strong>Assessment:</strong> 
-                                    {{ article.bias_analysis.get_political_leaning_display }} 
-                                    (Confidence: {{ article.bias_analysis.confidence|floatformat:2 }})
+                                    <span class="fw-normal">{{ article.bias_analysis.get_political_leaning_display }}</span>
                                 </p>
                             </div>
                         {% endif %}
@@ -114,31 +130,53 @@
                         <!-- Sentiment Analysis -->
                         {% if article.sentiment_analysis %}
                             <div class="mb-4">
-                                <h6>Emotional Tone</h6>
-                                <div class="progress mb-2" style="height: 25px;">
+                                <div class="d-flex align-items-center mb-2">
+                                    <h6 class="mb-0 me-2">Emotional Tone</h6>
+                                    <i class="fas fa-info-circle text-muted" 
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-html="true"
+                                       data-bs-placement="top" 
+                                       title="This shows the emotional tone of the article's language.<br>Sentiment score ranges from -1 (very negative) to +1 (very positive).">
+                                    </i>
+                                </div>
+                                <div class="d-flex justify-content-between mb-1 small text-muted">
+                                    <span>Negative</span>
+                                    <span>Neutral</span>
+                                    <span>Positive</span>
+                                </div>
+                                <div class="progress mb-2" style="height: 20px;">
                                     <div class="progress-bar bg-danger" role="progressbar" 
                                          style="width: {{ article.sentiment_analysis.negative_score|floatformat:2|mul:100 }}%" 
-                                         title="Negative: {{ article.sentiment_analysis.negative_score|floatformat:2 }}">
+                                         data-bs-toggle="tooltip" 
+                                         title="Negative: {{ article.sentiment_analysis.negative_score|floatformat:2|mul:100|floatformat:0 }}% of content">
                                     </div>
                                     <div class="progress-bar bg-secondary" role="progressbar" 
                                          style="width: {{ article.sentiment_analysis.neutral_score|floatformat:2|mul:100 }}%" 
-                                         title="Neutral: {{ article.sentiment_analysis.neutral_score|floatformat:2 }}">
+                                         data-bs-toggle="tooltip"
+                                         title="Neutral: {{ article.sentiment_analysis.neutral_score|floatformat:2|mul:100|floatformat:0 }}% of content">
                                     </div>
                                     <div class="progress-bar bg-success" role="progressbar" 
                                          style="width: {{ article.sentiment_analysis.positive_score|floatformat:2|mul:100 }}%" 
-                                         title="Positive: {{ article.sentiment_analysis.positive_score|floatformat:2 }}">
+                                         data-bs-toggle="tooltip"
+                                         title="Positive: {{ article.sentiment_analysis.positive_score|floatformat:2|mul:100|floatformat:0 }}% of content">
                                     </div>
                                 </div>
-                                <p class="mb-0">
+                                <p class="mb-0 small text-muted">
                                     <strong>Overall sentiment:</strong> 
                                     {% if article.sentiment_analysis.sentiment_score > 0.3 %}
-                                        <span class="text-success">Positive</span>
+                                        <span class="text-success fw-normal">Mostly Positive</span>
+                                    {% elif article.sentiment_analysis.sentiment_score > 0.1 %}
+                                        <span class="text-success fw-normal">Slightly Positive</span>
                                     {% elif article.sentiment_analysis.sentiment_score < -0.3 %}
-                                        <span class="text-danger">Negative</span>
+                                        <span class="text-danger fw-normal">Mostly Negative</span>
+                                    {% elif article.sentiment_analysis.sentiment_score < -0.1 %}
+                                        <span class="text-danger fw-normal">Slightly Negative</span>
                                     {% else %}
-                                        <span class="text-secondary">Neutral</span>
+                                        <span class="text-secondary fw-normal">Neutral</span>
                                     {% endif %}
-                                    (Score: {{ article.sentiment_analysis.sentiment_score|floatformat:2 }})
+                                    <span class="ms-2" data-bs-toggle="tooltip" title="Sentiment score: {{ article.sentiment_analysis.sentiment_score|floatformat:2 }}">
+                                        <i class="fas fa-info-circle text-muted"></i>
+                                    </span>
                                 </p>
                             </div>
                         {% endif %}
@@ -146,7 +184,14 @@
                         <!-- Fact Checks -->
                         {% if article.fact_checks.exists %}
                             <div class="mb-4">
-                                <h6>Fact Checks</h6>
+                                <div class="d-flex align-items-center mb-2">
+                                    <h6 class="mb-0 me-2">Fact Checks</h6>
+                                    <i class="fas fa-info-circle text-muted" 
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-placement="top" 
+                                       title="Verified facts from trusted sources to help assess the accuracy of claims in this article.">
+                                    </i>
+                                </div>
                                 <div class="accordion" id="factChecksAccordion">
                                     {% for fact_check in article.fact_checks.all %}
                                         <div class="accordion-item">
