@@ -90,8 +90,9 @@
                                     <h6 class="mb-0 me-2">Political Bias</h6>
                                     <i class="fas fa-info-circle text-muted" 
                                        data-bs-toggle="tooltip" 
+                                       data-bs-html="true"
                                        data-bs-placement="top" 
-                                       title="This measures the political leaning of the article's language. -1 is strongly left-leaning, 0 is neutral, and +1 is strongly right-leaning.">
+                                       title="<strong>Understanding Political Bias</strong><br>This measures the political leaning of the article's language:<br><br>• <b>Left Leaning</b> (-1 to -0.1): Language typically associated with progressive/liberal viewpoints (e.g., support for social programs, environmental regulations)<br>• <b>Neutral</b> (-0.1 to 0.1): Balanced, centrist language<br>• <b>Right Leaning</b> (0.1 to 1): Language typically associated with conservative viewpoints (e.g., support for free markets, traditional values)<br><br>Note: This measures the language's alignment, not the writer's personal views.">
                                     </i>
                                 </div>
                                 <div class="d-flex justify-content-between mb-1 small text-muted">
@@ -136,7 +137,7 @@
                                        data-bs-toggle="tooltip" 
                                        data-bs-html="true"
                                        data-bs-placement="top" 
-                                       title="This shows the emotional tone of the article's language.<br>Sentiment score ranges from -1 (very negative) to +1 (very positive).">
+                                       title="<strong>Understanding Emotional Tone</strong><br>This analyzes the emotional content of the article's language:<br><br>• <b>Negative</b>: Expresses emotions like anger, fear, or sadness<br>• <b>Neutral</b>: Factual, objective language<br>• <b>Positive</b>: Expresses emotions like happiness, hope, or approval<br><br>The bar shows the proportion of each emotional tone in the article.">
                                     </i>
                                 </div>
                                 <div class="d-flex justify-content-between mb-1 small text-muted">
@@ -184,13 +185,19 @@
                         <!-- Fact Checks -->
                         {% if article.fact_checks.exists %}
                             <div class="mb-4">
-                                <div class="d-flex align-items-center mb-2">
-                                    <h6 class="mb-0 me-2">Fact Checks</h6>
-                                    <i class="fas fa-info-circle text-muted" 
-                                       data-bs-toggle="tooltip" 
-                                       data-bs-placement="top" 
-                                       title="Verified facts from trusted sources to help assess the accuracy of claims in this article.">
-                                    </i>
+                                <h6 class="mt-4">Understanding the Metrics</h6>
+                                <div class="alert alert-info small">
+                                    <h6><i class="fas fa-balance-scale me-2"></i>Political Bias</h6>
+                                    <p class="mb-2">Measures the political leaning of the article's language on a scale from -1 (strongly left-leaning) to +1 (strongly right-leaning). This shows the language's alignment with political viewpoints, not the writer's personal opinions.</p>
+
+                                    <h6 class="mt-3"><i class="fas fa-smile me-2"></i>Emotional Tone</h6>
+                                    <p class="mb-2">Analyzes the emotional sentiment of the article. The bar shows the proportion of negative, neutral, and positive language detected. This helps understand the emotional impact of the writing.</p>
+
+                                    <h6 class="mt-3"><i class="fas fa-check-circle me-2"></i>Fact Checks</h6>
+                                    <p class="mb-0">Shows verified information from fact-checking organizations about claims made in the article. Each fact check includes a rating and explanation from trusted sources.</p>
+
+                                    <hr class="my-2">
+                                    <p class="mb-0 small"><i class="fas fa-lightbulb me-1"></i> <strong>Tip:</strong> Hover over the <i class="fas fa-info-circle"></i> icons throughout the page for quick explanations of specific metrics.</p>
                                 </div>
                                 <div class="accordion" id="factChecksAccordion">
                                     {% for fact_check in article.fact_checks.all %}
