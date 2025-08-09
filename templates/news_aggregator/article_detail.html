@@ -84,7 +84,7 @@
                 <div class="card-body">
                     {% if article.is_analyzed %}
                         <!-- Bias Analysis -->
-                        {% if article.bias_analysis %}
+                        {% if article.bias_analysis and request.user.is_authenticated and request.user.preferences.enable_bias_analysis %}
                             <div class="mb-4">
                                 <div class="d-flex align-items-center mb-2">
                                     <h6 class="mb-0 me-2">Political Bias</h6>
@@ -128,7 +128,7 @@
                         {% endif %}
 
                         <!-- Sentiment Analysis -->
-                        {% if article.sentiment_analysis %}
+                        {% if article.sentiment_analysis and request.user.is_authenticated and request.user.preferences.enable_sentiment_analysis %}
                             <div class="mb-4">
                                 <div class="d-flex align-items-center mb-2">
                                     <h6 class="mb-0 me-2">Emotional Tone</h6>
@@ -182,7 +182,7 @@
                         {% endif %}
 
                         <!-- Fact Checks -->
-                        {% if article.fact_checks.exists %}
+                        {% if article.fact_checks.exists and request.user.is_authenticated and request.user.preferences.enable_fact_check %}
                             <div class="mb-4">
                                 <div class="d-flex align-items-center mb-2">
                                     <h6 class="mb-0 me-2">Fact Checks</h6>

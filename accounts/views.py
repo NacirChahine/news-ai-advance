@@ -41,6 +41,19 @@ def preferences(request):
     user = request.user
     preferences = user.preferences
 
+    if request.method == 'POST':
+        # Update preferences based on form submission
+        preferences.enable_bias_analysis = 'enable_bias_analysis' in request.POST
+        preferences.enable_sentiment_analysis = 'enable_sentiment_analysis' in request.POST
+        
+        # Only update political_filter if it's not disabled
+        if 'political_filter' in request.POST:
+            preferences.political_filter = request.POST.get('political_filter', 'balanced')
+        
+        preferences.save()
+        messages.success(request, 'Your preferences have been updated successfully!')
+        return redirect('accounts:preferences')
+
     context = {
         'user': user,
         'preferences': preferences,

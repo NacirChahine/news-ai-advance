@@ -20,14 +20,14 @@
                                 <hr>
                                 
                                 <div class="mb-3">
-                                    <label class="form-label">Political Balance</label>
-                                    <select name="political_filter" class="form-select">
+                                    <label class="form-label">Political Balance (coming soon)</label>
+                                    <select name="political_filter" class="form-select" disabled>
                                         <option value="all" {% if preferences.political_filter == 'all' %}selected{% endif %}>Show All Content</option>
                                         <option value="balanced" {% if preferences.political_filter == 'balanced' %}selected{% endif %}>Balanced Mix</option>
                                         <option value="neutral_only" {% if preferences.political_filter == 'neutral_only' %}selected{% endif %}>Neutral Sources Only</option>
                                         <option value="diverse" {% if preferences.political_filter == 'diverse' %}selected{% endif %}>Diverse Viewpoints</option>
                                     </select>
-                                    <div class="form-text">Choose how you want news to be balanced across the political spectrum</div>
+                                    <div class="form-text">This feature is coming soon - it will help balance news across the political spectrum</div>
                                 </div>
                             </div>
                         </div>
@@ -38,40 +38,40 @@
                                 <hr>
                                 
                                 <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="enable_fact_check" name="enable_fact_check" {% if preferences.enable_fact_check %}checked{% endif %}>
-                                    <label class="form-check-label" for="enable_fact_check">Enable Fact-Checking</label>
-                                    <div class="form-text">Show fact-check results for claims in articles</div>
+                                    <input class="form-check-input" type="checkbox" id="enable_fact_check" name="enable_fact_check" disabled>
+                                    <label class="form-check-label" for="enable_fact_check">Enable Fact-Checking (coming soon)</label>
+                                    <div class="form-text">This feature is coming soon - it will show fact-check results for claims in articles</div>
                                 </div>
                                 
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" type="checkbox" id="enable_bias_analysis" name="enable_bias_analysis" {% if preferences.enable_bias_analysis %}checked{% endif %}>
                                     <label class="form-check-label" for="enable_bias_analysis">Enable Bias Analysis</label>
-                                    <div class="form-text">Show political bias indicators for articles</div>
+                                    <div class="form-text">This will remove the related section from the article view</div>
                                 </div>
                                 
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" type="checkbox" id="enable_sentiment_analysis" name="enable_sentiment_analysis" {% if preferences.enable_sentiment_analysis %}checked{% endif %}>
                                     <label class="form-check-label" for="enable_sentiment_analysis">Enable Sentiment Analysis</label>
-                                    <div class="form-text">Show emotional tone indicators for articles</div>
+                                    <div class="form-text">This will remove the related section from the article view</div>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="row mb-4">
                             <div class="col-md-12">
-                                <h5><i class="fas fa-bell me-2 text-primary"></i>Notifications</h5>
+                                <h5><i class="fas fa-bell me-2 text-primary"></i>Notifications (coming soon)</h5>
                                 <hr>
                                 
                                 <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="receive_misinformation_alerts" name="receive_misinformation_alerts" {% if preferences.receive_misinformation_alerts %}checked{% endif %}>
-                                    <label class="form-check-label" for="receive_misinformation_alerts">Misinformation Alerts</label>
-                                    <div class="form-text">Receive alerts about trending misinformation</div>
+                                    <input class="form-check-input" type="checkbox" id="receive_misinformation_alerts" name="receive_misinformation_alerts" disabled>
+                                    <label class="form-check-label" for="receive_misinformation_alerts">Misinformation Alerts (coming soon)</label>
+                                    <div class="form-text">This feature is coming soon - you'll receive alerts about trending misinformation</div>
                                 </div>
                                 
                                 <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="daily_digest_email" name="daily_digest_email" {% if preferences.daily_digest_email %}checked{% endif %}>
-                                    <label class="form-check-label" for="daily_digest_email">Daily News Digest</label>
-                                    <div class="form-text">Receive a daily email with personalized news</div>
+                                    <input class="form-check-input" type="checkbox" id="daily_digest_email" name="daily_digest_email" disabled>
+                                    <label class="form-check-label" for="daily_digest_email">Daily News Digest (coming soon)</label>
+                                    <div class="form-text">This feature is coming soon - you'll receive a daily email with personalized news</div>
                                 </div>
                             </div>
                         </div>
