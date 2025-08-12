@@ -1,3 +1,5 @@
+import logging
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -5,6 +7,8 @@ from django.core.paginator import Paginator
 from django.db.models import Q
 from django.http import JsonResponse
 from .models import NewsArticle, NewsSource, UserSavedArticle
+
+logger = logging.getLogger(__name__)
 
 def latest_news(request):
     """View to display the latest news articles with filters"""
@@ -70,7 +74,10 @@ def latest_news(request):
 def article_detail(request, article_id):
     """View to display a single news article with analysis"""
     article = get_object_or_404(NewsArticle, pk=article_id)
-    
+    logger.debug("Request received: %s", article.author)
+    logger.info("User accessed dashboard")
+    logger.error("Something went wrong", exc_info=True)
+
     # Check if the user has saved this article
     user_saved = False
     if request.user.is_authenticated:
