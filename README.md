@@ -15,7 +15,7 @@ News Advance is a web application that aggregates news articles and applies AI-d
 
 - **Backend**: Django 5.2
 - **Database**: SQLite (Development) / PostgreSQL (Production)
-- **NLP/AI**: NLTK, spaCy, scikit-learn, Transformers, PyTorch, Ollama (local LLMs)
+- **NLP/AI**: NLTK, spaCy, Transformers, PyTorch, Ollama (local LLMs)
 - **Frontend**: Bootstrap 5, HTML/CSS, JavaScript
 - **Data Gathering**: Newspaper3k, Requests, BeautifulSoup4
 
@@ -57,28 +57,36 @@ The project is organized into the following Django apps:
    pip install -r requirements.txt
    ```
 
-5. Download NLP (Natural Language Processing) resources
+5. Set up environment variables
+   ```bash
+   # The .env file is already configured with working email settings
+   # You can modify it if needed for your specific configuration
+   # For new setups, you can copy from the template:
+   # cp .env.example .env
+   ```
+
+6. Download NLP (Natural Language Processing) resources
    ```bash
    python -m nltk.downloader vader_lexicon punkt stopwords
    python -m spacy download en_core_web_sm
    ```
 
-6. Run migrations
+7. Run migrations
    ```bash
    python manage.py migrate
    ```
 
-7. Create a superuser (for admin access)
+8. Create a superuser (for admin access)
    ```bash
    python manage.py createsuperuser
    ```
 
-8. Start the development server
+9. Start the development server
    ```bash
    python manage.py runserver
    ```
 
-9. Access the site at http://127.0.0.1:8000
+10. Access the site at http://127.0.0.1:8000
 
 ## Running the Project
 
@@ -180,10 +188,11 @@ This will create:
   - Personalized news preferences
   - Saved articles with notes
 
-### Misinformation Tracking (in progress)
-  - Real-time alerts for misleading content
-  - Fact-checking of claims
-  - Source reliability scoring
+### Misinformation Tracking
+  - **Models & Infrastructure**: Complete database models for alerts and fact-checking
+  - **Manual Fact-Checking**: Admin interface for creating fact-check results
+  - **Source Reliability**: Basic reliability scoring system
+  - **Automated Detection**: *In development* - Real-time misinformation detection pipeline
 
 ## ML-Powered News Summarization
 
@@ -267,12 +276,29 @@ For detailed instructions on setting up and using Ollama with News Advance, see 
 
 ### Environment Variables
 
-Create a `.env` file in the project root (optional):
+The project includes a pre-configured `.env` file with working email settings. For production or custom setups, you can modify the values as needed:
 
 ```env
+# Django Configuration
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+
+# Email Configuration
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+DEFAULT_FROM_EMAIL=your-email@gmail.com
+
+# Ollama Configuration
 OLLAMA_ENDPOINT=http://localhost:11434/api/generate
+
+# ML Models Configuration
 USE_ML_SUMMARIZATION=True
 ```
+
+**Security Note**: The `.env` file is excluded from version control to protect sensitive credentials. Use `.env.example` as a template for new setups.
 
 ### Django Settings
 

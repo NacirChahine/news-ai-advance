@@ -212,7 +212,7 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 - newspaper3k
 - nltk
 - spaCy
-- scikit-learn
+
 - transformers (for ML summarization model)
 - torch (for ML model inference)
 - datasets (for model training)
