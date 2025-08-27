@@ -16,6 +16,7 @@ from news_analysis.utils import (
     summarize_article_with_ai,
     extract_key_insights_with_ai
 )
+from news_analysis.match_utils import find_related_alerts_for_article
 
 # Download necessary NLTK data
 try:
@@ -117,6 +118,18 @@ class Command(BaseCommand):
 
                 # Extract key insights
                 self.extract_key_insights(article)
+
+            # Link related misinformation alerts (no creation, just association)
+            try:
+                related_alerts = find_related_alerts_for_article(article)
+                if related_alerts:
+                    for alert in related_alerts:
+                        alert.related_articles.add(article)
+                    self.stdout.write(f"  Linked {len(related_alerts)} misinformation alert(s)")
+                else:
+                    self.stdout.write("  No related misinformation alerts found")
+            except Exception as e:
+                self.stderr.write(f"  Error linking misinformation alerts: {str(e)}")
 
             # Mark article as analyzed
             article.is_analyzed = True
@@ -296,7 +309,14 @@ class Command(BaseCommand):
         """Generate a summary of the article using AI"""
         try:
             self.stdout.write(f"  Generating article summary with {self.model}...")
-            summary = summarize_article_with_ai(article.content, model=self.model)
+            # Build optional alert context for the prompt
+            related_alerts = list(article.misinformation_alerts.filter(is_active=True)[:3])
+            alert_context = None
+            if related_alerts:
+                lines = [f"- {a.title} ({a.severity})" for a in related_alerts]
+                alert_context = "\n".join(lines)
+
+            summary = summarize_article_with_ai(article.content, model=self.model, alert_context=alert_context)
 
             if summary:
                 # Update the article's summary field

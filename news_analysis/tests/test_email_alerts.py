@@ -2,8 +2,8 @@ from django.test import TestCase, override_settings
 from django.core import mail
 from django.contrib.auth.models import User
 from accounts.models import UserPreferences
-from .models import MisinformationAlert
-from .email_utils import get_opted_in_recipient_emails, send_misinformation_alert_email
+from news_analysis.models import MisinformationAlert
+from news_analysis.email_utils import get_opted_in_recipient_emails, send_misinformation_alert_email
 
 
 @override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend', DEFAULT_FROM_EMAIL='test@example.com')
@@ -40,6 +40,3 @@ class MisinformationEmailTests(TestCase):
         self.assertIn('Misinformation Alert', message.subject)
         self.assertIn('Test Alert', message.body)
 
-from django.test import TestCase
-
-# Create your tests here.

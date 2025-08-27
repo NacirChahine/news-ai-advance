@@ -117,6 +117,9 @@ def article_analysis(request, article_id):
         Q(title__icontains=article.title.split()[-1])
     ).exclude(id=article.id).distinct()[:5]
     
+    # Get related misinformation alerts (active or any?)
+    related_alerts = article.misinformation_alerts.filter(is_active=True)
+
     context = {
         'article': article,
         'bias_analysis': bias_analysis,
@@ -124,6 +127,7 @@ def article_analysis(request, article_id):
         'fact_checks': fact_checks,
         'is_saved': is_saved,
         'related_articles': related_articles,
+        'misinformation_alerts': related_alerts,
     }
     return render(request, 'news_analysis/article_analysis.html', context)
 

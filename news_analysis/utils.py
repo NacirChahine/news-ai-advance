@@ -283,7 +283,7 @@ except ImportError:
     ml_summarization_available = False
     logger.warning("ML-based summarization model is not available")
 
-def summarize_article_with_ai(article_text, model="llama3", use_ml_model=None):
+def summarize_article_with_ai(article_text, model="llama3", use_ml_model=None, alert_context: str | None = None):
     """
     Generate a concise summary of an article using either:
     1. The fine-tuned ML summarization model (if available and selected)
@@ -293,6 +293,7 @@ def summarize_article_with_ai(article_text, model="llama3", use_ml_model=None):
         article_text (str): The article text to summarize
         model (str): The model to use - either an Ollama model name or "ml" for the fine-tuned model
         use_ml_model (bool): If True, use ML model; if False, use Ollama; if None, use settings default
+        alert_context (str): Optional context to include about related misinformation alerts
 
     Returns:
         str: The generated summary, or None if there was an error
@@ -308,21 +309,22 @@ def summarize_article_with_ai(article_text, model="llama3", use_ml_model=None):
     if use_ml_model is None:
         # Check settings, default to True if ML model is available
         use_ml_model = getattr(settings, "USE_ML_SUMMARIZATION", ml_summarization_available)
-    
+
     # Use the ML model if specified and available
     if use_ml_model and ml_summarization_available:
         logger.info("Summarizing article using fine-tuned ML model")
         return summarize_article_with_ml_model(article_text)
-    
+
     # Otherwise fall back to Ollama
     logger.info(f"Summarizing article using Ollama model: {model}")
-    
+
     # Truncate very long articles to avoid token limits
     max_chars = 10000
     truncated_text = article_text[:max_chars] + ("..." if len(article_text) > max_chars else "")
 
     # Create a prompt for summarization
-    prompt = f"""Please provide a concise summary of the following article:
+    context_block = f"\n\nKnown related misinformation alerts:\n{alert_context}\n" if alert_context else ""
+    prompt = f"""Please provide a concise summary of the following article:{context_block}
 
 {truncated_text}
 

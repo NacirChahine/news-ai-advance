@@ -1,4 +1,4 @@
-<!-- 🔄 Synced with README.md → Maintain human-readable summaries here.  
+<!-- 🔄 Synced with README.md → Maintain human-readable summaries here.
 **AI NOTE**: This file contains extended technical context for the AI. -->
 
 # News Advance: Technical Documentation
@@ -68,11 +68,11 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 ### Analysis Pipeline
 
 1. **Content Preparation**: Text cleaning and normalization
-2. **Bias Analysis**: 
+2. **Bias Analysis**:
    - AI-powered political leaning detection using Ollama LLMs
    - Language pattern analysis for bias indicators
    - Fallback to random generation for demo purposes
-3. **Sentiment Analysis**: 
+3. **Sentiment Analysis**:
    - Primary: AI-enhanced sentiment analysis via Ollama
    - Fallback: VADER sentiment scoring
 4. **Summarization**:
@@ -194,6 +194,49 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 ### Accounts Templates
 
 - **profile.html**: User profile with activity summary and preferences
+
+## Misinformation Alerts: Architecture & Integration
+
+### Manual Management (Admin)
+- Model: `MisinformationAlert(title, description, severity, is_active, detected_at, resolution_details, resolved_at, related_articles)`
+- Admin Enhancements:
+  - list_display includes `related_count`
+  - Actions: `mark_resolved`, `mark_active`, `send_alert_email`
+
+### Email Notification Flow
+- User opt-in: `accounts.UserPreferences.receive_misinformation_alerts` (bool)
+- Recipient selection: users with the flag enabled and valid email (deduped)
+- Templates: `templates/emails/misinformation_alert.txt` (HTML optional)
+- Send paths:
+  - Admin action on selected alerts
+  - Management command: `send_misinformation_alerts` with options:
+    - `--alert-id`, `--since YYYY-MM-DD`, `--active-only`, `--dry-run`
+
+### Article Scanning Integration
+- Utility: `news_analysis.match_utils.find_related_alerts_for_article(article)`
+  - Heuristic keyword overlap on tokenized article and alert fields
+  - Threshold configurable (default ~0.06), limited to top N
+- Pipeline hook: `analyze_articles` command
+  - After bias/sentiment/summary/insights, attempts to link existing active alerts to the article
+  - Idempotent association via M2M; no auto-creation of alerts
+- UI: `article_analysis.html`
+  - Renders a "Misinformation Alerts" card listing active related alerts with severity badges and links
+
+### AI Prompt Context Injection (Non-breaking)
+- `summarize_article_with_ai(..., alert_context=None)` accepts an optional context string
+- `analyze_articles.generate_summary()` passes a short list of related alert titles/severities if present
+- Keeps function signature backward-compatible; ML model path unaffected
+
+### API (Optional)
+- JSON endpoint: `GET /analysis/api/articles/<id>/misinformation-alerts/`
+- Response: `{ article_id, alerts: [{id, title, severity, detected_at}] }`
+
+### Edge Cases & Notes
+- If spaCy model unavailable, matching still works via token overlap
+- Email sending aggregates recipients into a single message (per send) for simplicity; can batch if needed
+- Admin actions handle toggling `is_active` and `resolved_at` consistently
+- No schema changes added yet for automated ingestion (external_id, source meta, etc.) per current scope
+
 - **preferences.html**: Settings interface for content filtering and notifications
 - **saved_articles.html**: Management of user's saved articles collection
 

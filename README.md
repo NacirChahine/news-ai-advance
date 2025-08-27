@@ -1,4 +1,4 @@
-<!-- 🔄 Synced with AI_PROJECT_DOCS.md → Keep parity for AI/human consistency. -->  
+<!-- 🔄 Synced with AI_PROJECT_DOCS.md → Keep parity for AI/human consistency. -->
 # News Advance
 
 An AI-powered news credibility analyzer built with Django.
@@ -139,7 +139,7 @@ To analyze articles for bias, sentiment, and generate summaries:
 
    # To force reanalysis of previously analyzed articles
    python manage.py analyze_articles --force
-   
+
    # To choose an AI model for analysis (requires Ollama)
    python manage.py analyze_articles --model llama3
    python manage.py analyze_articles --model qwen2:1.5b
@@ -193,6 +193,27 @@ This will create:
   - **Manual Fact-Checking**: Admin interface for creating fact-check results
   - **Source Reliability**: Basic reliability scoring system
   - **Automated Detection**: *In development* - Real-time misinformation detection pipeline
+
+
+### Misinformation Alerts (Manual Management and Email Notifications)
+
+- Manage alerts in Django Admin: Admin > News Analysis > Misinformation alerts
+  - Actions: Mark resolved, Mark active, Send alert email to opted-in users
+  - Link related articles via the ManyToMany field on the alert
+
+- Send email notifications to users who enabled alerts in their preferences:
+  - From Admin: select alert(s) > action "Send alert email to opted-in users"
+  - From CLI:
+    ```bash
+    python manage.py send_misinformation_alerts --active-only --since 2025-01-01
+    python manage.py send_misinformation_alerts --alert-id 123
+    python manage.py send_misinformation_alerts --dry-run --since 2025-01-01
+    ```
+
+- Article analysis integration
+  - During analyze_articles, the system matches articles to active alerts using keyword overlap and links them (no new alerts are created automatically)
+  - Article Analysis page shows a "Misinformation Alerts" card when related active alerts exist
+  - AI summary prompts can include a brief list of related alerts as context (non-breaking)
 
 ## ML-Powered News Summarization
 
