@@ -9,12 +9,12 @@ Severity: {{ alert.severity|title }}
 
 {% if alert.related_articles.all %}Related articles:
 {% for a in alert.related_articles.all|slice:":3" %}- {{ a.title }} ({{ a.source.name }})
-  {{ request.scheme|default:"https" }}://{{ request.get_host|default:"localhost" }}{% url 'news_aggregator:article_detail' a.id %}
+  {{ base_url }}{% url 'news_aggregator:article_detail' a.id %}
 {% endfor %}
 {% endif %}
 
 Manage your alert settings:
-{{ request.scheme|default:"https" }}://{{ request.get_host|default:"localhost" }}{{ settings_url }}
+{{ base_url }}{{ settings_url }}
 
 Sent on {{ generated_at|date:"F j, Y, g:i a" }}
 

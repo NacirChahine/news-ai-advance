@@ -17,19 +17,21 @@ def get_opted_in_recipient_emails() -> List[str]:
     return list(qs)
 
 
-def render_alert_email(alert: MisinformationAlert) -> Tuple[str, str]:
+def render_alert_email(alert: MisinformationAlert) -> Tuple[str, str, Optional[str]]:
     """Render subject and body (plain and optional HTML) for an alert email."""
     subject = f"Misinformation Alert: {alert.title} ({alert.severity.title()})"
+
+    base_url = getattr(settings, "SITE_URL", "http://localhost:8000")
 
     context = {
         "alert": alert,
         "site_name": getattr(settings, "SITE_NAME", "News Advance"),
         "settings_url": getattr(settings, "ALERT_SETTINGS_URL", "/accounts/preferences/"),
+        "base_url": base_url,
         "generated_at": timezone.now(),
     }
 
     text_body = render_to_string("emails/misinformation_alert.txt", context)
-    html_body = None
     try:
         html_body = render_to_string("emails/misinformation_alert.html", context)
     except Exception:
