@@ -45,6 +45,9 @@ def send_misinformation_alert_email(alert: MisinformationAlert, recipients: Opti
     """
     Send a misinformation alert email to opted-in users (or provided recipients).
 
+    PRIVACY: Sends individual emails to each recipient to protect privacy.
+    Each recipient only sees their own email address, not others.
+
     Returns a dict with counts and any errors.
     """
     if recipients is None:
@@ -62,19 +65,34 @@ def send_misinformation_alert_email(alert: MisinformationAlert, recipients: Opti
     errors: List[str] = []
     sent_count = 0
 
-    if html_body:
-        # Use EmailMultiAlternatives to include HTML
+    # Send individual emails to protect recipient privacy
+    for recipient_email in recipients:
         try:
-            msg = EmailMultiAlternatives(subject, text_body, settings.DEFAULT_FROM_EMAIL, recipients)
-            msg.attach_alternative(html_body, "text/html")
-            sent_count = msg.send()
+            if html_body:
+                # Use EmailMultiAlternatives to include HTML
+                msg = EmailMultiAlternatives(
+                    subject,
+                    text_body,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [recipient_email]  # Single recipient only
+                )
+                msg.attach_alternative(html_body, "text/html")
+                result = msg.send()
+                if result:
+                    sent_count += 1
+            else:
+                # Use simple send_mail for text-only
+                result = send_mail(
+                    subject,
+                    text_body,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [recipient_email],  # Single recipient only
+                    fail_silently=False
+                )
+                if result:
+                    sent_count += 1
         except Exception as e:
-            errors.append(str(e))
-    else:
-        try:
-            sent_count = send_mail(subject, text_body, settings.DEFAULT_FROM_EMAIL, recipients, fail_silently=False)
-        except Exception as e:
-            errors.append(str(e))
+            errors.append(f"Failed to send to {recipient_email}: {str(e)}")
 
     return {"sent": sent_count, "recipients": len(recipients), "errors": errors, "dry_run": False}
 

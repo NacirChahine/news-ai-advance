@@ -59,15 +59,24 @@
                         
                         <div class="row mb-4">
                             <div class="col-md-12">
-                                <h5><i class="fas fa-bell me-2 text-primary"></i>Notifications (coming soon)</h5>
+                                <h5><i class="fas fa-bell me-2 text-primary"></i>Email Notifications</h5>
                                 <hr>
-                                
+
                                 <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="receive_misinformation_alerts" name="receive_misinformation_alerts" disabled>
-                                    <label class="form-check-label" for="receive_misinformation_alerts">Misinformation Alerts (coming soon)</label>
-                                    <div class="form-text">This feature is coming soon - you'll receive alerts about trending misinformation</div>
+                                    {% if user.email %}
+                                        <input class="form-check-input" type="checkbox" id="receive_misinformation_alerts" name="receive_misinformation_alerts" {% if preferences.receive_misinformation_alerts %}checked{% endif %}>
+                                        <label class="form-check-label" for="receive_misinformation_alerts">Misinformation Alerts</label>
+                                        <div class="form-text">Receive email alerts about trending misinformation and fact-check updates</div>
+                                    {% else %}
+                                        <input class="form-check-input" type="checkbox" id="receive_misinformation_alerts" name="receive_misinformation_alerts" disabled>
+                                        <label class="form-check-label text-muted" for="receive_misinformation_alerts">Misinformation Alerts</label>
+                                        <div class="form-text text-warning">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Email address required. <a href="{% url 'accounts:edit_profile' %}" class="text-decoration-none">Add email address</a> to enable notifications.
+                                        </div>
+                                    {% endif %}
                                 </div>
-                                
+
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" type="checkbox" id="daily_digest_email" name="daily_digest_email" disabled>
                                     <label class="form-check-label" for="daily_digest_email">Daily News Digest (coming soon)</label>
@@ -164,9 +173,13 @@ document.addEventListener('DOMContentLoaded', function() {
         autoSavePreference('enable_sentiment_analysis', this.checked);
     });
 
-    document.getElementById('receive_misinformation_alerts').addEventListener('change', function() {
-        autoSavePreference('receive_misinformation_alerts', this.checked);
-    });
+    // Only add event listener for misinformation alerts if the checkbox is not disabled
+    const misinformationAlertsCheckbox = document.getElementById('receive_misinformation_alerts');
+    if (misinformationAlertsCheckbox && !misinformationAlertsCheckbox.disabled) {
+        misinformationAlertsCheckbox.addEventListener('change', function() {
+            autoSavePreference('receive_misinformation_alerts', this.checked);
+        });
+    }
 
     // Select dropdown
     document.querySelector('select[name="political_filter"]').addEventListener('change', function() {
