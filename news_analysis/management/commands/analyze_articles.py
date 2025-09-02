@@ -1,7 +1,9 @@
 import logging
+import time
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 from news_aggregator.models import NewsArticle
-from news_analysis.models import BiasAnalysis, SentimentAnalysis
+from news_analysis.models import BiasAnalysis, SentimentAnalysis, FactCheckResult
 
 # Import NLP libraries
 import nltk
@@ -14,8 +16,11 @@ from news_analysis.utils import (
     analyze_sentiment_with_ai,
     detect_political_bias_with_ai,
     summarize_article_with_ai,
-    extract_key_insights_with_ai
+    extract_key_insights_with_ai,
+    extract_claims,
+    verify_claim_with_ai,
 )
+from news_analysis.match_utils import find_related_alerts_for_article
 
 # Download necessary NLTK data
 try:
@@ -30,8 +35,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--article_id', 
-            type=int, 
+            '--article_id',
+            type=int,
             help='ID of a specific article to analyze (optional)'
         )
         parser.add_argument(
@@ -117,6 +122,21 @@ class Command(BaseCommand):
 
                 # Extract key insights
                 self.extract_key_insights(article)
+
+            # Generate placeholder fact-check records (non-destructive; skips if already present)
+            self.generate_fact_checks(article)
+
+            # Link related misinformation alerts (no creation, just association)
+            try:
+                related_alerts = find_related_alerts_for_article(article)
+                if related_alerts:
+                    for alert in related_alerts:
+                        alert.related_articles.add(article)
+                    self.stdout.write(f"  Linked {len(related_alerts)} misinformation alert(s)")
+                else:
+                    self.stdout.write("  No related misinformation alerts found")
+            except Exception as e:
+                self.stderr.write(f"  Error linking misinformation alerts: {str(e)}")
 
             # Mark article as analyzed
             article.is_analyzed = True
@@ -219,7 +239,7 @@ class Command(BaseCommand):
                 # Fallback to random bias generation (for demo purposes)
                 self.stdout.write("  Using random bias generation (demo mode)...")
 
-                # Extract some basic features 
+                # Extract some basic features
                 doc = self.nlp(article.content[:5000])  # Limit text length for performance
 
                 # For demo purposes, generate a random bias score between -1 and 1
@@ -296,7 +316,14 @@ class Command(BaseCommand):
         """Generate a summary of the article using AI"""
         try:
             self.stdout.write(f"  Generating article summary with {self.model}...")
-            summary = summarize_article_with_ai(article.content, model=self.model)
+            # Build optional alert context for the prompt
+            related_alerts = list(article.misinformation_alerts.filter(is_active=True)[:3])
+            alert_context = None
+            if related_alerts:
+                lines = [f"- {a.title} ({a.severity})" for a in related_alerts]
+                alert_context = "\n".join(lines)
+
+            summary = summarize_article_with_ai(article.content, model=self.model, alert_context=alert_context)
 
             if summary:
                 # Update the article's summary field
@@ -329,3 +356,52 @@ class Command(BaseCommand):
 
         except Exception as e:
             self.stderr.write(f"  Error extracting insights: {str(e)}")
+
+
+    def generate_fact_checks(self, article):
+        """Extract claims and verify them using an LLM. Skips if any fact-checks already exist.
+        Applies simple rate limiting between calls.
+        """
+        try:
+            # Skip if fact checks already exist for this article
+            if article.fact_checks.exists():
+                self.stdout.write("  Fact-checks already exist; skipping generation")
+                return
+
+            content = (article.content or "").strip()
+            title = (article.title or "").strip()
+
+            # Extract up to 5 candidate claims
+            claims = extract_claims(content, max_claims=5)
+            # Ensure we include headline if meaningful and not duplicate
+            if title and all(title not in c for c in claims):
+                claims = [f"Headline claim: {title}"] + claims
+
+            if not claims:
+                self.stdout.write("  No suitable claims found for fact-checking")
+                return
+
+            created_count = 0
+            # Rate limiting: 1s delay between verification calls
+            for claim in claims[:5]:
+                try:
+                    result = verify_claim_with_ai(claim, context_text=content, model=self.model)
+                except Exception as ve:
+                    self.stderr.write(f"  Verification error: {ve}")
+                    result = {"rating": "unverified", "confidence": 0.0, "explanation": "Verification failed", "sources": ""}
+
+                fc = FactCheckResult.objects.create(
+                    article=article,
+                    claim=claim,
+                    rating=result.get('rating', 'unverified'),
+                    explanation=result.get('explanation', '')[:2000],
+                    sources=str(result.get('sources', ''))[:1000],
+                    confidence=result.get('confidence'),
+                    last_verified=timezone.now(),
+                )
+                created_count += 1
+                time.sleep(1)
+
+            self.stdout.write(f"  Created {created_count} fact-check(s)")
+        except Exception as e:
+            self.stderr.write(f"  Error generating fact-checks: {str(e)}")

@@ -1,4 +1,4 @@
-<!-- 🔄 Synced with AI_PROJECT_DOCS.md → Keep parity for AI/human consistency. -->  
+<!-- 🔄 Synced with AI_PROJECT_DOCS.md → Keep parity for AI/human consistency. -->
 # News Advance
 
 An AI-powered news credibility analyzer built with Django.
@@ -15,7 +15,7 @@ News Advance is a web application that aggregates news articles and applies AI-d
 
 - **Backend**: Django 5.2
 - **Database**: SQLite (Development) / PostgreSQL (Production)
-- **NLP/AI**: NLTK, spaCy, scikit-learn, Transformers, PyTorch, Ollama (local LLMs)
+- **NLP/AI**: NLTK, spaCy, Transformers, PyTorch, Ollama (local LLMs)
 - **Frontend**: Bootstrap 5, HTML/CSS, JavaScript
 - **Data Gathering**: Newspaper3k, Requests, BeautifulSoup4
 
@@ -57,28 +57,36 @@ The project is organized into the following Django apps:
    pip install -r requirements.txt
    ```
 
-5. Download NLP (Natural Language Processing) resources
+5. Set up environment variables
+   ```bash
+   # The .env file is already configured with working email settings
+   # You can modify it if needed for your specific configuration
+   # For new setups, you can copy from the template:
+   # cp .env.example .env
+   ```
+
+6. Download NLP (Natural Language Processing) resources
    ```bash
    python -m nltk.downloader vader_lexicon punkt stopwords
    python -m spacy download en_core_web_sm
    ```
 
-6. Run migrations
+7. Run migrations
    ```bash
    python manage.py migrate
    ```
 
-7. Create a superuser (for admin access)
+8. Create a superuser (for admin access)
    ```bash
    python manage.py createsuperuser
    ```
 
-8. Start the development server
+9. Start the development server
    ```bash
    python manage.py runserver
    ```
 
-9. Access the site at http://127.0.0.1:8000
+10. Access the site at http://127.0.0.1:8000
 
 ## Running the Project
 
@@ -131,7 +139,7 @@ To analyze articles for bias, sentiment, and generate summaries:
 
    # To force reanalysis of previously analyzed articles
    python manage.py analyze_articles --force
-   
+
    # To choose an AI model for analysis (requires Ollama)
    python manage.py analyze_articles --model llama3
    python manage.py analyze_articles --model qwen2:1.5b
@@ -180,10 +188,59 @@ This will create:
   - Personalized news preferences
   - Saved articles with notes
 
-### Misinformation Tracking (in progress)
-  - Real-time alerts for misleading content
-  - Fact-checking of claims
-  - Source reliability scoring
+### Misinformation Tracking
+  - **Models & Infrastructure**: Complete database models for alerts and fact-checking
+  - **Manual Fact-Checking**: Admin interface for creating fact-check results
+  - **Source Reliability**: Basic reliability scoring system
+  - **Automated Detection**: *In development* - Real-time misinformation detection pipeline
+
+
+### Misinformation Alerts (Manual Management and Email Notifications)
+
+- Manage alerts in Django Admin: Admin > News Analysis > Misinformation alerts
+  - Actions: Mark resolved, Mark active, Send alert email to opted-in users
+  - Link related articles via the ManyToMany field on the alert
+
+- Send email notifications to users who enabled alerts in their preferences:
+  - From Admin: select alert(s) > action "Send alert email to opted-in users"
+  - From CLI:
+    ```bash
+    python manage.py send_misinformation_alerts --active-only --since 2025-01-01
+    python manage.py send_misinformation_alerts --alert-id 123
+    python manage.py send_misinformation_alerts --dry-run --since 2025-01-01
+    ```
+
+- Article analysis integration
+  - During analyze_articles, the system matches articles to active alerts using keyword overlap and links them (no new alerts are created automatically)
+  - Article Analysis page shows a "Misinformation Alerts" card when related active alerts exist
+  - AI summary prompts can include a brief list of related alerts as context (non-breaking)
+
+
+## Fact-Checking
+
+- Fact-check results are displayed on the article detail page in a dedicated accordion.
+- Automated pipeline:
+  - Claim extraction: up to 3–5 verifiable claims are extracted from article content using NLP heuristics (entities, numbers, quotes, reporting verbs).
+  - LLM verification: Each claim is verified via Ollama, producing a rating (true/mostly_true/half_true/mostly_false/false/pants_on_fire/unverified), an explanation, sources, and a confidence score. Rate-limited to avoid API saturation.
+  - Stored fields now include confidence and last_verified timestamps. The UI shows ratings and explanations; sources are listed when provided.
+- Users can control visibility:
+  - Go to Accounts > Preferences and toggle “Enable Fact-Checking”.
+  - If disabled, the article page shows a hint with a link back to Preferences to enable it.
+- For visitors who aren’t logged in, the article page shows a helpful prompt with links to sign up or log in to access fact-checks.
+
+CLI tips:
+
+```bash
+# Analyze one article (extract + verify claims)
+python manage.py analyze_articles --article_id <ID> --force
+
+# Periodically re-verify older fact checks
+python manage.py reverify_fact_checks --older-than-days 14 --limit 50
+```
+
+Configuration:
+- Set OLLAMA_ENDPOINT (default http://localhost:11434/api/generate) if needed.
+- Ensure an Ollama model (default: llama3) is available locally.
 
 ## ML-Powered News Summarization
 
@@ -267,12 +324,29 @@ For detailed instructions on setting up and using Ollama with News Advance, see 
 
 ### Environment Variables
 
-Create a `.env` file in the project root (optional):
+The project includes a pre-configured `.env` file with working email settings. For production or custom setups, you can modify the values as needed:
 
 ```env
+# Django Configuration
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+
+# Email Configuration
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your-email@gmail.com
+EMAIL_HOST_PASSWORD=your-app-password
+DEFAULT_FROM_EMAIL=your-email@gmail.com
+
+# Ollama Configuration
 OLLAMA_ENDPOINT=http://localhost:11434/api/generate
+
+# ML Models Configuration
 USE_ML_SUMMARIZATION=True
 ```
+
+**Security Note**: The `.env` file is excluded from version control to protect sensitive credentials. Use `.env.example` as a template for new setups.
 
 ### Django Settings
 

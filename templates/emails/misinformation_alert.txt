@@ -1,0 +1,20 @@
+Subject: {{ site_name }} - Misinformation Alert: {{ alert.title }} ({{ alert.severity|title }})
+
+{{ site_name }}
+
+Misinformation Alert: {{ alert.title }}
+Severity: {{ alert.severity|title }}
+
+{{ alert.description }}
+
+{% if alert.related_articles.all %}Related articles:
+{% for a in alert.related_articles.all|slice:":3" %}- {{ a.title }} ({{ a.source.name }})
+  {{ base_url }}{% url 'news_aggregator:article_detail' a.id %}
+{% endfor %}
+{% endif %}
+
+Manage your alert settings:
+{{ base_url }}{{ settings_url }}
+
+Sent on {{ generated_at|date:"F j, Y, g:i a" }}
+

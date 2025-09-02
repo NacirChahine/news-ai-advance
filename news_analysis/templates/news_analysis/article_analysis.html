@@ -221,21 +221,53 @@
         
         <!-- Fact checks and key points -->
         <div class="col-lg-4">
+            <!-- Misinformation Alerts -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title">Misinformation Alerts</h5>
+                    {% if misinformation_alerts %}
+                    <div class="mt-2">
+                        {% for alert in misinformation_alerts %}
+                        <div class="mb-3 pb-2 {% if not forloop.last %}border-bottom{% endif %}">
+                            <div class="d-flex align-items-center mb-1">
+                                {% if alert.severity == 'critical' %}
+                                <span class="badge bg-danger me-2">Critical</span>
+                                {% elif alert.severity == 'high' %}
+                                <span class="badge bg-warning text-dark me-2">High</span>
+                                {% elif alert.severity == 'medium' %}
+                                <span class="badge bg-info text-dark me-2">Medium</span>
+                                {% else %}
+                                <span class="badge bg-success me-2">Low</span>
+                                {% endif %}
+                                <a href="{% url 'news_analysis:alert_detail' alert.id %}" class="text-decoration-none">{{ alert.title }}</a>
+                            </div>
+                            <p class="small text-muted mb-0">Detected: {{ alert.detected_at|date:"M j, Y" }}</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center text-muted my-4">
+                        <p>No related misinformation alerts.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
             <!-- Fact check results -->
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body p-4">
                     <h5 class="card-title">Fact Check Results</h5>
-                    
+
                     {% if fact_checks %}
                     <div class="mt-3">
                         {% for fact in fact_checks %}
                         <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
                             <h6 class="mb-2">Claim:</h6>
                             <p class="mb-2">{{ fact.claim }}</p>
-                            
+
                             <div class="d-flex align-items-center mb-2">
                                 <h6 class="mb-0 me-2">Rating:</h6>
-                                <span class="badge 
+                                <span class="badge
                                     {% if fact.rating == 'true' %}bg-success{% endif %}
                                     {% if fact.rating == 'mostly_true' %}bg-info{% endif %}
                                     {% if fact.rating == 'half_true' %}bg-warning text-dark{% endif %}
@@ -245,10 +277,10 @@
                                     {{ fact.get_rating_display }}
                                 </span>
                             </div>
-                            
+
                             <h6 class="mb-2">Explanation:</h6>
                             <p class="mb-0">{{ fact.explanation }}</p>
-                            
+
                             {% if fact.sources %}
                             <a href="{{ fact.sources }}" target="_blank" class="small">View Sources</a>
                             {% endif %}
@@ -262,12 +294,12 @@
                     {% endif %}
                 </div>
             </div>
-            
+
             <!-- Related articles -->
             <div class="card border-0 shadow-sm">
                 <div class="card-body p-4">
                     <h5 class="card-title">Related Articles</h5>
-                    
+
                     {% if related_articles %}
                     <div class="mt-3">
                         {% for related in related_articles %}
@@ -302,7 +334,7 @@
         $('.save-article').click(function() {
             var articleId = $(this).data('article-id');
             var button = $(this);
-            
+
             $.ajax({
                 url: "{% url 'news_aggregator:save_article' %}",
                 type: "POST",

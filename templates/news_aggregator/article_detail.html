@@ -182,47 +182,63 @@
                         {% endif %}
 
                         <!-- Fact Checks -->
-                        {% if article.fact_checks.exists and request.user.is_authenticated and request.user.preferences.enable_fact_check %}
-                            <div class="mb-4">
-                                <div class="d-flex align-items-center mb-2">
-                                    <h6 class="mb-0 me-2">Fact Checks</h6>
-                                    <i class="fas fa-info-circle text-muted" 
-                                       data-bs-toggle="tooltip" 
-                                       data-bs-placement="top" 
-                                       title="Verified facts from trusted sources to help assess the accuracy of claims in this article.">
-                                    </i>
-                                </div>
-                                <div class="accordion" id="factChecksAccordion">
-                                    {% for fact_check in article.fact_checks.all %}
-                                        <div class="accordion-item">
-                                            <h2 class="accordion-header" id="heading{{ fact_check.id }}">
-                                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                                                        data-bs-target="#collapse{{ fact_check.id }}" aria-expanded="false" 
-                                                        aria-controls="collapse{{ fact_check.id }}">
-                                                    <span class="badge 
-                                                        {% if fact_check.rating == 'true' or fact_check.rating == 'mostly_true' %}bg-success
-                                                        {% elif fact_check.rating == 'half_true' %}bg-warning text-dark
-                                                        {% elif fact_check.rating == 'mostly_false' or fact_check.rating == 'false' or fact_check.rating == 'pants_on_fire' %}bg-danger
-                                                        {% else %}bg-secondary{% endif %} me-2">
-                                                        {{ fact_check.get_rating_display }}
-                                                    </span>
-                                                    {{ fact_check.claim|truncatechars:70 }}
-                                                </button>
-                                            </h2>
-                                            <div id="collapse{{ fact_check.id }}" class="accordion-collapse collapse" 
-                                                 aria-labelledby="heading{{ fact_check.id }}" data-bs-parent="#factChecksAccordion">
-                                                <div class="accordion-body">
-                                                    <p><strong>Claim:</strong> {{ fact_check.claim }}</p>
-                                                    <p><strong>Explanation:</strong> {{ fact_check.explanation }}</p>
-                                                    {% if fact_check.sources %}
-                                                        <p><strong>Sources:</strong> {{ fact_check.sources }}</p>
-                                                    {% endif %}
-                                                    <small class="text-muted">Checked on {{ fact_check.checked_at|date:"F d, Y" }}</small>
+                        {% if request.user.is_authenticated %}
+                            {% if request.user.preferences.enable_fact_check %}
+                                <div class="mb-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h6 class="mb-0 me-2">Fact Checks</h6>
+                                        <i class="fas fa-info-circle text-muted"
+                                           data-bs-toggle="tooltip"
+                                           data-bs-placement="top"
+                                           title="Verified facts from trusted sources to help assess the accuracy of claims in this article.">
+                                        </i>
+                                    </div>
+                                    {% if article.fact_checks.all|length > 0 %}
+                                    <div class="accordion" id="factChecksAccordion">
+                                        {% for fact_check in article.fact_checks.all %}
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header" id="heading{{ fact_check.id }}">
+                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                                            data-bs-target="#collapse{{ fact_check.id }}" aria-expanded="false"
+                                                            aria-controls="collapse{{ fact_check.id }}">
+                                                        <span class="badge
+                                                            {% if fact_check.rating == 'true' or fact_check.rating == 'mostly_true' %}bg-success
+                                                            {% elif fact_check.rating == 'half_true' %}bg-warning text-dark
+                                                            {% elif fact_check.rating == 'mostly_false' or fact_check.rating == 'false' or fact_check.rating == 'pants_on_fire' %}bg-danger
+                                                            {% else %}bg-secondary{% endif %} me-2">
+                                                            {{ fact_check.get_rating_display }}
+                                                        </span>
+                                                        {{ fact_check.claim|truncatechars:70 }}
+                                                    </button>
+                                                </h2>
+                                                <div id="collapse{{ fact_check.id }}" class="accordion-collapse collapse"
+                                                     aria-labelledby="heading{{ fact_check.id }}" data-bs-parent="#factChecksAccordion">
+                                                    <div class="accordion-body">
+                                                        <p><strong>Claim:</strong> {{ fact_check.claim }}</p>
+                                                        <p><strong>Explanation:</strong> {{ fact_check.explanation }}</p>
+                                                        {% if fact_check.sources %}
+                                                            <p><strong>Sources:</strong> {{ fact_check.sources }}</p>
+                                                        {% endif %}
+                                                        <small class="text-muted">Checked on {{ fact_check.checked_at|date:"F d, Y" }}</small>
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    {% endfor %}
+                                        {% endfor %}
+                                    </div>
+                                    {% else %}
+                                    <div class="alert alert-info mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>No fact-checks are available for this article yet.
+                                    </div>
+                                    {% endif %}
                                 </div>
+                            {% else %}
+                                <div class="alert alert-secondary">
+                                    <i class="fas fa-toggle-off me-2"></i>Fact-checking is currently disabled. <a href="{% url 'accounts:preferences' %}" class="alert-link">Enable it in your preferences</a> to see fact-checks on articles.
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-secondary">
+                                <i class="fas fa-user-lock me-2"></i>Want to see fact-checks? <a href="{% url 'accounts:signup' %}" class="alert-link">Create an account</a> or <a href="{% url 'accounts:login' %}" class="alert-link">log in</a> to enable this feature.
                             </div>
                         {% endif %}
                     {% else %}

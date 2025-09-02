@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>{{ site_name }} - Misinformation Alert</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #333; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+    .critical { background: #dc3545; color: #fff; }
+    .high { background: #ffc107; color: #212529; }
+    .medium { background: #0dcaf0; color: #212529; }
+    .low { background: #198754; color: #fff; }
+  </style>
+</head>
+<body>
+  <h2>{{ site_name }} - Misinformation Alert</h2>
+  <p>
+    <span class="badge {{ alert.severity }}">{{ alert.severity|title }}</span>
+  </p>
+  <h3>{{ alert.title }}</h3>
+  <p>{{ alert.description }}</p>
+
+  {% if alert.related_articles.all %}
+  <h4>Related Articles</h4>
+  <ul>
+    {% for a in alert.related_articles.all|slice:":3" %}
+      <li>
+        <a href="{{ base_url }}{% url 'news_aggregator:article_detail' a.id %}">{{ a.title }}</a>
+        &nbsp;(<em>{{ a.source.name }}</em>)
+      </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <p>
+    Manage your alert settings:
+    <a href="{{ base_url }}{{ settings_url }}">Preferences</a>
+  </p>
+  <p style="font-size: 12px; color: #666;">Sent on {{ generated_at|date:"F j, Y, g:i a" }}</p>
+</body>
+</html>
+

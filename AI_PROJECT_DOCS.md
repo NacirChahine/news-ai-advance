@@ -1,4 +1,4 @@
-<!-- 🔄 Synced with README.md → Maintain human-readable summaries here.  
+<!-- 🔄 Synced with README.md → Maintain human-readable summaries here.
 **AI NOTE**: This file contains extended technical context for the AI. -->
 
 # News Advance: Technical Documentation
@@ -68,11 +68,11 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 ### Analysis Pipeline
 
 1. **Content Preparation**: Text cleaning and normalization
-2. **Bias Analysis**: 
+2. **Bias Analysis**:
    - AI-powered political leaning detection using Ollama LLMs
    - Language pattern analysis for bias indicators
    - Fallback to random generation for demo purposes
-3. **Sentiment Analysis**: 
+3. **Sentiment Analysis**:
    - Primary: AI-enhanced sentiment analysis via Ollama
    - Fallback: VADER sentiment scoring
 4. **Summarization**:
@@ -194,6 +194,49 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 ### Accounts Templates
 
 - **profile.html**: User profile with activity summary and preferences
+
+## Misinformation Alerts: Architecture & Integration
+
+### Manual Management (Admin)
+- Model: `MisinformationAlert(title, description, severity, is_active, detected_at, resolution_details, resolved_at, related_articles)`
+- Admin Enhancements:
+  - list_display includes `related_count`
+  - Actions: `mark_resolved`, `mark_active`, `send_alert_email`
+
+### Email Notification Flow
+- User opt-in: `accounts.UserPreferences.receive_misinformation_alerts` (bool)
+- Recipient selection: users with the flag enabled and valid email (deduped)
+- Templates: `templates/emails/misinformation_alert.txt` (HTML optional)
+- Send paths:
+  - Admin action on selected alerts
+  - Management command: `send_misinformation_alerts` with options:
+    - `--alert-id`, `--since YYYY-MM-DD`, `--active-only`, `--dry-run`
+
+### Article Scanning Integration
+- Utility: `news_analysis.match_utils.find_related_alerts_for_article(article)`
+  - Heuristic keyword overlap on tokenized article and alert fields
+  - Threshold configurable (default ~0.06), limited to top N
+- Pipeline hook: `analyze_articles` command
+  - After bias/sentiment/summary/insights, attempts to link existing active alerts to the article
+  - Idempotent association via M2M; no auto-creation of alerts
+- UI: `article_analysis.html`
+  - Renders a "Misinformation Alerts" card listing active related alerts with severity badges and links
+
+### AI Prompt Context Injection (Non-breaking)
+- `summarize_article_with_ai(..., alert_context=None)` accepts an optional context string
+- `analyze_articles.generate_summary()` passes a short list of related alert titles/severities if present
+- Keeps function signature backward-compatible; ML model path unaffected
+
+### API (Optional)
+- JSON endpoint: `GET /analysis/api/articles/<id>/misinformation-alerts/`
+- Response: `{ article_id, alerts: [{id, title, severity, detected_at}] }`
+
+### Edge Cases & Notes
+- If spaCy model unavailable, matching still works via token overlap
+- Email sending aggregates recipients into a single message (per send) for simplicity; can batch if needed
+- Admin actions handle toggling `is_active` and `resolved_at` consistently
+- No schema changes added yet for automated ingestion (external_id, source meta, etc.) per current scope
+
 - **preferences.html**: Settings interface for content filtering and notifications
 - **saved_articles.html**: Management of user's saved articles collection
 
@@ -212,7 +255,7 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 - newspaper3k
 - nltk
 - spaCy
-- scikit-learn
+
 - transformers (for ML summarization model)
 - torch (for ML model inference)
 - datasets (for model training)
@@ -287,6 +330,39 @@ SUMMARIZATION_MODEL_DIR = BASE_DIR / 'news_analysis' / 'ml_models' / 'summarizat
 SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'
 USE_ML_SUMMARIZATION = True
 ```
+
+## Fact-Checking UX & Logic
+
+- Creation & Verification:
+  - During `analyze_articles`, if an article has no `FactCheckResult` rows yet, the command extracts 3–5 claims from content using NLP heuristics (entities, numbers, quotes, reporting verbs) and verifies each with an LLM via Ollama.
+  - Each verification returns: `rating` (true/mostly_true/half_true/mostly_false/false/pants_on_fire/unverified), `confidence` (0..1), `explanation`, and `sources`.
+  - Idempotent: skipped if any fact-checks already exist for that article.
+- Re-verification:
+  - `reverify_fact_checks` management command updates older entries (by last_verified) with fresh ratings/sources; includes rate limiting.
+- Model fields:
+  - FactCheckResult now tracks `confidence` (float) and `last_verified` (datetime). DB indexes on `rating` and `(article, last_verified)`.
+- Display conditions on Article Detail (`templates/news_aggregator/article_detail.html`):
+  - Authenticated + `request.user.preferences.enable_fact_check = True`:
+    - Renders a Fact Checks accordion. If none exist, shows a neutral info alert that no fact-checks are available yet.
+  - Authenticated + pref disabled:
+    - Renders a secondary alert with a link to `accounts:preferences` prompting user to enable.
+  - Not authenticated:
+    - Renders a secondary alert with links to `accounts:signup` and `accounts:login`.
+- Preferences UI (`accounts/templates/accounts/preferences.html`):
+  - Fact-Checking toggle is enabled and persisted.
+  - `accounts/views.preferences` now saves `enable_fact_check` from POST.
+
+CLI tips:
+
+```bash
+python manage.py analyze_articles --article_id <ID> --force
+python manage.py reverify_fact_checks --older-than-days 14 --limit 50
+```
+
+- Configuration:
+  - OLLAMA_ENDPOINT default: http://localhost:11434/api/generate (overridable via env)
+  - Model default: llama3 (configurable); ensure a local Ollama model is available
+
 
 ## Testing Strategy
 
