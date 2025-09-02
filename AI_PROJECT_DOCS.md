@@ -331,6 +331,30 @@ SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'
 USE_ML_SUMMARIZATION = True
 ```
 
+## Fact-Checking UX & Logic
+
+- Creation:
+  - During `analyze_articles`, if an article has no `FactCheckResult` rows yet, the command creates 1–2 placeholder fact-checks derived from the headline and the first substantial line of content.
+  - Placeholders use rating `unverified`, with a clear explanation indicating they are initial, automated placeholders.
+  - Idempotent: skipped if any fact-checks already exist for that article.
+- Display conditions on Article Detail (`templates/news_aggregator/article_detail.html`):
+  - Authenticated + `request.user.preferences.enable_fact_check = True`:
+    - Renders a Fact Checks accordion. If none exist, shows a neutral info alert that no fact-checks are available yet.
+  - Authenticated + pref disabled:
+    - Renders a secondary alert with a link to `accounts:preferences` prompting user to enable.
+  - Not authenticated:
+    - Renders a secondary alert with links to `accounts:signup` and `accounts:login`.
+- Preferences UI (`accounts/templates/accounts/preferences.html`):
+  - Fact-Checking toggle is enabled and persisted.
+  - `accounts/views.preferences` now saves `enable_fact_check` from POST.
+
+CLI tip to force regeneration of placeholders for a specific article:
+
+```bash
+python manage.py analyze_articles --article_id <ID> --force
+```
+
+
 ## Testing Strategy
 
 - Unit tests for utility functions

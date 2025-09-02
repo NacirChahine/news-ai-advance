@@ -215,6 +215,22 @@ This will create:
   - Article Analysis page shows a "Misinformation Alerts" card when related active alerts exist
   - AI summary prompts can include a brief list of related alerts as context (non-breaking)
 
+
+## Fact-Checking
+
+- Fact-check results are displayed on the article detail page in a dedicated accordion.
+- During analysis, the system now creates initial FactCheckResult records when none exist yet for an article. These start as “Unverified” placeholders so the UI can render and can be updated later (via Admin or future automations).
+- Users can control visibility:
+  - Go to Accounts > Preferences and toggle “Enable Fact-Checking”.
+  - If disabled, the article page shows a hint with a link back to Preferences to enable it.
+- For visitors who aren’t logged in, the article page shows a helpful prompt with links to sign up or log in to access fact-checks.
+
+Tip: To (re)generate placeholders for a specific article you’re testing:
+
+```bash
+python manage.py analyze_articles --article_id <ID> --force
+```
+
 ## ML-Powered News Summarization
 
 News Advance includes a fine-tuned BART model specifically trained on the BBC News Summary dataset for high-quality article summarization. This provides more accurate and consistent summaries compared to general-purpose models.

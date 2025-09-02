@@ -1,7 +1,7 @@
 import logging
 from django.core.management.base import BaseCommand
 from news_aggregator.models import NewsArticle
-from news_analysis.models import BiasAnalysis, SentimentAnalysis
+from news_analysis.models import BiasAnalysis, SentimentAnalysis, FactCheckResult
 
 # Import NLP libraries
 import nltk
@@ -31,8 +31,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--article_id', 
-            type=int, 
+            '--article_id',
+            type=int,
             help='ID of a specific article to analyze (optional)'
         )
         parser.add_argument(
@@ -118,6 +118,9 @@ class Command(BaseCommand):
 
                 # Extract key insights
                 self.extract_key_insights(article)
+
+            # Generate placeholder fact-check records (non-destructive; skips if already present)
+            self.generate_fact_checks(article)
 
             # Link related misinformation alerts (no creation, just association)
             try:
@@ -232,7 +235,7 @@ class Command(BaseCommand):
                 # Fallback to random bias generation (for demo purposes)
                 self.stdout.write("  Using random bias generation (demo mode)...")
 
-                # Extract some basic features 
+                # Extract some basic features
                 doc = self.nlp(article.content[:5000])  # Limit text length for performance
 
                 # For demo purposes, generate a random bias score between -1 and 1
@@ -349,3 +352,52 @@ class Command(BaseCommand):
 
         except Exception as e:
             self.stderr.write(f"  Error extracting insights: {str(e)}")
+
+
+    def generate_fact_checks(self, article):
+        """Create initial fact-check records if none exist yet.
+        These are placeholders to surface the Fact Checks UI; ratings start as 'unverified'.
+        """
+        try:
+            # Skip if fact checks already exist for this article
+            if article.fact_checks.exists():
+                self.stdout.write("  Fact-checks already exist; skipping generation")
+                return
+
+            claims = []
+
+            # Use the headline as a primary claim candidate
+            title = (article.title or "").strip()
+            if title:
+                claims.append(f"Headline claim: {title}")
+
+            # Add one more simple claim from the beginning of the content if available
+            content = (article.content or "").strip()
+            if content:
+                # Take the first reasonably long line/sentence as a second claim
+                first_line = next((line.strip() for line in content.split('\n') if len(line.strip()) > 40), "")
+                if first_line and first_line != title:
+                    claims.append(first_line[:200])
+
+            # Ensure we have at least one claim to create
+            if not claims:
+                self.stdout.write("  No suitable claims found for initial fact-checks")
+                return
+
+            created_count = 0
+            for claim in claims[:3]:
+                FactCheckResult.objects.create(
+                    article=article,
+                    claim=claim,
+                    rating='unverified',
+                    explanation=(
+                        "Automated initial fact-check placeholder. "
+                        "This claim has not yet been verified by our system."
+                    ),
+                    sources=""
+                )
+                created_count += 1
+
+            self.stdout.write(f"  Created {created_count} fact-check placeholder(s)")
+        except Exception as e:
+            self.stderr.write(f"  Error generating fact-checks: {str(e)}")
