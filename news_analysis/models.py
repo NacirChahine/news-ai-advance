@@ -44,14 +44,22 @@ class FactCheckResult(models.Model):
         ('pants_on_fire', 'Pants on Fire'),
         ('unverified', 'Unverified'),
     ]
-    
+
     article = models.ForeignKey(NewsArticle, on_delete=models.CASCADE, related_name='fact_checks')
     claim = models.TextField()  # The specific claim being fact-checked
     rating = models.CharField(max_length=20, choices=RATING_CHOICES, default='unverified')
     explanation = models.TextField()  # Explanation of the fact-check result
     sources = models.TextField(blank=True)  # Sources used to verify the claim
-    checked_at = models.DateTimeField(auto_now_add=True)
-    
+    confidence = models.FloatField(null=True, blank=True)  # 0.0 to 1.0 confidence score
+    checked_at = models.DateTimeField(auto_now_add=True)  # First time we checked/created
+    last_verified = models.DateTimeField(null=True, blank=True)  # Last time verification was performed
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['rating']),
+            models.Index(fields=['article', 'last_verified']),
+        ]
+
     def __str__(self):
         return f"Fact Check for claim: {self.claim[:50]}..."
 

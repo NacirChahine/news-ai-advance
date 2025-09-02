@@ -253,11 +253,11 @@ def summarize_article_with_ml_model(article_text, max_length=150):
     """
     Generate a summary of an article using the fine-tuned ML model
     This is a wrapper around the ML model integration.
-    
+
     Args:
         article_text (str): The article text to summarize
         max_length (int): Maximum length of the generated summary
-    
+
     Returns:
         str: The generated summary, or None if there was an error
     """
@@ -367,7 +367,7 @@ def analyze_sentiment_with_ai(text, model="llama3"):
     truncated_text = text[:max_chars] + ("..." if len(text) > max_chars else "")
 
     # Create a prompt for sentiment analysis
-    prompt = f"""Analyze the sentiment of the following text. Determine if it's positive, negative, or neutral, 
+    prompt = f"""Analyze the sentiment of the following text. Determine if it's positive, negative, or neutral,
 and provide a score from -1.0 (very negative) to 1.0 (very positive), with 0 being neutral.
 Also provide a brief explanation of your analysis.
 
@@ -543,3 +543,164 @@ Format your response as a JSON array of strings, each representing a key insight
             return insights[:num_insights] if insights else []
 
     return []
+
+
+# --- Fact-checking helpers ---
+
+def extract_claims(text: str, max_claims: int = 5) -> list[str]:
+    """Extract likely fact-checkable claims from text.
+    Uses spaCy when available; falls back to NLTK sentence tokenization.
+    Heuristics prefer sentences with named entities, numbers, quotes, or report verbs.
+    """
+    if not text:
+        return []
+
+    sentences = []
+    try:
+        if nlp:
+            doc = nlp(text[:100000])
+            sentences = [s.text.strip() for s in doc.sents]
+        else:
+            sentences = nltk.sent_tokenize(text)
+    except Exception:
+        sentences = nltk.sent_tokenize(text)
+
+    def score_sentence(sent: str) -> float:
+        s = sent.strip()
+        if len(s) < 40 or len(s) > 300:
+            return -1
+        score = 0.0
+        # Numbers, dates, percentages
+        if re.search(r"[0-9]|%|\$", s):
+            score += 1.5
+        # Quotes
+        if '"' in s or "'" in s:
+            score += 0.4
+        # Reporting verbs
+        if re.search(r"\b(said|reported|stated|according to|announced|estimated|claims?)\b", s, re.I):
+            score += 0.8
+        # Named entities via spaCy
+        if nlp:
+            try:
+                ents = nlp(s).ents
+                if any(ent.label_ in {"PERSON", "ORG", "GPE", "DATE", "PERCENT", "MONEY", "TIME", "NORP"} for ent in ents):
+                    score += 1.2
+            except Exception:
+                pass
+        # Declarative ending
+        if s.endswith('.'):
+            score += 0.2
+        return score
+
+    # Deduplicate near-identical sentences
+    seen = set()
+    unique_sents = []
+    for s in sentences:
+        key = re.sub(r"\s+", " ", s.lower())[:180]
+        if key not in seen:
+            seen.add(key)
+            unique_sents.append(s)
+
+    scored = [(score_sentence(s), s) for s in unique_sents]
+    # keep only positive scores
+    scored = [t for t in scored if t[0] > 0]
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [s for _, s in scored[:max_claims]]
+
+
+def verify_claim_with_ai(claim: str, context_text: str | None = None, model: str = "llama3") -> dict:
+    """Verify a claim using an LLM via Ollama.
+    Returns dict with: rating, confidence (0..1), explanation, sources (str or list)
+    """
+    if not claim:
+        return {"rating": "unverified", "confidence": 0.0, "explanation": "Empty claim", "sources": []}
+
+    # Truncate context to avoid token bloat
+    ctx = (context_text or "")
+    max_chars = 6000
+    ctx = ctx[:max_chars] + ("..." if len(ctx) > max_chars else "")
+
+    rating_choices = [
+        "true", "mostly_true", "half_true", "mostly_false", "false", "pants_on_fire", "unverified"
+    ]
+
+    prompt = (
+        "Fact-check the following claim. Use the context if helpful, but do not assume the claim is true unless you can justify it with general knowledge or reliable sources.\n\n"
+        f"Claim:\n{claim}\n\n"
+        f"Context:\n{ctx}\n\n"
+        "Respond ONLY as strict JSON with this schema:\n"
+        "{\n"
+        "  \"rating\": \"one of: true, mostly_true, half_true, mostly_false, false, pants_on_fire, unverified\",\n"
+        "  \"confidence\": 0.0-1.0,\n"
+        "  \"explanation\": \"concise explanation\",\n"
+        "  \"sources\": [\"optional URL or citation strings\"]\n"
+        "}\n"
+    )
+
+    system_prompt = (
+        "You are a professional fact-checker. Be accurate and conservative. "
+        "If insufficient information, return rating 'unverified'. Prefer citing 1-3 reputable sources."
+    )
+
+    resp = query_ollama(prompt, model=model, system_prompt=system_prompt, max_tokens=700)
+    if resp and "response" in resp:
+        raw = resp["response"].strip()
+        # Strip possible code fences
+        if "```" in raw:
+            try:
+                raw = raw.split("```json")[1].split("```")[0]
+            except Exception:
+                try:
+                    raw = raw.split("```", 1)[1].split("```", 1)[0]
+                except Exception:
+                    raw = raw
+        try:
+            data = json.loads(raw)
+            rating = str(data.get("rating", "unverified")).lower().strip()
+            if rating not in rating_choices:
+                rating = "unverified"
+            confidence = data.get("confidence")
+            try:
+                confidence = float(confidence)
+                if confidence < 0 or confidence > 1:
+                    confidence = None
+            except Exception:
+                confidence = None
+            explanation = str(data.get("explanation", "")).strip()
+            sources = data.get("sources", [])
+            if isinstance(sources, list):
+                src_str = "; ".join([str(s) for s in sources if str(s).strip()])
+            else:
+                src_str = str(sources)
+            return {
+                "rating": rating,
+                "confidence": confidence if confidence is not None else 0.5,
+                "explanation": explanation or "AI verification result",
+                "sources": src_str[:1000]
+            }
+        except Exception as e:
+            logger.error(f"Error parsing fact-check response: {e}")
+            # Heuristic fallback
+            low = raw.lower()
+            rating = "unverified"
+            if "pants on fire" in low:
+                rating = "pants_on_fire"
+            elif "mostly false" in low:
+                rating = "mostly_false"
+            elif "half true" in low or "partly true" in low:
+                rating = "half_true"
+            elif "mostly true" in low:
+                rating = "mostly_true"
+            elif "true" in low:
+                rating = "true"
+            elif "false" in low:
+                rating = "false"
+            return {
+                "rating": rating,
+                "confidence": 0.4,
+                "explanation": raw[:500],
+                "sources": ""
+            }
+
+    # Total failure fallback
+    return {"rating": "unverified", "confidence": 0.0, "explanation": "Verification failed", "sources": ""}

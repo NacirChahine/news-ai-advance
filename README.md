@@ -219,17 +219,28 @@ This will create:
 ## Fact-Checking
 
 - Fact-check results are displayed on the article detail page in a dedicated accordion.
-- During analysis, the system now creates initial FactCheckResult records when none exist yet for an article. These start as “Unverified” placeholders so the UI can render and can be updated later (via Admin or future automations).
+- Automated pipeline:
+  - Claim extraction: up to 3–5 verifiable claims are extracted from article content using NLP heuristics (entities, numbers, quotes, reporting verbs).
+  - LLM verification: Each claim is verified via Ollama, producing a rating (true/mostly_true/half_true/mostly_false/false/pants_on_fire/unverified), an explanation, sources, and a confidence score. Rate-limited to avoid API saturation.
+  - Stored fields now include confidence and last_verified timestamps. The UI shows ratings and explanations; sources are listed when provided.
 - Users can control visibility:
   - Go to Accounts > Preferences and toggle “Enable Fact-Checking”.
   - If disabled, the article page shows a hint with a link back to Preferences to enable it.
 - For visitors who aren’t logged in, the article page shows a helpful prompt with links to sign up or log in to access fact-checks.
 
-Tip: To (re)generate placeholders for a specific article you’re testing:
+CLI tips:
 
 ```bash
+# Analyze one article (extract + verify claims)
 python manage.py analyze_articles --article_id <ID> --force
+
+# Periodically re-verify older fact checks
+python manage.py reverify_fact_checks --older-than-days 14 --limit 50
 ```
+
+Configuration:
+- Set OLLAMA_ENDPOINT (default http://localhost:11434/api/generate) if needed.
+- Ensure an Ollama model (default: llama3) is available locally.
 
 ## ML-Powered News Summarization
 

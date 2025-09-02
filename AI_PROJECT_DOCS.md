@@ -333,10 +333,14 @@ USE_ML_SUMMARIZATION = True
 
 ## Fact-Checking UX & Logic
 
-- Creation:
-  - During `analyze_articles`, if an article has no `FactCheckResult` rows yet, the command creates 1–2 placeholder fact-checks derived from the headline and the first substantial line of content.
-  - Placeholders use rating `unverified`, with a clear explanation indicating they are initial, automated placeholders.
+- Creation & Verification:
+  - During `analyze_articles`, if an article has no `FactCheckResult` rows yet, the command extracts 3–5 claims from content using NLP heuristics (entities, numbers, quotes, reporting verbs) and verifies each with an LLM via Ollama.
+  - Each verification returns: `rating` (true/mostly_true/half_true/mostly_false/false/pants_on_fire/unverified), `confidence` (0..1), `explanation`, and `sources`.
   - Idempotent: skipped if any fact-checks already exist for that article.
+- Re-verification:
+  - `reverify_fact_checks` management command updates older entries (by last_verified) with fresh ratings/sources; includes rate limiting.
+- Model fields:
+  - FactCheckResult now tracks `confidence` (float) and `last_verified` (datetime). DB indexes on `rating` and `(article, last_verified)`.
 - Display conditions on Article Detail (`templates/news_aggregator/article_detail.html`):
   - Authenticated + `request.user.preferences.enable_fact_check = True`:
     - Renders a Fact Checks accordion. If none exist, shows a neutral info alert that no fact-checks are available yet.
@@ -348,11 +352,16 @@ USE_ML_SUMMARIZATION = True
   - Fact-Checking toggle is enabled and persisted.
   - `accounts/views.preferences` now saves `enable_fact_check` from POST.
 
-CLI tip to force regeneration of placeholders for a specific article:
+CLI tips:
 
 ```bash
 python manage.py analyze_articles --article_id <ID> --force
+python manage.py reverify_fact_checks --older-than-days 14 --limit 50
 ```
+
+- Configuration:
+  - OLLAMA_ENDPOINT default: http://localhost:11434/api/generate (overridable via env)
+  - Model default: llama3 (configurable); ensure a local Ollama model is available
 
 
 ## Testing Strategy

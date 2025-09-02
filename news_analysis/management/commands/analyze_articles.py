@@ -1,5 +1,7 @@
 import logging
+import time
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 from news_aggregator.models import NewsArticle
 from news_analysis.models import BiasAnalysis, SentimentAnalysis, FactCheckResult
 
@@ -14,7 +16,9 @@ from news_analysis.utils import (
     analyze_sentiment_with_ai,
     detect_political_bias_with_ai,
     summarize_article_with_ai,
-    extract_key_insights_with_ai
+    extract_key_insights_with_ai,
+    extract_claims,
+    verify_claim_with_ai,
 )
 from news_analysis.match_utils import find_related_alerts_for_article
 
@@ -355,8 +359,8 @@ class Command(BaseCommand):
 
 
     def generate_fact_checks(self, article):
-        """Create initial fact-check records if none exist yet.
-        These are placeholders to surface the Fact Checks UI; ratings start as 'unverified'.
+        """Extract claims and verify them using an LLM. Skips if any fact-checks already exist.
+        Applies simple rate limiting between calls.
         """
         try:
             # Skip if fact checks already exist for this article
@@ -364,40 +368,40 @@ class Command(BaseCommand):
                 self.stdout.write("  Fact-checks already exist; skipping generation")
                 return
 
-            claims = []
-
-            # Use the headline as a primary claim candidate
-            title = (article.title or "").strip()
-            if title:
-                claims.append(f"Headline claim: {title}")
-
-            # Add one more simple claim from the beginning of the content if available
             content = (article.content or "").strip()
-            if content:
-                # Take the first reasonably long line/sentence as a second claim
-                first_line = next((line.strip() for line in content.split('\n') if len(line.strip()) > 40), "")
-                if first_line and first_line != title:
-                    claims.append(first_line[:200])
+            title = (article.title or "").strip()
 
-            # Ensure we have at least one claim to create
+            # Extract up to 5 candidate claims
+            claims = extract_claims(content, max_claims=5)
+            # Ensure we include headline if meaningful and not duplicate
+            if title and all(title not in c for c in claims):
+                claims = [f"Headline claim: {title}"] + claims
+
             if not claims:
-                self.stdout.write("  No suitable claims found for initial fact-checks")
+                self.stdout.write("  No suitable claims found for fact-checking")
                 return
 
             created_count = 0
-            for claim in claims[:3]:
-                FactCheckResult.objects.create(
+            # Rate limiting: 1s delay between verification calls
+            for claim in claims[:5]:
+                try:
+                    result = verify_claim_with_ai(claim, context_text=content, model=self.model)
+                except Exception as ve:
+                    self.stderr.write(f"  Verification error: {ve}")
+                    result = {"rating": "unverified", "confidence": 0.0, "explanation": "Verification failed", "sources": ""}
+
+                fc = FactCheckResult.objects.create(
                     article=article,
                     claim=claim,
-                    rating='unverified',
-                    explanation=(
-                        "Automated initial fact-check placeholder. "
-                        "This claim has not yet been verified by our system."
-                    ),
-                    sources=""
+                    rating=result.get('rating', 'unverified'),
+                    explanation=result.get('explanation', '')[:2000],
+                    sources=str(result.get('sources', ''))[:1000],
+                    confidence=result.get('confidence'),
+                    last_verified=timezone.now(),
                 )
                 created_count += 1
+                time.sleep(1)
 
-            self.stdout.write(f"  Created {created_count} fact-check placeholder(s)")
+            self.stdout.write(f"  Created {created_count} fact-check(s)")
         except Exception as e:
             self.stderr.write(f"  Error generating fact-checks: {str(e)}")

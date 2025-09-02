@@ -91,3 +91,73 @@ class MisinformationIntegrationTests(TestCase):
         resp = self.client.get(f"/analysis/article-analysis/{self.article.id}/")
         self.assertContains(resp, 'Misinformation Alerts')
         self.assertContains(resp, 'Viral Health Claim')
+
+
+from unittest.mock import patch
+from django.core.management import call_command
+from news_aggregator.models import NewsArticle, NewsSource
+from news_analysis.models import FactCheckResult
+from news_analysis import utils as analysis_utils
+
+
+class ClaimExtractionTests(TestCase):
+    def setUp(self):
+        self.content = (
+            'The World Health Organization said on Monday that global life expectancy rose by 6 years since 2000. '
+            'According to the report, more than 2.3 billion people were affected by respiratory illnesses in 2023. '
+            'Experts estimated the cost at $1.2 trillion annually. "This is significant," said Dr. Smith.'
+        )
+
+    def test_extract_claims_returns_scored_sentences(self):
+        claims = analysis_utils.extract_claims(self.content, max_claims=5)
+        self.assertGreaterEqual(len(claims), 3)
+        self.assertTrue(all(isinstance(c, str) and len(c) > 20 for c in claims))
+
+
+class FactCheckPipelineTests(TestCase):
+    def setUp(self):
+        self.source = NewsSource.objects.create(name="Test Source", url="https://example.com")
+        self.article = NewsArticle.objects.create(
+            title="WHO: life expectancy rose by 6 years since 2000",
+            source=self.source,
+            url="https://example.com/article1",
+            content=(
+                'The World Health Organization said on Monday that global life expectancy rose by 6 years since 2000. '
+                'According to the report, more than 2.3 billion people were affected by respiratory illnesses in 2023.'
+            ),
+        )
+
+    @patch("news_analysis.management.commands.analyze_articles.spacy.load", autospec=True)
+    @patch("news_analysis.utils.query_ollama")
+    def test_analyze_articles_creates_fact_checks_with_llm(self, mock_ollama, mock_spacy_load):
+        mock_spacy_load.return_value = object()  # Avoid downloading models
+        mock_ollama.return_value = {
+            "response": '{"rating":"mostly_true","confidence":0.78,"explanation":"Consistent with WHO data","sources":["https://www.who.int/"]}'
+        }
+        call_command("analyze_articles", article_id=self.article.id, force=True)
+        fcs = FactCheckResult.objects.filter(article=self.article)
+        self.assertGreaterEqual(fcs.count(), 1)
+        fc = fcs.first()
+        self.assertIn(fc.rating, [c[0] for c in FactCheckResult.RATING_CHOICES])
+        self.assertIsNotNone(fc.last_verified)
+        self.assertIsNotNone(fc.confidence)
+
+    @patch("news_analysis.utils.query_ollama")
+    def test_reverify_fact_checks_command_updates_entries(self, mock_ollama):
+        fc = FactCheckResult.objects.create(
+            article=self.article,
+            claim="The World Health Organization said ...",
+            rating="unverified",
+            explanation="",
+            sources="",
+            confidence=None,
+            last_verified=None,
+        )
+        mock_ollama.return_value = {
+            "response": '{"rating":"true","confidence":0.9,"explanation":"Verified against WHO site","sources":["https://www.who.int/"]}'
+        }
+        call_command("reverify_fact_checks", article_id=self.article.id, limit=1, delay=0)
+        fc.refresh_from_db()
+        self.assertEqual(fc.rating, "true")
+        self.assertIsNotNone(fc.last_verified)
+        self.assertGreaterEqual(fc.confidence or 0, 0.0)
