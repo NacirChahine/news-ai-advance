@@ -152,6 +152,11 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER)
 
 OLLAMA_ENDPOINT = 'http://localhost:11434/api/generate'
 
+# Login/Logout URLs
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,

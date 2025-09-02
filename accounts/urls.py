@@ -11,6 +11,7 @@ urlpatterns = [
     path('profile/', views.profile, name='profile'),
     path('edit-profile/', views.edit_profile, name='edit_profile'),
     path('preferences/', views.preferences, name='preferences'),
+    path('auto-save-preferences/', views.auto_save_preferences, name='auto_save_preferences'),
     path('saved-articles/', views.saved_articles, name='saved_articles'),
     path('update-saved-notes/', views.update_saved_notes, name='update_saved_notes'),
     path('delete-saved/', views.delete_saved, name='delete_saved'),

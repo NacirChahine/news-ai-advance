@@ -8,6 +8,10 @@ from news_aggregator.models import UserSavedArticle
 from django.core.files.storage import default_storage
 from django.core.mail import send_mail
 from django.conf import settings
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+import json
 from .models import PasswordResetOTP
 
 def signup(request):
@@ -60,6 +64,40 @@ def preferences(request):
         'preferences': preferences,
     }
     return render(request, 'accounts/preferences.html', context)
+
+@login_required
+@require_POST
+def auto_save_preferences(request):
+    """AJAX endpoint for auto-saving user preferences"""
+    try:
+        data = json.loads(request.body)
+        user = request.user
+        preferences = user.preferences
+
+        # Update the specific preference that was changed
+        field_name = data.get('field')
+        field_value = data.get('value')
+
+        if field_name == 'enable_fact_check':
+            preferences.enable_fact_check = field_value
+        elif field_name == 'enable_bias_analysis':
+            preferences.enable_bias_analysis = field_value
+        elif field_name == 'enable_sentiment_analysis':
+            preferences.enable_sentiment_analysis = field_value
+        elif field_name == 'political_filter':
+            preferences.political_filter = field_value
+        elif field_name == 'receive_misinformation_alerts':
+            preferences.receive_misinformation_alerts = field_value
+        else:
+            return JsonResponse({'success': False, 'error': 'Invalid field name'})
+
+        preferences.save()
+        return JsonResponse({'success': True, 'message': 'Preference saved successfully'})
+
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 @login_required
 def saved_articles(request):

@@ -11,7 +11,7 @@
                     <h4 class="mb-0"><i class="fas fa-cog me-2"></i>News Preferences</h4>
                 </div>
                 <div class="card-body">
-                    <form method="post">
+                    <div>
                         {% csrf_token %}
                         
                         <div class="row mb-4">
@@ -77,17 +77,101 @@
                         </div>
                         
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-save me-2"></i>Save Preferences
-                            </button>
+                            <div id="save-status" class="alert alert-success d-none" role="alert">
+                                <i class="fas fa-check-circle me-2"></i>Preferences saved automatically!
+                            </div>
                             <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Return to Profile
                             </a>
                         </div>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    const csrftoken = getCookie('csrftoken');
+
+    // Function to show save status
+    function showSaveStatus(success, message) {
+        const statusDiv = document.getElementById('save-status');
+        statusDiv.className = success ? 'alert alert-success' : 'alert alert-danger';
+        statusDiv.innerHTML = success ?
+            '<i class="fas fa-check-circle me-2"></i>Preferences saved automatically!' :
+            '<i class="fas fa-exclamation-triangle me-2"></i>Error saving preferences: ' + message;
+        statusDiv.classList.remove('d-none');
+
+        // Hide after 3 seconds
+        setTimeout(() => {
+            statusDiv.classList.add('d-none');
+        }, 3000);
+    }
+
+    // Function to auto-save preference
+    function autoSavePreference(fieldName, fieldValue) {
+        fetch('{% url "accounts:auto_save_preferences" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrftoken,
+            },
+            body: JSON.stringify({
+                field: fieldName,
+                value: fieldValue
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            showSaveStatus(data.success, data.error || data.message);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showSaveStatus(false, 'Network error occurred');
+        });
+    }
+
+    // Add event listeners to all form controls
+
+    // Checkbox switches
+    document.getElementById('enable_fact_check').addEventListener('change', function() {
+        autoSavePreference('enable_fact_check', this.checked);
+    });
+
+    document.getElementById('enable_bias_analysis').addEventListener('change', function() {
+        autoSavePreference('enable_bias_analysis', this.checked);
+    });
+
+    document.getElementById('enable_sentiment_analysis').addEventListener('change', function() {
+        autoSavePreference('enable_sentiment_analysis', this.checked);
+    });
+
+    document.getElementById('receive_misinformation_alerts').addEventListener('change', function() {
+        autoSavePreference('receive_misinformation_alerts', this.checked);
+    });
+
+    // Select dropdown
+    document.querySelector('select[name="political_filter"]').addEventListener('change', function() {
+        autoSavePreference('political_filter', this.value);
+    });
+});
+</script>
 {% endblock %}
