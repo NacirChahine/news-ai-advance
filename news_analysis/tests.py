@@ -43,3 +43,51 @@ class MisinformationEmailTests(TestCase):
 from django.test import TestCase
 
 # Create your tests here.
+
+
+from django.test import Client
+from django.core.management import call_command
+from news_aggregator.models import NewsSource, NewsArticle
+
+class MisinformationIntegrationTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.source = NewsSource.objects.create(name='Test Source', url='https://example.com')
+        self.article = NewsArticle.objects.create(
+            title='Big Health Claim Goes Viral',
+            source=self.source,
+            url='https://example.com/a1',
+            content='A viral claim about health and wellness is circulating widely.',
+        )
+        self.alert = MisinformationAlert.objects.create(
+            title='Viral Health Claim',
+            description='A known misleading claim related to health.',
+            severity='high',
+            is_active=True,
+        )
+
+    def test_management_command_dry_run(self):
+        call_command('send_misinformation_alerts', dry_run=True)
+        # No emails should be sent during dry run
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_api_endpoint(self):
+        # Attempt linking via analyze_articles
+        call_command('analyze_articles', article_id=self.article.id, force=True)
+        # API call
+        resp = self.client.get(f"/analysis/api/articles/{self.article.id}/misinformation-alerts/")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn('alerts', data)
+        # Ensure shows once linked
+        self.alert.related_articles.add(self.article)
+        resp = self.client.get(f"/analysis/api/articles/{self.article.id}/misinformation-alerts/")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertGreaterEqual(len(data['alerts']), 1)
+
+    def test_article_analysis_page_shows_alerts(self):
+        self.alert.related_articles.add(self.article)
+        resp = self.client.get(f"/analysis/article-analysis/{self.article.id}/")
+        self.assertContains(resp, 'Misinformation Alerts')
+        self.assertContains(resp, 'Viral Health Claim')
