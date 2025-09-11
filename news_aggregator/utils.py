@@ -5,7 +5,6 @@ import re
 import logging
 import requests
 from urllib.parse import urlparse
-from newspaper import Article, ArticleException
 from bs4 import BeautifulSoup
 from django.utils import timezone
 
@@ -49,6 +48,7 @@ def extract_article_content(url, timeout=10):
         dict: Dictionary containing article details or None if extraction failed
     """
     try:
+        from newspaper import Article, ArticleException
         # Create and download article
         article = Article(url)
         article.download()
