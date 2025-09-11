@@ -11,6 +11,8 @@ News Advance is a web application that aggregates news articles and applies AI-d
 - **AI-Powered Summarization & Fact-Checking** – Generates concise summaries and verifies key claims
 - **Real-Time Misinformation Tracker** – Flags potentially misleading trending news
 
+- **Logical Fallacy Reference & Detection (in progress)** – Catalog of logical fallacies with admin management; detection integration upcoming
+
 ## Tech Stack
 
 - **Backend**: Django 5.2
@@ -181,6 +183,8 @@ This will create:
 - Named entity recognition and extraction
 - Readability scoring and complexity analysis
 - Visual indicators for source reliability and content bias
+- Logical fallacy reference and groundwork for detection (catalog + admin; pipeline integration upcoming)
+
 - Advanced AI analysis using local LLMs via Ollama integration
 
 ### User System

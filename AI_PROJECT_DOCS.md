@@ -46,6 +46,15 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - Fields: title, description, severity, detected_at, is_active, resolution_details, resolved_at, related_articles
   - Choices for severity: low, medium, high, critical
 
+
+- **LogicalFallacy**: Catalog of logical fallacies (reference data)
+  - Fields: name (unique), slug (unique), description, example, created_at
+  - Notes: Slugs used for anchors/links in the public reference page
+
+- **LogicalFallacyDetection**: Article-level detections of logical fallacies
+  - Fields: article (FK), fallacy (FK), confidence (0..1), evidence_excerpt, start_char, end_char, detected_at
+  - Indexes: (article, fallacy)
+
 ### Accounts Models
 
 - **UserProfile**: Extended user information

@@ -1,6 +1,6 @@
 from django.contrib import admin, messages
 from django.utils import timezone
-from .models import BiasAnalysis, SentimentAnalysis, FactCheckResult, MisinformationAlert
+from .models import BiasAnalysis, SentimentAnalysis, FactCheckResult, MisinformationAlert, LogicalFallacy, LogicalFallacyDetection
 from .email_utils import send_misinformation_alert_email
 
 @admin.register(BiasAnalysis)
@@ -67,3 +67,17 @@ class MisinformationAlertAdmin(admin.ModelAdmin):
             self.message_user(request, f"Sent {sent_total} email(s) with errors: {', '.join(errors_total)}", level=messages.WARNING)
         else:
             self.message_user(request, f"Sent {sent_total} email(s) successfully.", level=messages.SUCCESS)
+
+
+@admin.register(LogicalFallacy)
+class LogicalFallacyAdmin(admin.ModelAdmin):
+    list_display = ('name', 'slug', 'created_at')
+    search_fields = ('name', 'description', 'example')
+    prepopulated_fields = {"slug": ("name",)}
+
+
+@admin.register(LogicalFallacyDetection)
+class LogicalFallacyDetectionAdmin(admin.ModelAdmin):
+    list_display = ('article', 'fallacy', 'confidence', 'detected_at')
+    list_filter = ('fallacy', 'detected_at')
+    search_fields = ('article__title', 'fallacy__name', 'evidence_excerpt')
