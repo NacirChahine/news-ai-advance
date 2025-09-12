@@ -61,8 +61,8 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - Fields: user, bio, avatar, preferred_sources
   - Relationships: one-to-one with User, many-to-many with NewsSource
 
-- **UserPreferences**: User-specific settings for content filtering
-  - Fields: user, political_filter, show_politics, show_business, show_tech, show_health, show_entertainment, email_newsletter, etc.
+- **UserPreferences**: User-specific settings for content filtering and analysis visibility
+  - Fields: user, political_filter, show_politics, show_business, show_tech, show_health, show_entertainment, email_newsletter, enable_logical_fallacy_analysis, etc.
   - Relationships: one-to-one with User
 
 ## Processing Pipelines
@@ -81,7 +81,11 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
    - AI-powered political leaning detection using Ollama LLMs
    - Language pattern analysis for bias indicators
    - Fallback to random generation for demo purposes
-3. **Sentiment Analysis**:
+3. **Logical Fallacy Detection**:
+   - AI-powered fallacy detection via `detect_logical_fallacies_with_ai`
+   - Matches AI labels to `LogicalFallacy` by name/slug; unknown labels are skipped
+   - Idempotent: cleans and re-creates detections on `--force`
+4. **Sentiment Analysis**:
    - Primary: AI-enhanced sentiment analysis via Ollama
    - Fallback: VADER sentiment scoring
 4. **Summarization**:
@@ -163,6 +167,7 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 - **analyze_sentiment_with_ai(text, model)**: Enhanced sentiment analysis using Ollama
 - **detect_political_bias_with_ai(text, model)**: Political bias detection using Ollama
 - **extract_key_insights_with_ai(text, model, num_insights)**: Key insights extraction using Ollama
+- **detect_logical_fallacies_with_ai(text, model)**: Detects logical fallacies with structured outputs (name, confidence, evidence excerpt, span)
 
 #### ML Model Integration
 - **summarize_article_with_ml_model(text, max_length)**: Wrapper for fine-tuned BART model
@@ -179,7 +184,7 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 ### Analyze Articles (news_analysis/management/commands/analyze_articles.py)
 
 - Processes unanalyzed articles through the analysis pipeline
-- Generates bias, sentiment, and readability metrics
+- Generates bias, logical fallacy detections, sentiment, and readability metrics
 - Supports AI-enhanced analysis with configurable models
 - Batched processing to handle large article volumes efficiently
 - Parameters: `--article_id`, `--limit`, `--force`, `--model`, `--unanalyzed-only`, `--batch-size`
@@ -196,7 +201,8 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 
 ### News Analysis Templates
 
-- **article_analysis.html**: Comprehensive article analysis view with visualization of bias, sentiment, and reliability metrics
+- **article_analysis.html**: Comprehensive article analysis view with visualization of bias, sentiment, logical fallacies, and reliability metrics
+- **fallacies.html**: Public reference catalog of logical fallacies with descriptions and examples
 - **misinformation_tracker.html**: Real-time dashboard of potentially misleading content
 - **alert_detail.html**: Detailed view of individual misinformation alerts
 

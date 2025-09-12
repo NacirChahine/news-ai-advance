@@ -42,6 +42,7 @@ class UserPreferences(models.Model):
     enable_fact_check = models.BooleanField(default=True)
     enable_bias_analysis = models.BooleanField(default=True)
     enable_sentiment_analysis = models.BooleanField(default=True)
+    enable_logical_fallacy_analysis = models.BooleanField(default=True)
     receive_misinformation_alerts = models.BooleanField(default=True)
     daily_digest_email = models.BooleanField(default=False)
 

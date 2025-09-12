@@ -9,5 +9,6 @@ urlpatterns = [
     path('sentiment-analysis/<int:article_id>/', views.sentiment_analysis, name='sentiment_analysis'),
     path('fact-check/<int:article_id>/', views.fact_check, name='fact_check'),
     path('misinformation/<int:alert_id>/details/', views.alert_detail, name='alert_detail'),
+    path('fallacies/', views.fallacies_reference, name='fallacies'),
     path('api/articles/<int:article_id>/misinformation-alerts/', article_misinformation_alerts, name='article_misinformation_alerts'),
 ]

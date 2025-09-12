@@ -197,6 +197,44 @@
                             {% endif %}
                         {% endif %}
 
+                        <!-- Logical Fallacy Detections -->
+                        {% if request.user.is_authenticated %}
+                            {% if request.user.preferences.enable_logical_fallacy_analysis %}
+                                <div class="mb-4">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <h6 class="mb-0 me-2">Logical Fallacies</h6>
+                                        <a href="{% url 'news_analysis:fallacies' %}" class="small text-decoration-none">
+                                            <i class="fas fa-book me-1"></i>Learn about fallacies
+                                        </a>
+                                    </div>
+                                    {% if article.fallacy_detections.all|length > 0 %}
+                                        <ul class="list-group list-group-flush">
+                                            {% for det in article.fallacy_detections.all %}
+                                                <li class="list-group-item">
+                                                    <span class="badge bg-dark me-2">{{ det.fallacy.name }}</span>
+                                                    {% if det.confidence %}
+                                                        <span class="small text-muted">Confidence: {{ det.confidence|floatformat:2 }}</span>
+                                                    {% endif %}
+                                                    {% if det.evidence_excerpt %}
+                                                        <p class="mb-0 mt-2 small">“{{ det.evidence_excerpt }}”</p>
+                                                    {% endif %}
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
+                                    {% else %}
+                                        <div class="alert alert-info mb-0">
+                                            <i class="fas fa-info-circle me-2"></i>No logical fallacies were detected in this article.
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% else %}
+                                <div class="alert alert-secondary mb-4">
+                                    <i class="fas fa-toggle-off me-2"></i>Logical fallacy detection is currently disabled. <a href="{% url 'accounts:preferences' %}" class="alert-link">Enable it in your preferences</a> to see detected fallacies on articles.
+                                </div>
+                            {% endif %}
+                        {% endif %}
+
+
                         <!-- Fact Checks -->
                         {% if request.user.is_authenticated %}
                             {% if request.user.preferences.enable_fact_check %}
@@ -317,7 +355,7 @@
                     {% endif %}
                     <p>{{ article.source.description }}</p>
                     <p class="mb-0">
-                        <strong>Reliability Score:</strong> 
+                        <strong>Reliability Score:</strong>
                         <span class="
                             {% if article.source.reliability_score >= 75 %}text-success
                             {% elif article.source.reliability_score >= 50 %}text-warning

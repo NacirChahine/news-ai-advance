@@ -50,6 +50,7 @@ def preferences(request):
         preferences.enable_fact_check = 'enable_fact_check' in request.POST
         preferences.enable_bias_analysis = 'enable_bias_analysis' in request.POST
         preferences.enable_sentiment_analysis = 'enable_sentiment_analysis' in request.POST
+        preferences.enable_logical_fallacy_analysis = 'enable_logical_fallacy_analysis' in request.POST
 
         # Only update political_filter if it's not disabled
         if 'political_filter' in request.POST:
@@ -84,6 +85,8 @@ def auto_save_preferences(request):
             preferences.enable_bias_analysis = field_value
         elif field_name == 'enable_sentiment_analysis':
             preferences.enable_sentiment_analysis = field_value
+        elif field_name == 'enable_logical_fallacy_analysis':
+            preferences.enable_logical_fallacy_analysis = field_value
         elif field_name == 'political_filter':
             preferences.political_filter = field_value
         elif field_name == 'receive_misinformation_alerts':

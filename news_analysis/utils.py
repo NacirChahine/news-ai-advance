@@ -704,3 +704,80 @@ def verify_claim_with_ai(claim: str, context_text: str | None = None, model: str
 
     # Total failure fallback
     return {"rating": "unverified", "confidence": 0.0, "explanation": "Verification failed", "sources": ""}
+
+
+# --- Logical Fallacy Detection ---
+
+def detect_logical_fallacies_with_ai(text: str, model: str = "llama3") -> list[dict]:
+    """Detect logical fallacies in text via Ollama LLM.
+    Returns a list of detections: [{ name, confidence, evidence_excerpt, start_char, end_char }].
+    Robust to non-JSON responses.
+    """
+    if not text:
+        return []
+
+    # Truncate to avoid token overflow
+    max_chars = 8000
+    truncated = text[:max_chars] + ("..." if len(text) > max_chars else "")
+
+    prompt = (
+        "Identify any logical fallacies present in the following text. "
+        "Return a JSON array of detections. Each detection must have: \n"
+        "- name: the standard fallacy name (e.g., 'Ad Hominem', 'Straw Man', 'False Dichotomy', etc.)\n"
+        "- confidence: 0.0-1.0\n"
+        "- evidence_excerpt: a short excerpt from the text illustrating the fallacy\n"
+        "- start_char: integer start index of the excerpt in the text (if unknown, null)\n"
+        "- end_char: integer end index of the excerpt in the text (if unknown, null)\n\n"
+        f"Text:\n{truncated}\n\n"
+        "Respond ONLY with valid JSON, e.g.:\n"
+        "[ {\"name\": \"Ad Hominem\", \"confidence\": 0.8, \"evidence_excerpt\": \"...\", \"start_char\": 120, \"end_char\": 180 } ]"
+    )
+
+    system_prompt = (
+        "You are a critical thinking instructor specializing in fallacies. "
+        "Use standard fallacy names and be conservative. If unsure, omit."
+    )
+
+    resp = query_ollama(prompt, model=model, system_prompt=system_prompt, max_tokens=700)
+    if not (resp and "response" in resp):
+        return []
+
+    raw = resp["response"].strip()
+    # Strip code fences if present
+    if "```" in raw:
+        try:
+            raw = raw.split("```json", 1)[1].split("```", 1)[0]
+        except Exception:
+            try:
+                raw = raw.split("```", 1)[1].split("```", 1)[0]
+            except Exception:
+                raw = raw
+
+    try:
+        data = json.loads(raw)
+        if isinstance(data, list):
+            cleaned = []
+            for d in data:
+                if not isinstance(d, dict):
+                    continue
+                name = str(d.get("name", "")).strip()
+                if not name:
+                    continue
+                conf = d.get("confidence")
+                try:
+                    conf = float(conf) if conf is not None else None
+                    if conf is not None and (conf < 0 or conf > 1):
+                        conf = None
+                except Exception:
+                    conf = None
+                cleaned.append({
+                    "name": name,
+                    "confidence": conf,
+                    "evidence_excerpt": (d.get("evidence_excerpt") or "").strip(),
+                    "start_char": d.get("start_char"),
+                    "end_char": d.get("end_char"),
+                })
+            return cleaned
+    except Exception:
+        logger.error("Failed to parse logical fallacy detection response; returning empty list")
+    return []

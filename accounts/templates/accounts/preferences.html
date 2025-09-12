@@ -13,12 +13,12 @@
                 <div class="card-body">
                     <div>
                         {% csrf_token %}
-                        
+
                         <div class="row mb-4">
                             <div class="col-md-12">
                                 <h5><i class="fas fa-filter me-2 text-primary"></i>Content Filters</h5>
                                 <hr>
-                                
+
                                 <div class="mb-3">
                                     <label class="form-label">Political Balance</label>
                                     <select name="political_filter" class="form-select">
@@ -31,12 +31,12 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="row mb-4">
                             <div class="col-md-12">
                                 <h5><i class="fas fa-chart-pie me-2 text-primary"></i>Analysis Features</h5>
                                 <hr>
-                                
+
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" type="checkbox" id="enable_fact_check" name="enable_fact_check" {% if preferences.enable_fact_check %}checked{% endif %}>
                                     <label class="form-check-label" for="enable_fact_check">Enable Fact-Checking</label>
@@ -48,15 +48,21 @@
                                     <label class="form-check-label" for="enable_bias_analysis">Enable Bias Analysis</label>
                                     <div class="form-text">This will remove the related section from the article view</div>
                                 </div>
-                                
+
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" type="checkbox" id="enable_sentiment_analysis" name="enable_sentiment_analysis" {% if preferences.enable_sentiment_analysis %}checked{% endif %}>
                                     <label class="form-check-label" for="enable_sentiment_analysis">Enable Sentiment Analysis</label>
                                     <div class="form-text">This will remove the related section from the article view</div>
                                 </div>
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="enable_logical_fallacy_analysis" name="enable_logical_fallacy_analysis" {% if preferences.enable_logical_fallacy_analysis %}checked{% endif %}>
+                                    <label class="form-check-label" for="enable_logical_fallacy_analysis">Enable Logical Fallacy Detection</label>
+                                    <div class="form-text">Show detected logical fallacies and examples in the AI Analysis panel</div>
+                                </div>
+
                             </div>
                         </div>
-                        
+
                         <div class="row mb-4">
                             <div class="col-md-12">
                                 <h5><i class="fas fa-bell me-2 text-primary"></i>Email Notifications</h5>
@@ -84,7 +90,7 @@
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="d-grid gap-2">
                             <div id="save-status" class="alert alert-success d-none" role="alert">
                                 <i class="fas fa-check-circle me-2"></i>Preferences saved automatically!
@@ -167,6 +173,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.getElementById('enable_bias_analysis').addEventListener('change', function() {
         autoSavePreference('enable_bias_analysis', this.checked);
+    });
+
+    document.getElementById('enable_logical_fallacy_analysis').addEventListener('change', function() {
+        autoSavePreference('enable_logical_fallacy_analysis', this.checked);
     });
 
     document.getElementById('enable_sentiment_analysis').addEventListener('change', function() {

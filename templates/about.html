@@ -10,7 +10,7 @@
             <p class="lead">
                 News Advance is an AI-powered news credibility analyzer designed to help users navigate the complex landscape of online news and information.
             </p>
-            
+
             <h2 class="mt-5 mb-3">Our Mission</h2>
             <p>
                 In an era of information overload, News Advance aims to provide a reliable tool for assessing news content. Our mission is to promote media literacy and help users access more balanced information through AI-powered analysis.
@@ -61,6 +61,21 @@
             <div class="card mb-4">
                 <div class="card-body">
                     <h3 class="card-title h5">
+                        <i class="fas fa-book text-primary me-2"></i>Logical Fallacies Reference & Detection
+                    </h3>
+                    <p class="card-text">
+                        Explore common logical fallacies in our public reference and see detected fallacies on analyzed articles.
+                    </p>
+                    <a href="{% url 'news_analysis:fallacies' %}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-book-open me-1"></i>View Fallacies Catalog
+                    </a>
+                </div>
+            </div>
+
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h3 class="card-title h5">
                         <i class="fas fa-chart-line text-primary me-2"></i>Source Reliability Tracking
                     </h3>
                     <p class="card-text">
@@ -73,7 +88,7 @@
             <p>
                 Our AI Analysis provides insights into the content of news articles through various metrics. Here's what they mean:
             </p>
-            
+
             <div class="card mb-4">
                 <div class="card-body">
                     <h3 class="card-title h5">

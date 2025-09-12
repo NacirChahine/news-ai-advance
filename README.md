@@ -11,7 +11,7 @@ News Advance is a web application that aggregates news articles and applies AI-d
 - **AI-Powered Summarization & Fact-Checking** – Generates concise summaries and verifies key claims
 - **Real-Time Misinformation Tracker** – Flags potentially misleading trending news
 
-- **Logical Fallacy Reference & Detection (in progress)** – Catalog of logical fallacies with admin management; detection integration upcoming
+- **Logical Fallacy Reference & Detection** – Catalog of logical fallacies with admin management and per-article detections with AI integration
 
 ## Tech Stack
 
@@ -183,9 +183,18 @@ This will create:
 - Named entity recognition and extraction
 - Readability scoring and complexity analysis
 - Visual indicators for source reliability and content bias
-- Logical fallacy reference and groundwork for detection (catalog + admin; pipeline integration upcoming)
+- Logical fallacy reference and detection (catalog + admin + per-article detections with user toggle and public reference page)
 
 - Advanced AI analysis using local LLMs via Ollama integration
+
+#### Logical Fallacies
+- Public reference page: visit `/analysis/fallacies/` for the catalog (name, description, example, detection counts)
+- User preference: Accounts → Preferences → "Enable Logical Fallacy Analysis" controls visibility on article pages
+- Article pages:
+  - Article Detail: shows detected fallacies when enabled (with confidence and evidence excerpt)
+  - Analysis View: includes a "Logical Fallacies" card listing detections and a link to the reference page
+- Pipeline: `analyze_articles` runs fallacy detection with Ollama when available; unknown labels are skipped unless added to the catalog (Admin > News Analysis > Logical fallacies)
+
 
 ### User System
   - User authentication and profile management

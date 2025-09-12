@@ -2,8 +2,9 @@ import logging
 import time
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+from django.utils.text import slugify
 from news_aggregator.models import NewsArticle
-from news_analysis.models import BiasAnalysis, SentimentAnalysis, FactCheckResult
+from news_analysis.models import BiasAnalysis, SentimentAnalysis, FactCheckResult, LogicalFallacy, LogicalFallacyDetection
 
 # Import NLP libraries
 import nltk
@@ -19,6 +20,7 @@ from news_analysis.utils import (
     extract_key_insights_with_ai,
     extract_claims,
     verify_claim_with_ai,
+    detect_logical_fallacies_with_ai,
 )
 from news_analysis.match_utils import find_related_alerts_for_article
 
@@ -67,6 +69,7 @@ class Command(BaseCommand):
         article_id = options.get('article_id')
         limit = options.get('limit')
         force = options.get('force')
+        self.force = force
         self.model = options.get('model')
         self.use_ai = options.get('use_ai')
 
@@ -115,6 +118,9 @@ class Command(BaseCommand):
 
             # Perform bias analysis
             self.analyze_bias(article)
+
+            # Detect logical fallacies
+            self.analyze_fallacies(article)
 
             if self.use_ai:
                 # Generate article summary
@@ -311,6 +317,68 @@ class Command(BaseCommand):
                 self.stdout.write(f"  {action} bias analysis (leaning: {political_leaning}, score: {bias_score:.2f})")
             except Exception as e2:
                 self.stderr.write(f"  Error saving bias analysis: {str(e2)}")
+
+
+    def analyze_fallacies(self, article):
+        """Detect logical fallacies in the article content using AI.
+        Idempotent: if detections exist and not forced, skip. If forced, replace.
+        """
+        try:
+            content = (article.content or "").strip()
+            if not content:
+                self.stdout.write("  No content available for fallacy detection; skipping")
+                return
+
+            # Idempotency controls
+            existing_qs = LogicalFallacyDetection.objects.filter(article=article)
+            if existing_qs.exists() and not getattr(self, 'force', False):
+                self.stdout.write("  Fallacy detections already exist; skipping (use --force to regenerate)")
+                return
+            if getattr(self, 'force', False) and existing_qs.exists():
+                count = existing_qs.count()
+                existing_qs.delete()
+                self.stdout.write(f"  Removed {count} existing fallacy detection(s) due to --force")
+
+            if not self.use_ai:
+                self.stdout.write("  AI disabled; skipping fallacy detection")
+                return
+
+            self.stdout.write(f"  Detecting logical fallacies with {self.model}...")
+            detections = detect_logical_fallacies_with_ai(content, model=self.model) or []
+
+            if not detections:
+                self.stdout.write("  No logical fallacies detected")
+                return
+
+            created = 0
+            for det in detections:
+                name = det.get("name") or ""
+                if not name:
+                    continue
+                # Match to catalog by name or slug
+                lf = LogicalFallacy.objects.filter(name__iexact=name).first()
+                if not lf:
+                    slug = slugify(name)
+                    lf = LogicalFallacy.objects.filter(slug=slug).first()
+                if not lf:
+                    self.stderr.write(f"  Unknown fallacy label from AI: '{name}' — skipping (add to catalog if desired)")
+                    continue
+
+                LogicalFallacyDetection.objects.create(
+                    article=article,
+                    fallacy=lf,
+                    confidence=det.get("confidence"),
+                    evidence_excerpt=(det.get("evidence_excerpt") or "")[:500],
+                    start_char=det.get("start_char"),
+                    end_char=det.get("end_char"),
+                    detected_at=timezone.now(),
+                )
+                created += 1
+
+            self.stdout.write(f"  Created {created} logical fallacy detection(s)")
+        except Exception as e:
+            self.stderr.write(f"  Error in logical fallacy detection: {str(e)}")
+
 
     def generate_summary(self, article):
         """Generate a summary of the article using AI"""
