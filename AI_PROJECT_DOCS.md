@@ -85,6 +85,13 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
    - AI-powered fallacy detection via `detect_logical_fallacies_with_ai`
    - Matches AI labels to `LogicalFallacy` by name/slug; unknown labels are skipped
    - Idempotent: cleans and re-creates detections on `--force`
+   - Highlighting UX (robust multi-tier):
+     1) Use `start_char`/`end_char` when valid
+     2) Fallback to case-insensitive exact search of `evidence_excerpt`
+     3) Fuzzy token-based search tolerating punctuation/whitespace variations
+     4) Graceful degrade: if no match, sidebar still shows excerpts/links
+   - Interactive spans: highlighted text is clickable and keyboard-activatable (role=link, tabindex=0). Bootstrap tooltips announce “<name> — <desc> • Click to learn more”. Clicking navigates to `/analysis/fallacies/<slug>/`.
+   - Backend position correction: `analyze_articles` uses `_robust_find_positions()` to validate/repair AI-provided spans. Strategies: 'ai' (trusted), 'exact', 'ci', 'fuzzy'. Adjustments are logged to stdout for traceability.
 4. **Sentiment Analysis**:
    - Primary: AI-enhanced sentiment analysis via Ollama
    - Fallback: VADER sentiment scoring

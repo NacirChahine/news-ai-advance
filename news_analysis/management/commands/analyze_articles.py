@@ -12,6 +12,10 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import spacy
 import random  # Used as a fallback if AI analysis fails
 
+import re
+
+from typing import Optional, Tuple, List
+
 # Import advanced AI analysis functions
 from news_analysis.utils import (
     analyze_sentiment_with_ai,
@@ -29,6 +33,63 @@ try:
     nltk.data.find('vader_lexicon')
 except LookupError:
     nltk.download('vader_lexicon')
+
+# --- Helpers for robust text position finding ---
+
+def _tokens(text: str) -> List[str]:
+    """Split into alphanumeric tokens for tolerant matching."""
+    return re.findall(r"[A-Za-z0-9]+", text or "")
+
+
+def _build_fuzzy_pattern(excerpt: str) -> Optional[re.Pattern]:
+    """Build a case-insensitive regex that tolerates whitespace/punctuation variations between tokens.
+    Example: "It’s false!" -> tokens ["It", "s", "false"] => pattern: It[\W_]+s[\W_]+false
+    """
+    toks = _tokens(excerpt)
+    if not toks:
+        return None
+    pat = r"[\W_]+".join(re.escape(t) for t in toks)
+    try:
+        return re.compile(pat, re.IGNORECASE)
+    except re.error:
+        return None
+
+
+def _robust_find_positions(content: str, excerpt: str, ai_start: Optional[int], ai_end: Optional[int]) -> Tuple[Optional[int], Optional[int], str]:
+    """Return best-effort (start, end, strategy) positions of excerpt in content.
+    Strategy indicates which method succeeded: 'ai', 'exact', 'ci', 'fuzzy', or 'none'.
+    """
+    text = content or ""
+    ex = (excerpt or "").strip()
+
+    # 1) Trust AI if plausible and matches substring
+    if isinstance(ai_start, int) and isinstance(ai_end, int) and 0 <= ai_start < ai_end <= len(text):
+        span = text[ai_start:ai_end]
+        if ex and (ex.lower() in span.lower() or span.lower() in ex.lower()):
+            return ai_start, ai_end, "ai"
+
+    # 2) Exact search (case-sensitive)
+    if ex:
+        idx = text.find(ex)
+        if idx != -1:
+            return idx, idx + len(ex), "exact"
+
+    # 3) Case-insensitive search
+    if ex:
+        low = text.lower()
+        idx = low.find(ex.lower())
+        if idx != -1:
+            return idx, idx + len(ex), "ci"
+
+    # 4) Fuzzy token-based search (tolerate punctuation/whitespace)
+    rx = _build_fuzzy_pattern(ex)
+    if rx:
+        m = rx.search(text)
+        if m:
+            return m.start(), m.end(), "fuzzy"
+
+    return None, None, "none"
+
 
 logger = logging.getLogger(__name__)
 
@@ -364,13 +425,20 @@ class Command(BaseCommand):
                     self.stderr.write(f"  Unknown fallacy label from AI: '{name}' — skipping (add to catalog if desired)")
                     continue
 
+                # Compute robust positions to align with displayed text
+                ex = (det.get("evidence_excerpt") or "")[:500]
+                ai_s = det.get("start_char")
+                ai_e = det.get("end_char")
+                start_idx, end_idx, strategy = _robust_find_positions(content, ex, ai_s, ai_e)
+                if strategy != "ai":
+                    self.stdout.write(f"  Adjusted fallacy span via {strategy} search for '{name}'")
                 LogicalFallacyDetection.objects.create(
                     article=article,
                     fallacy=lf,
                     confidence=det.get("confidence"),
-                    evidence_excerpt=(det.get("evidence_excerpt") or "")[:500],
-                    start_char=det.get("start_char"),
-                    end_char=det.get("end_char"),
+                    evidence_excerpt=ex,
+                    start_char=start_idx,
+                    end_char=end_idx,
                     detected_at=timezone.now(),
                 )
                 created += 1
@@ -415,6 +483,11 @@ class Command(BaseCommand):
             insights = extract_key_insights_with_ai(article.content, model=self.model, num_insights=5)
 
             if insights:
+                # todo: save insights to model
+                #  Extracted 5 key insights:
+                #     1. Here are the 5 most important insights from the article:
+                #     2. [
+                #     3. "Conservatives prioritize
                 # Log the insights (in a real application, you might want to save these to a model)
                 self.stdout.write(f"  Extracted {len(insights)} key insights:")
                 for i, insight in enumerate(insights, 1):

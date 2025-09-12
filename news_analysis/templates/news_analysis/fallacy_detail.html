@@ -26,13 +26,29 @@
       {% if detections %}
         <div class="list-group mb-3">
           {% for det in detections %}
-          <a class="list-group-item list-group-item-action" href="{% url 'news_aggregator:article_detail' article_id=det.article.id %}">
+          <div class="list-group-item">
             <div class="d-flex w-100 justify-content-between">
-              <h5 class="mb-1">{{ det.article.title }}</h5>
+              <h5 class="mb-1"><a class="text-decoration-none" href="{% url 'news_aggregator:article_detail' article_id=det.article.id %}#fallacy-detection-{{ det.id }}">{{ det.article.title }}</a></h5>
               <small class="text-muted">{{ det.detected_at|date:"M d, Y H:i" }}</small>
             </div>
-            <small class="text-muted">Source: {{ det.article.source.name }}</small>
-          </a>
+            <div class="small text-muted mb-1">Source: {{ det.article.source.name }}</div>
+            {% if det.evidence_excerpt %}
+            <div class="mt-1">
+              <div class="small text-muted">Evidence excerpt:</div>
+              <blockquote class="blockquote small mb-2" style="border-left:3px solid #ddd;padding-left:.75rem;">
+                “{{ det.evidence_excerpt }}”
+              </blockquote>
+            </div>
+            {% endif %}
+            <div>
+              <a class="btn btn-sm btn-outline-primary" href="{% url 'news_aggregator:article_detail' article_id=det.article.id %}#fallacy-detection-{{ det.id }}">
+                <i class="fas fa-highlighter me-1"></i> View in article
+              </a>
+              <a class="btn btn-sm btn-outline-secondary" href="{% url 'news_aggregator:article_detail' article_id=det.article.id %}">
+                <i class="fas fa-file-alt me-1"></i> Article page
+              </a>
+            </div>
+          </div>
           {% endfor %}
         </div>
         {% if detections.has_other_pages %}

@@ -198,10 +198,15 @@ This will create:
 - Detail pages: `/analysis/fallacies/<slug>/` show the fallacy details and a paginated list of articles where it was detected.
 - User preference: Accounts → Preferences → "Enable Logical Fallacy Analysis" controls visibility on article pages
 - Article pages:
+  - Interactions: From the catalog detail page, each detection entry links directly to the highlighted location within the article. On article pages, hovering over an evidence excerpt glows the corresponding text; clicking scrolls smoothly and highlights for a few seconds.
   - Article Detail: shows detected fallacies when enabled (with confidence and evidence excerpt); each detection links directly to the catalog anchor and has a Details link
   - Analysis View: includes a "Logical Fallacies" card listing detections with anchor and Details links
 - Pipeline: `analyze_articles` runs fallacy detection with Ollama when available; unknown labels are skipped unless added to the catalog (Admin > News Analysis > Logical fallacies)
 - Seed data: catalog seeded with 25+ common fallacies (e.g., Appeal to Authority, Bandwagon, Slippery Slope, Red Herring, Circular Reasoning, Appeal to Emotion, Hasty Generalization, Begging the Question, Appeal to Ignorance, Cherry Picking, Gambler's Fallacy, etc.)
+
+
+  - Robust highlighting: When character positions are missing/inaccurate, the article page falls back to searching the evidence excerpt within the rendered text (case-insensitive, then fuzzy token match) and highlights the first match; otherwise, it gracefully degrades (excerpt shown in sidebar only).
+  - Clickable highlights: Highlighted spans are accessible links with tooltips (name + brief description) that navigate to the fallacy detail page for deeper context.
 
 
 ### User System
