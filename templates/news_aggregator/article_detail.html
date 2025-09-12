@@ -211,7 +211,8 @@
                                         <ul class="list-group list-group-flush">
                                             {% for det in article.fallacy_detections.all %}
                                                 <li class="list-group-item">
-                                                    <span class="badge bg-dark me-2">{{ det.fallacy.name }}</span>
+                                                    <a class="badge bg-dark me-2 text-decoration-none" href="{% url 'news_analysis:fallacies' %}#{{ det.fallacy.slug }}">{{ det.fallacy.name }}</a>
+                                                    <a class="small text-muted me-2" href="{% url 'news_analysis:fallacy_detail' slug=det.fallacy.slug %}">Details</a>
                                                     {% if det.confidence %}
                                                         <span class="small text-muted">Confidence: {{ det.confidence|floatformat:2 }}</span>
                                                     {% endif %}

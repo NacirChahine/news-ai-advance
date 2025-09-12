@@ -10,5 +10,6 @@ urlpatterns = [
     path('fact-check/<int:article_id>/', views.fact_check, name='fact_check'),
     path('misinformation/<int:alert_id>/details/', views.alert_detail, name='alert_detail'),
     path('fallacies/', views.fallacies_reference, name='fallacies'),
+    path('fallacies/<slug:slug>/', views.fallacy_detail, name='fallacy_detail'),
     path('api/articles/<int:article_id>/misinformation-alerts/', article_misinformation_alerts, name='article_misinformation_alerts'),
 ]

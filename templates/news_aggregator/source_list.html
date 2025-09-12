@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}News Sources Overview{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0"><i class="fas fa-list me-2"></i>News Sources</h1>
+    <a href="{% url 'news_aggregator:latest' %}" class="btn btn-outline-secondary btn-sm"><i class="fas fa-newspaper me-1"></i> Latest News</a>
+  </div>
+  <p class="text-muted mb-4">Overview of sources we aggregate from, with reliability and political bias indicators.</p>
+
+  {% if sources %}
+  <div class="table-responsive">
+    <table class="table align-middle">
+      <thead>
+        <tr class="text-muted small">
+          <th scope="col">Source</th>
+          <th scope="col" class="text-center">Reliability</th>
+          <th scope="col" class="text-center">Political Bias</th>
+          <th scope="col" class="text-center">Articles</th>
+          <th scope="col" class="text-end">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in sources %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center">
+              {% if s.logo %}
+              <img src="{{ s.logo.url }}" alt="{{ s.name }} logo" class="me-2" style="width:28px;height:28px;object-fit:contain;"/>
+              {% endif %}
+              <div>
+                <div class="fw-semibold"><a class="text-decoration-none" href="{% url 'news_aggregator:source_detail' source_id=s.id %}">{{ s.name }}</a></div>
+                {% if s.url %}
+                <div class="small"><a class="text-muted" href="{{ s.url }}" target="_blank" rel="noopener">{{ s.url }}</a></div>
+                {% endif %}
+              </div>
+            </div>
+          </td>
+          <td class="text-center">
+            <span class="badge bg-{% if s.reliability_score >= 80 %}success{% elif s.reliability_score >= 60 %}primary{% elif s.reliability_score >= 40 %}warning{% else %}danger{% endif %}">{{ s.reliability_score|floatformat:0 }}/100</span>
+          </td>
+          <td class="text-center">
+            {% with b=s.political_bias %}
+            {% if b < -0.4 %}
+              <span class="badge bg-info">Left</span>
+            {% elif b > 0.4 %}
+              <span class="badge bg-danger">Right</span>
+            {% else %}
+              <span class="badge bg-secondary">Center</span>
+            {% endif %}
+            {% endwith %}
+          </td>
+          <td class="text-center">
+            <span class="badge bg-light text-dark">{{ s.article_count }}</span>
+          </td>
+          <td class="text-end">
+            <a class="btn btn-sm btn-outline-primary" href="{% url 'news_aggregator:source_detail' source_id=s.id %}"><i class="fas fa-eye me-1"></i> View Source</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-info">No sources available.</div>
+  {% endif %}
+</div>
+{% endblock %}
+

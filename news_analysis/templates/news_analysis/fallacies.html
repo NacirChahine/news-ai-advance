@@ -14,12 +14,26 @@
       </div>
       <p class="text-muted">A reference catalog of common logical fallacies our system may detect in articles.</p>
 
+      <div class="mb-3">
+        <div class="small text-muted mb-1">Quick navigation</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for f in fallacies %}
+          <a class="btn btn-sm btn-outline-secondary" href="#{{ f.slug }}">{{ f.name }}</a>
+          {% endfor %}
+        </div>
+      </div>
+
       <div class="list-group">
         {% for f in fallacies %}
-        <div class="list-group-item">
+        <div id="{{ f.slug }}" class="list-group-item">
           <div class="d-flex justify-content-between align-items-start">
-            <h5 class="mb-1">{{ f.name }}</h5>
-            <span class="badge bg-secondary ms-2" title="Total detections across analyzed articles">{{ f.num_detections }}</span>
+            <h5 class="mb-1">
+              <a class="text-decoration-none" href="{% url 'news_analysis:fallacy_detail' slug=f.slug %}">{{ f.name }}</a>
+            </h5>
+            <div class="d-flex align-items-center">
+              <a class="text-muted me-2" href="#{{ f.slug }}" title="Copy link to this fallacy"><i class="fas fa-link"></i></a>
+              <span class="badge bg-secondary" title="Total detections across analyzed articles">{{ f.num_detections }}</span>
+            </div>
           </div>
           <p class="mb-2">{{ f.description }}</p>
           {% if f.example %}

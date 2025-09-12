@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}{{ fallacy.name }}  Logical Fallacy{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row">
+    <div class="col-12 col-lg-10 mx-auto">
+      <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="{% url 'news_analysis:fallacies' %}">Logical Fallacies</a></li>
+          <li class="breadcrumb-item active" aria-current="page">{{ fallacy.name }}</li>
+        </ol>
+      </nav>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h1 class="h3 mb-0">{{ fallacy.name }}</h1>
+        <span class="badge bg-secondary" title="Total detections">{{ detections.paginator.count }}</span>
+      </div>
+      <p class="text-muted">{{ fallacy.description }}</p>
+      {% if fallacy.example %}
+      <div class="alert alert-light border small"><strong>Example:</strong> {{ fallacy.example }}</div>
+      {% endif %}
+
+      <hr/>
+      <h2 class="h5 mb-3">Articles with this detection</h2>
+      {% if detections %}
+        <div class="list-group mb-3">
+          {% for det in detections %}
+          <a class="list-group-item list-group-item-action" href="{% url 'news_aggregator:article_detail' article_id=det.article.id %}">
+            <div class="d-flex w-100 justify-content-between">
+              <h5 class="mb-1">{{ det.article.title }}</h5>
+              <small class="text-muted">{{ det.detected_at|date:"M d, Y H:i" }}</small>
+            </div>
+            <small class="text-muted">Source: {{ det.article.source.name }}</small>
+          </a>
+          {% endfor %}
+        </div>
+        {% if detections.has_other_pages %}
+        <nav aria-label="Fallacy detections pagination">
+          <ul class="pagination">
+            {% if detections.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ detections.previous_page_number }}">Previous</a></li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            {% endif %}
+            <li class="page-item disabled"><span class="page-link">Page {{ detections.number }} of {{ detections.paginator.num_pages }}</span></li>
+            {% if detections.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ detections.next_page_number }}">Next</a></li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+      {% else %}
+        <div class="alert alert-info">No detections yet for this fallacy.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -17,8 +17,8 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 
 ### News Aggregator Models
 
-- **NewsSource**: Represents news publishers with reliability metrics
-  - Fields: name, url, description, reliability_score
+- **NewsSource**: Represents news publishers with reliability and bias metrics
+  - Fields: name, url, description, reliability_score (0-100), political_bias (-1 left .. +1 right), logo, created_at, updated_at
   - Relationships: one-to-many with NewsArticle
 
 - **NewsArticle**: Core content model for news articles
@@ -204,9 +204,21 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 - **article_analysis.html**: Comprehensive article analysis view with visualization of bias, sentiment, logical fallacies, and reliability metrics
 - **fallacies.html**: Public reference catalog of logical fallacies with descriptions and examples
 - **misinformation_tracker.html**: Real-time dashboard of potentially misleading content
+- **fallacy_detail.html**: Detail page for a single logical fallacy; shows description, example, and paginated list of related article detections
+- **news_aggregator/source_list.html**: Sources overview with reliability scores, political bias badges, and per-source article counts
+
 - **alert_detail.html**: Detailed view of individual misinformation alerts
 
 ### Accounts Templates
+
+### Navigation
+- Top navbar uses Bootstrap 5.3 with a modernized design (hover/active states, rounded links).
+- "Analysis Tools" is a dropdown containing:
+  - Misinformation Tracker (`news_analysis:misinformation_tracker`)
+  - Logical Fallacies Catalog (`news_analysis:fallacies`) and detail pages (`news_analysis:fallacy_detail`)
+  - Sources Overview (`news_aggregator:source_list`)
+- Active state highlighting applied based on `request.resolver_match` (url_name/namespace) for clear context.
+
 
 - **profile.html**: User profile with activity summary and preferences
 

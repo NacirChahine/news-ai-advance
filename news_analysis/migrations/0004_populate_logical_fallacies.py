@@ -78,6 +78,76 @@ def populate_fallacies(apps, schema_editor):
             'description': 'Reinterpreting evidence to prevent refutation of one’s position.',
             'example': '“No true expert would disagree with this theory.”',
         },
+        {
+            'name': 'Begging the Question',
+            'description': 'Assuming the truth of the conclusion in the premises instead of supporting it.',
+            'example': '“We must trust the news because reputable outlets report it.”',
+        },
+        {
+            'name': 'Appeal to Ignorance',
+            'description': 'Claiming something is true because it has not yet been proven false (or vice versa).',
+            'example': '“No one has proven this claim false; therefore it must be true.”',
+        },
+        {
+            'name': 'Composition/Division',
+            'description': 'Assuming what is true of the parts is true of the whole, or vice versa.',
+            'example': '“Each department is efficient, so the entire organization is efficient.”',
+        },
+        {
+            'name': 'Loaded Question',
+            'description': 'Asking a question that contains a controversial assumption, making any answer problematic.',
+            'example': '“Have you stopped misreporting the facts yet?”',
+        },
+        {
+            'name': 'Middle Ground',
+            'description': 'Assuming the truth is a compromise between two opposing positions.',
+            'example': '“The truth must be somewhere in between the two claims.”',
+        },
+        {
+            'name': 'Sunk Cost',
+            'description': 'Continuing a behavior because of previously invested resources rather than current benefits.',
+            'example': '“We have already spent so much on this policy; we must continue.”',
+        },
+        {
+            'name': 'Anecdotal',
+            'description': 'Using a personal experience or isolated example instead of a sound argument or compelling evidence.',
+            'example': '“My friend recovered quickly, so the disease is harmless.”',
+        },
+        {
+            'name': 'Texas Sharpshooter',
+            'description': 'Cherry-picking data clusters to suit an argument, or finding a pattern to fit a presumption.',
+            'example': '“This map shows clusters of events, proving the trend.”',
+        },
+        {
+            'name': 'Genetic Fallacy',
+            'description': 'Judging the claim based on its origin rather than its merits.',
+            'example': '“That idea came from a tabloid, so it’s false.”',
+        },
+        {
+            'name': 'Appeal to Nature',
+            'description': 'Arguing that something is good because it is natural, or bad because it is unnatural.',
+            'example': '“Natural remedies are better than medicine because they are natural.”',
+        },
+        {
+            'name': 'Personal Incredulity',
+            'description': 'Claiming something must be false because it is difficult to understand.',
+            'example': '“I can’t imagine how that works, so it must be wrong.”',
+        },
+        {
+            'name': 'Equivocation (Ambiguity)',
+            'description': 'Using ambiguous language to mislead or conceal the truth.',
+            'example': '“The sign said ‘fine for parking here,’ so I parked.”',
+        },
+        {
+            'name': 'Cherry Picking',
+            'description': 'Selecting only evidence that supports a position while ignoring contradictory evidence.',
+            'example': '“These two studies support the claim; ignore the ten that don’t.”',
+        },
+        {
+            'name': 'Gambler’s Fallacy',
+            'description': 'Believing that past random events affect the probabilities in the short term.',
+            'example': '“It’s come up heads five times; tails is due next.”',
+        },
     ]
 
     for item in seed_data:
@@ -108,6 +178,20 @@ def unpopulate_fallacies(apps, schema_editor):
         'Tu Quoque (Appeal to Hypocrisy)',
         'False Equivalence',
         'No True Scotsman',
+        'Begging the Question',
+        'Appeal to Ignorance',
+        'Composition/Division',
+        'Loaded Question',
+        'Middle Ground',
+        'Sunk Cost',
+        'Anecdotal',
+        'Texas Sharpshooter',
+        'Genetic Fallacy',
+        'Appeal to Nature',
+        'Personal Incredulity',
+        'Equivocation (Ambiguity)',
+        'Cherry Picking',
+        "Gambler's Fallacy",
     ]
     LogicalFallacy.objects.filter(name__in=names).delete()
 

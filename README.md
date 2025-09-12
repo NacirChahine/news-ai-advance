@@ -177,23 +177,31 @@ This will create:
 - Personalized news feed based on topics of interest
 - Save articles to your personal collection with notes
 
+
+### Sources Overview
+- Browse all sources at `/news/sources/` with reliability scores, political bias indicators (Left/Center/Right), and article counts.
+- Click a source to view its articles (`/news/source/<id>/`).
+- Also accessible from the navbar under Analysis Tools → Sources Overview.
+
 ### News Analysis
 - Political bias detection and visualization using advanced NLP techniques
 - Sentiment analysis to detect emotional tone (positive, negative, neutral)
 - Named entity recognition and extraction
 - Readability scoring and complexity analysis
 - Visual indicators for source reliability and content bias
-- Logical fallacy reference and detection (catalog + admin + per-article detections with user toggle and public reference page)
+- Logical fallacy reference and detection (catalog + admin + per-article detections with user toggle and public reference page). Catalog now includes anchor links and dedicated detail pages for each fallacy.
 
 - Advanced AI analysis using local LLMs via Ollama integration
 
 #### Logical Fallacies
-- Public reference page: visit `/analysis/fallacies/` for the catalog (name, description, example, detection counts)
+- Public reference page: visit `/analysis/fallacies/` for the catalog (name, description, example, detection counts). Each item has a URL anchor and a link icon for easy sharing.
+- Detail pages: `/analysis/fallacies/<slug>/` show the fallacy details and a paginated list of articles where it was detected.
 - User preference: Accounts → Preferences → "Enable Logical Fallacy Analysis" controls visibility on article pages
 - Article pages:
-  - Article Detail: shows detected fallacies when enabled (with confidence and evidence excerpt)
-  - Analysis View: includes a "Logical Fallacies" card listing detections and a link to the reference page
+  - Article Detail: shows detected fallacies when enabled (with confidence and evidence excerpt); each detection links directly to the catalog anchor and has a Details link
+  - Analysis View: includes a "Logical Fallacies" card listing detections with anchor and Details links
 - Pipeline: `analyze_articles` runs fallacy detection with Ollama when available; unknown labels are skipped unless added to the catalog (Admin > News Analysis > Logical fallacies)
+- Seed data: catalog seeded with 25+ common fallacies (e.g., Appeal to Authority, Bandwagon, Slippery Slope, Red Herring, Circular Reasoning, Appeal to Emotion, Hasty Generalization, Begging the Question, Appeal to Ignorance, Cherry Picking, Gambler's Fallacy, etc.)
 
 
 ### User System

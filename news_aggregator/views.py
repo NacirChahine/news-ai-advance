@@ -88,8 +88,13 @@ def article_detail(request, article_id):
 
 def source_list(request):
     """View to display a list of all news sources"""
-    sources = NewsSource.objects.all().order_by('name')
-    
+    from django.db.models import Count
+    sources = (
+        NewsSource.objects
+        .annotate(article_count=Count('articles'))
+        .order_by('name')
+    )
+
     context = {
         'sources': sources,
     }

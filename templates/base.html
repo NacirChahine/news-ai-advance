@@ -18,6 +18,22 @@
         }
         .navbar-brand {
             font-weight: bold;
+            letter-spacing: .2px;
+        }
+        .navbar .nav-link {
+            padding: .5rem .75rem;
+            border-radius: .375rem;
+            transition: background-color .15s ease, color .15s ease;
+        }
+        .navbar .nav-link:hover {
+            background-color: rgba(255,255,255,.15);
+        }
+        .navbar .nav-link.active {
+            background-color: rgba(255,255,255,.25);
+            font-weight: 600;
+        }
+        .dropdown-menu .dropdown-item.active {
+            font-weight: 600;
         }
         .footer {
             margin-top: 3rem;
@@ -38,16 +54,23 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'home' %}">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'news_aggregator:latest' %}">Latest News</a>
+                        <a class="nav-link {% if request.resolver_match.namespace == 'news_aggregator' and request.resolver_match.url_name == 'latest' %}active{% endif %}" href="{% url 'news_aggregator:latest' %}">Latest News</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'news_analysis' or request.resolver_match.url_name == 'source_list' or request.resolver_match.url_name == 'source_detail' %}active{% endif %}" href="#" id="analysisDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Analysis Tools
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="analysisDropdown">
+                            <li><a class="dropdown-item {% if request.resolver_match.namespace == 'news_analysis' and request.resolver_match.url_name == 'misinformation_tracker' %}active{% endif %}" href="{% url 'news_analysis:misinformation_tracker' %}"><i class="fas fa-triangle-exclamation me-2"></i>Misinformation Tracker</a></li>
+                            <li><a class="dropdown-item {% if request.resolver_match.namespace == 'news_analysis' and request.resolver_match.url_name == 'fallacies' or request.resolver_match.namespace == 'news_analysis' and request.resolver_match.url_name == 'fallacy_detail' %}active{% endif %}" href="{% url 'news_analysis:fallacies' %}"><i class="fas fa-book me-2"></i>Logical Fallacies Catalog</a></li>
+                            <li><a class="dropdown-item {% if request.resolver_match.url_name == 'source_list' or request.resolver_match.url_name == 'source_detail' %}active{% endif %}" href="{% url 'news_aggregator:source_list' %}"><i class="fas fa-list me-2"></i>Sources Overview</a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'news_analysis:misinformation_tracker' %}">Analysis Tools</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'about' %}">About</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}" href="{% url 'about' %}">About</a>
                     </li>
                 </ul>
                 <div class="navbar-nav">
@@ -99,7 +122,9 @@
                         <li><a href="{% url 'home' %}">Home</a></li>
                         <li><a href="{% url 'about' %}">About</a></li>
                         <li><a href="{% url 'news_aggregator:latest' %}">Latest News</a></li>
-                        <li><a href="{% url 'news_analysis:misinformation_tracker' %}">Analysis Tools</a></li>
+                        <li><a href="{% url 'news_analysis:misinformation_tracker' %}">Misinformation Tracker</a></li>
+                        <li><a href="{% url 'news_analysis:fallacies' %}">Logical Fallacies Catalog</a></li>
+                        <li><a href="{% url 'news_aggregator:source_list' %}">Sources Overview</a></li>
                     </ul>
                 </div>
                 <div class="col-md-4">

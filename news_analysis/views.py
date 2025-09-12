@@ -148,3 +148,24 @@ def fallacies_reference(request):
         'fallacies': fallacies,
     }
     return render(request, 'news_analysis/fallacies.html', context)
+
+
+
+def fallacy_detail(request, slug):
+    """Detail page for a single logical fallacy with related detections/articles."""
+    fallacy = get_object_or_404(LogicalFallacy, slug=slug)
+    detections_qs = (
+        LogicalFallacyDetection.objects
+        .filter(fallacy=fallacy)
+        .select_related('article', 'article__source')
+        .order_by('-detected_at')
+    )
+    paginator = Paginator(detections_qs, 20)
+    page_number = request.GET.get('page')
+    detections = paginator.get_page(page_number)
+
+    context = {
+        'fallacy': fallacy,
+        'detections': detections,
+    }
+    return render(request, 'news_analysis/fallacy_detail.html', context)
