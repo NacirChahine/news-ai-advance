@@ -88,7 +88,31 @@ def _robust_find_positions(content: str, excerpt: str, ai_start: Optional[int], 
         if m:
             return m.start(), m.end(), "fuzzy"
 
-    return None, None, "none"
+
+# Normalize raw article text to approximate DOM-visible text produced by Django's `linebreaks` filter
+# (linebreaks removes CR/LF by converting them into <p>/<br> elements; text nodes no longer contain newlines)
+def _to_display_text(text: str) -> str:
+    if not text:
+        return ""
+    # Normalize CRLF to LF, then remove LF and CR entirely
+    t = text.replace("\r\n", "\n")
+    t = t.replace("\r", "")
+    t = t.replace("\n", "")
+    return t
+
+
+def _map_indices_raw_to_display(text: str, start: Optional[int], end: Optional[int]) -> Tuple[Optional[int], Optional[int]]:
+    if start is None or end is None:
+        return start, end
+    if start < 0 or end < 0 or end < start:
+        return start, end
+    # Count newline chars before start/end to compute the shift
+    prefix_start = text[:start]
+    prefix_end = text[:end]
+    # Count both CR and LF. CRLF pairs will count as 2, which matches full removal of both.
+    rm_start = prefix_start.count("\n") + prefix_start.count("\r")
+    rm_end = prefix_end.count("\n") + prefix_end.count("\r")
+    return start - rm_start, end - rm_end
 
 
 logger = logging.getLogger(__name__)
@@ -425,20 +449,47 @@ class Command(BaseCommand):
                     self.stderr.write(f"  Unknown fallacy label from AI: '{name}' — skipping (add to catalog if desired)")
                     continue
 
-                # Compute robust positions to align with displayed text
+                # Compute robust positions and map to display-space indices (no CR/LF) to match DOM indexing
                 ex = (det.get("evidence_excerpt") or "")[:500]
                 ai_s = det.get("start_char")
                 ai_e = det.get("end_char")
                 start_idx, end_idx, strategy = _robust_find_positions(content, ex, ai_s, ai_e)
+                disp_start, disp_end = _map_indices_raw_to_display(content, start_idx, end_idx)
+
+                # Temporary detailed diagnostics to root-cause offset issues
+                try:
+                    raw_before = content[max(0, (start_idx or 0) - 20): (start_idx or 0)]
+                    raw_match = content[(start_idx or 0): (end_idx or 0)]
+                    raw_after = content[(end_idx or 0): min(len(content), (end_idx or 0) + 20)]
+                    disp_text = _to_display_text(content)
+                    disp_before = disp_text[max(0, (disp_start or 0) - 20): (disp_start or 0)]
+                    disp_match = disp_text[(disp_start or 0): (disp_end or 0)]
+                    disp_after = disp_text[(disp_end or 0): min(len(disp_text), (disp_end or 0) + 20)]
+                    self.stdout.write(
+                        "  Span debug → name='%s' ai=(%s,%s) raw=(%s,%s) disp=(%s,%s) strat=%s\n"
+                        "    ex=\"%s\"\n"
+                        "    raw:  ...%s[%s]%s...\n"
+                        "    disp: ...%s[%s]%s..." % (
+                            name,
+                            str(ai_s), str(ai_e), str(start_idx), str(end_idx), str(disp_start), str(disp_end), strategy,
+                            ex,
+                            raw_before, raw_match, raw_after,
+                            disp_before, disp_match, disp_after,
+                        )
+                    )
+                except Exception:
+                    pass
+
                 if strategy != "ai":
                     self.stdout.write(f"  Adjusted fallacy span via {strategy} search for '{name}'")
+
                 LogicalFallacyDetection.objects.create(
                     article=article,
                     fallacy=lf,
                     confidence=det.get("confidence"),
                     evidence_excerpt=ex,
-                    start_char=start_idx,
-                    end_char=end_idx,
+                    start_char=disp_start,
+                    end_char=disp_end,
                     detected_at=timezone.now(),
                 )
                 created += 1

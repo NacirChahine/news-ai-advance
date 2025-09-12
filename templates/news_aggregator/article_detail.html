@@ -551,7 +551,19 @@
     detections.forEach(function(d){
       let ok = false;
       if (typeof d.start === 'number' && typeof d.end === 'number' && d.end > d.start) {
-        ok = wrapByGlobal(container, d.start, d.end, d, idx);
+        let useProvided = true;
+        const ex = (d.excerpt || '').trim();
+        if (ex) {
+          const slice = idx.text.slice(d.start, d.end);
+          const a = slice.toLowerCase();
+          const b = ex.toLowerCase();
+          if (!(a.includes(b) || b.includes(a))) {
+            useProvided = false;
+          }
+        }
+        if (useProvided) {
+          ok = wrapByGlobal(container, d.start, d.end, d, idx);
+        }
       }
       if (!ok) {
         ok = tryFallbackSearch(d, idx, container);

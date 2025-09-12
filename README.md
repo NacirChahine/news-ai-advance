@@ -207,6 +207,7 @@ This will create:
 
   - Robust highlighting: When character positions are missing/inaccurate, the article page falls back to searching the evidence excerpt within the rendered text (case-insensitive, then fuzzy token match) and highlights the first match; otherwise, it gracefully degrades (excerpt shown in sidebar only).
   - Clickable highlights: Highlighted spans are accessible links with tooltips (name + brief description) that navigate to the fallacy detail page for deeper context.
+  - Exact alignment: Stored positions are saved in display-space indices (CR/LF removed) to match the DOM text produced by the `linebreaks` filter.
 
 
 ### User System

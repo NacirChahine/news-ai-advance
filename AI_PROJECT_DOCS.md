@@ -92,6 +92,7 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
      4) Graceful degrade: if no match, sidebar still shows excerpts/links
    - Interactive spans: highlighted text is clickable and keyboard-activatable (role=link, tabindex=0). Bootstrap tooltips announce “<name> — <desc> • Click to learn more”. Clicking navigates to `/analysis/fallacies/<slug>/`.
    - Backend position correction: `analyze_articles` uses `_robust_find_positions()` to validate/repair AI-provided spans. Strategies: 'ai' (trusted), 'exact', 'ci', 'fuzzy'. Adjustments are logged to stdout for traceability.
+   - Index space: stored `start_char`/`end_char` are saved in display-space indices (CR/LF removed) to match DOM text produced by the `linebreaks` filter for precise highlighting.
 4. **Sentiment Analysis**:
    - Primary: AI-enhanced sentiment analysis via Ollama
    - Fallback: VADER sentiment scoring
