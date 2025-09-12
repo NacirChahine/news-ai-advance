@@ -33,6 +33,26 @@ class SentimentAnalysis(models.Model):
     def __str__(self):
         return f"Sentiment Analysis for {self.article.title}"
 
+
+class ArticleInsight(models.Model):
+    """Key insights extracted for an article (ordered)."""
+    article = models.ForeignKey(NewsArticle, on_delete=models.CASCADE, related_name='insights')
+    text = models.TextField()
+    rank = models.PositiveSmallIntegerField(default=0, help_text='0-based order index')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['article', 'rank', 'id']
+        indexes = [
+            models.Index(fields=['article', 'rank']),
+        ]
+        unique_together = (
+            ('article', 'rank'),
+        )
+
+    def __str__(self):
+        return f"Insight #{self.rank + 1} for {self.article.title}: {self.text[:50]}..."
+
 class FactCheckResult(models.Model):
     """Model for storing fact-checking results"""
     RATING_CHOICES = [

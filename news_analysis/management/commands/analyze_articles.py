@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.utils.text import slugify
 from news_aggregator.models import NewsArticle
-from news_analysis.models import BiasAnalysis, SentimentAnalysis, FactCheckResult, LogicalFallacy, LogicalFallacyDetection
+from news_analysis.models import BiasAnalysis, SentimentAnalysis, FactCheckResult, LogicalFallacy, LogicalFallacyDetection, ArticleInsight
 
 # Import NLP libraries
 import nltk
@@ -457,28 +457,28 @@ class Command(BaseCommand):
                 disp_start, disp_end = _map_indices_raw_to_display(content, start_idx, end_idx)
 
                 # Temporary detailed diagnostics to root-cause offset issues
-                try:
-                    raw_before = content[max(0, (start_idx or 0) - 20): (start_idx or 0)]
-                    raw_match = content[(start_idx or 0): (end_idx or 0)]
-                    raw_after = content[(end_idx or 0): min(len(content), (end_idx or 0) + 20)]
-                    disp_text = _to_display_text(content)
-                    disp_before = disp_text[max(0, (disp_start or 0) - 20): (disp_start or 0)]
-                    disp_match = disp_text[(disp_start or 0): (disp_end or 0)]
-                    disp_after = disp_text[(disp_end or 0): min(len(disp_text), (disp_end or 0) + 20)]
-                    self.stdout.write(
-                        "  Span debug → name='%s' ai=(%s,%s) raw=(%s,%s) disp=(%s,%s) strat=%s\n"
-                        "    ex=\"%s\"\n"
-                        "    raw:  ...%s[%s]%s...\n"
-                        "    disp: ...%s[%s]%s..." % (
-                            name,
-                            str(ai_s), str(ai_e), str(start_idx), str(end_idx), str(disp_start), str(disp_end), strategy,
-                            ex,
-                            raw_before, raw_match, raw_after,
-                            disp_before, disp_match, disp_after,
-                        )
-                    )
-                except Exception:
-                    pass
+                # try:
+                #     raw_before = content[max(0, (start_idx or 0) - 20): (start_idx or 0)]
+                #     raw_match = content[(start_idx or 0): (end_idx or 0)]
+                #     raw_after = content[(end_idx or 0): min(len(content), (end_idx or 0) + 20)]
+                #     disp_text = _to_display_text(content)
+                #     disp_before = disp_text[max(0, (disp_start or 0) - 20): (disp_start or 0)]
+                #     disp_match = disp_text[(disp_start or 0): (disp_end or 0)]
+                #     disp_after = disp_text[(disp_end or 0): min(len(disp_text), (disp_end or 0) + 20)]
+                #     self.stdout.write(
+                #         "  Span debug → name='%s' ai=(%s,%s) raw=(%s,%s) disp=(%s,%s) strat=%s\n"
+                #         "    ex=\"%s\"\n"
+                #         "    raw:  ...%s[%s]%s...\n"
+                #         "    disp: ...%s[%s]%s..." % (
+                #             name,
+                #             str(ai_s), str(ai_e), str(start_idx), str(end_idx), str(disp_start), str(disp_end), strategy,
+                #             ex,
+                #             raw_before, raw_match, raw_after,
+                #             disp_before, disp_match, disp_after,
+                #         )
+                #     )
+                # except Exception:
+                #     pass
 
                 if strategy != "ai":
                     self.stdout.write(f"  Adjusted fallacy span via {strategy} search for '{name}'")
@@ -528,24 +528,87 @@ class Command(BaseCommand):
             self.stderr.write(f"  Error generating summary: {str(e)}")
 
     def extract_key_insights(self, article):
-        """Extract key insights from the article using AI"""
+        """Extract key insights from the article using AI, clean them, and persist to DB.
+        Idempotent: if insights exist and are not forced, skip. If forced, replace it.
+        """
         try:
+            content = (article.content or '').strip()
+            if not content:
+                self.stdout.write("  No content available for insights; skipping")
+                return
+
+            # Idempotency controls
+            existing_qs = ArticleInsight.objects.filter(article=article)
+            if existing_qs.exists() and not getattr(self, 'force', False):
+                self.stdout.write("  Insights already exist; skipping (use --force to regenerate)")
+                return
+            if getattr(self, 'force', False) and existing_qs.exists():
+                count = existing_qs.count()
+                existing_qs.delete()
+                self.stdout.write(f"  Removed {count} existing insight(s) due to --force")
+
             self.stdout.write(f"  Extracting key insights with {self.model}...")
-            insights = extract_key_insights_with_ai(article.content, model=self.model, num_insights=5)
+            raw_insights = extract_key_insights_with_ai(content, model=self.model, num_insights=5) or []
 
-            if insights:
-                # todo: save insights to model
-                #  Extracted 5 key insights:
-                #     1. Here are the 5 most important insights from the article:
-                #     2. [
-                #     3. "Conservatives prioritize
-                # Log the insights (in a real application, you might want to save these to a model)
-                self.stdout.write(f"  Extracted {len(insights)} key insights:")
-                for i, insight in enumerate(insights, 1):
-                    self.stdout.write(f"    {i}. {insight}")
-            else:
-                self.stdout.write(f"  No insights extracted")
+            # Cleaning logic to remove headers/preambles/brackets and normalize list items
+            cleaned = []
+            seen = set()
+            header_patterns = [
+                r"^extract(ed|ing)?\b.*key insight",  # e.g., "Extracted 5 key insights:"
+                r"^here (are|'re) the \d+ (most )?important insight",  # e.g., "Here are the 5 most important insights..."
+                r"^key insight(s)?\b",
+                r"^insight(s)?\s*:?$",
+                r"^summary\s*:?$",
+            ]
+            header_rx = re.compile("|".join(header_patterns), re.IGNORECASE)
 
+            def normalize_line(s: str) -> str:
+                x = (s or '').strip()
+                # Strip code fences and brackets-only lines
+                if x in ('[', ']', '[[', ']]', '[...', '...]', '...', '""', "''"):
+                    return ''
+                # Drop lines that are just brackets/commas
+                if re.fullmatch(r"^[\[\]\{\}\,]+$", x):
+                    return ''
+                # Remove markdown/number bullets ("- ", "* ", "1. ", "1) ", "1: ")
+                x = re.sub(r"^[-*\u2022]\s+", '', x)
+                x = re.sub(r"^\d+\s*[\.)\]:-]\s*", '', x)
+                # Trim wrapping quotes
+                x = x.strip().strip('"').strip("'")
+                # Remove trailing commas/semicolons leftover from JSON-ish lists
+                x = re.sub(r"[,;]+$", '', x).strip()
+                return x
+
+            for line in raw_insights:
+                if not isinstance(line, str):
+                    continue
+                t = normalize_line(line)
+                if not t:
+                    continue
+                # Filter generic headers/preambles
+                if header_rx.search(t):
+                    continue
+                # Remove extremely short or punctuation-only strings
+                if len(t) < 3 or re.fullmatch(r"^[^A-Za-z0-9]+$", t):
+                    continue
+                # Deduplicate while preserving order (case-insensitive key)
+                key = t.lower()
+                if key in seen:
+                    continue
+                seen.add(key)
+                cleaned.append(t)
+
+            if not cleaned:
+                self.stdout.write("  No substantive insights extracted")
+                return
+
+            # Persist cleaned insights in ranked order
+            created = 0
+            for idx, text in enumerate(cleaned[:10]):  # safety cap
+                ArticleInsight.objects.create(article=article, text=text[:1000], rank=idx)
+                created += 1
+
+            self.stdout.write(f"  Saved {created} cleaned insight(s)")
         except Exception as e:
             self.stderr.write(f"  Error extracting insights: {str(e)}")
 

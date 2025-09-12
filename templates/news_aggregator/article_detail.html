@@ -84,6 +84,29 @@
                         </div>
                     {% endif %}
 
+                        {% if article.insights.all|length > 0 %}
+                        <div class="card mb-4">
+                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Key Insights</h5>
+                                <button class="btn btn-sm btn-outline-secondary" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#keyInsightsCollapse"
+                                        aria-expanded="false" aria-controls="keyInsightsCollapse">
+                                    Show
+                                </button>
+                            </div>
+                            <div id="keyInsightsCollapse" class="collapse">
+                                <div class="card-body">
+                                    <ul class="mb-0">
+                                        {% for insight in article.insights.all %}
+                                            <li>{{ insight.text }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
+
                     <div class="article-content" id="article-content">
                         {{ article.content|linebreaks }}
                     </div>

@@ -38,6 +38,11 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - **SentimentAnalysis**: Emotional tone analysis
   - Fields: article, sentiment_score, positive_score, negative_score, neutral_score
 
+
+- **ArticleInsight**: Key insights extracted for an article (ordered)
+  - Fields: article (FK), text, rank (0-based), created_at
+  - Indexes: (article, rank); Unique per (article, rank)
+
 - **FactCheckResult**: Fact-checking of specific claims
   - Fields: article, claim, rating, explanation, sources
   - Choices: true, mostly_true, half_true, mostly_false, false, pants_on_fire
@@ -99,7 +104,12 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 4. **Summarization**:
    - Primary: Fine-tuned BART model trained on BBC News Summary dataset
    - Fallback: Ollama-based summarization
-5. **Key Insights**: AI-powered extraction of important points using Ollama
+5. **Key Insights**:
+   - AI-powered extraction of important points via `extract_key_insights_with_ai`
+   - Post-processing cleans non-substantive lines (e.g., headers like "Extracted 5 key insights:", preambles like "Here are the...", stray brackets)
+   - Deduplicates, trims bullets/numbering/quotes, and filters very short/punctuation-only entries
+   - Persisted as `ArticleInsight` rows (ordered by `rank`); idempotent with `--force` (replaces existing)
+   - Frontend: collapsible "Key Insights" panel on article pages lists insights as bullet points
 6. **Source Credibility**: Historical accuracy rating of publishers
 
 ## ML Models
@@ -195,7 +205,7 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 - Generates bias, logical fallacy detections, sentiment, and readability metrics
 - Supports AI-enhanced analysis with configurable models
 - Batched processing to handle large article volumes efficiently
-- Parameters: `--article_id`, `--limit`, `--force`, `--model`, `--unanalyzed-only`, `--batch-size`
+- Parameters: `--article_id`, `--limit`, `--force`, `--model`, `--use-ai`
 
 ### Generate Test Data (news_aggregator/management/commands/generate_test_data.py)
 
@@ -204,6 +214,8 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 - Produces articles with realistic bias and sentiment distributions
 - Simulates user interactions and saved articles
 - Parameters: `--sources`, `--articles`, `--users`, `--clear`
+
+- **news_aggregator/article_detail.html**: Article detail page; renders AI Summary and a collapsible Key Insights panel (when available), plus logical fallacies and fact checks
 
 ## User Interface
 

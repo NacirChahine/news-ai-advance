@@ -148,11 +148,17 @@ To analyze articles for bias, sentiment, and generate summaries:
    python manage.py analyze_articles --model deepseek-r1:8b
    ```
 
+   # To toggle AI usage (defaults to on)
+   python manage.py analyze_articles --use-ai
+
+
 3. **Verify the Results**
    - Return to the admin panel
    - Check that your article now has `is_analyzed` set to True
    - Navigate to "Bias analyses" and "Sentiment analyses" under the "News_analysis" section
    - You should see entries for your article with the analysis results
+
+   - On the article page, a “Key Insights” collapsible section appears below the summary when insights are available.
 
 #### Using Test Data Generator
 
@@ -192,6 +198,8 @@ This will create:
 - Logical fallacy reference and detection (catalog + admin + per-article detections with user toggle and public reference page). Catalog now includes anchor links and dedicated detail pages for each fallacy.
 
 - Advanced AI analysis using local LLMs via Ollama integration
+- Key insights extraction and display (collapsible panel on article pages)
+
 
 #### Logical Fallacies
 - Public reference page: visit `/analysis/fallacies/` for the catalog (name, description, example, detection counts). Each item has a URL anchor and a link icon for easy sharing.
