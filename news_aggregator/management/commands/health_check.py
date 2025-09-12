@@ -24,12 +24,19 @@ class Command(BaseCommand):
                 self.stdout.write(msg)
 
         # 1) Python version
-        py_ok = sys.version_info >= (3, 8)
+        py_version = sys.version_info
+        py_ok = (3, 8) <= py_version <= (3, 12)
+
         if py_ok:
-            self.stdout.write(self.style.SUCCESS(f"[Python] OK - {sys.version.split()[0]} (>= 3.8)"))
+            self.stdout.write(self.style.SUCCESS(
+                f"[Python] OK - {sys.version.split()[0]} (recommended: 3.11 or 3.12)"
+            ))
         else:
             failures += 1
-            self.stdout.write(self.style.ERROR(f"[Python] FAIL - {sys.version.split()[0]} < 3.8. Please use Python 3.8+"))
+            self.stdout.write(self.style.ERROR(
+                f"[Python] FAIL - {sys.version.split()[0]} not in supported range (3.8–3.12). "
+                f"Please use Python 3.11 or 3.12."
+            ))
 
         # 2) Virtual environment detection
         in_venv = (hasattr(sys, 'base_prefix') and sys.prefix != sys.base_prefix) or bool(os.environ.get('VIRTUAL_ENV'))
@@ -42,8 +49,8 @@ class Command(BaseCommand):
         deps = [
             ('django', 'Django (core framework)'),
             ('bs4', 'beautifulsoup4 (HTML parsing)'),
-            # ('sgmllib', 'sgmllib (provided by sgmllib3k)'),
-            # ('newspaper', 'newspaper3k (article extraction)'),
+            ('sgmllib', 'sgmllib (provided by sgmllib3k)'),
+            ('newspaper', 'newspaper3k (article extraction)'),
             ('nltk', 'nltk (NLP processing)'),
             ('spacy', 'spaCy (NLP models)'),
             ('transformers', 'transformers (ML summarization)'),
@@ -57,6 +64,17 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"[Deps] OK - {label}{extra}"))
                 info(f"         Module path: {getattr(mod, '__file__', 'n/a')}")
             except Exception as e:
+                # Be tolerant of optional/conditionally-required deps
+                if mod_name == 'newspaper':
+                    msg = str(e)
+                    # lxml >= 5 moved html.clean to a separate package; many libraries still import the old path
+                    if 'lxml.html.clean module is now a separate project' in msg or 'lxml_html_clean' in msg:
+                        self.stdout.write(self.style.WARNING(f"[Deps] WARN - {label}: {e}"))
+                        self.stdout.write("         Note: This is usually due to lxml>=5 splitting the cleaner into 'lxml_html_clean'.")
+                        self.stdout.write("         Fix (optional): pip install \"lxml[html_clean]\" or \"lxml_html_clean\"; alternatively pin lxml<5.")
+                        # Do not count this as a hard failure because Newspaper3k usage is optional in this project.
+                        continue
+                # Default: treat as failure
                 failures += 1
                 self.stdout.write(self.style.ERROR(f"[Deps] FAIL - {label}: {e}"))
                 if mod_name == 'newspaper':

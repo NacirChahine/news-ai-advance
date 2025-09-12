@@ -114,6 +114,36 @@ To fetch news articles from configured sources:
 python manage.py fetch_news
 ```
 
+
+### Health Check
+
+Run environment diagnostics to verify your setup:
+
+```bash
+python manage.py health_check
+# Verbose mode (shows extra details and hints)
+python manage.py health_check --verbose
+```
+
+What it checks:
+- Python version (supported range 3.8–3.12; recommended 3.11/3.12)
+- Virtual environment usage
+- Core dependencies: Django, BeautifulSoup4 (`bs4`), `sgmllib` (from `sgmllib3k`), Newspaper3k (`newspaper`), NLTK, spaCy, Transformers
+- Database connectivity (simple query)
+- NLTK data availability (`punkt`, `vader_lexicon`)
+- spaCy English model availability (`en_core_web_sm`)
+- Ollama connectivity (optional; only if `OLLAMA_ENDPOINT` is set)
+- Static files presence (static/css, static/js)
+
+Interpreting results:
+- "OK" means the check passed
+- "WARN" indicates an optional or environment-specific issue; the project should still run
+- "FAIL" indicates a problem to fix; the command exits with a non-zero status when any failures occur
+
+Notes:
+- Newspaper3k and lxml cleaner: With lxml>=5, the HTML cleaner was split out. If you see a warning like:
+  "lxml.html.clean module is now a separate project lxml_html_clean", you can install either `lxml[html_clean]` or `lxml_html_clean`. This is treated as a WARN by default since Newspaper3k is optional in this project.
+
 ### Analyzing Articles
 
 To analyze articles for bias, sentiment, and generate summaries:
