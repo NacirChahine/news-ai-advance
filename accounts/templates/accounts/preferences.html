@@ -62,6 +62,26 @@
 
                             </div>
                         </div>
+                        <div class="row mb-4">
+                            <div class="col-md-12">
+                                <h5><i class="fas fa-eye me-2 text-primary"></i>Display Features</h5>
+                                <hr>
+
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="enable_summary_display" name="enable_summary_display" {% if preferences.enable_summary_display %}checked{% endif %}>
+                                    <label class="form-check-label" for="enable_summary_display">Show AI-Generated Summary</label>
+                                    <div class="form-text">Toggle visibility of the AI summary on article pages</div>
+                                </div>
+
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="enable_key_insights" name="enable_key_insights" {% if preferences.enable_key_insights %}checked{% endif %}>
+                                    <label class="form-check-label" for="enable_key_insights">Show Key Insights</label>
+                                    <div class="form-text">Toggle visibility of the Key Insights panel on article pages</div>
+                                </div>
+
+                            </div>
+                        </div>
+
 
                         <div class="row mb-4">
                             <div class="col-md-12">
@@ -92,7 +112,7 @@
                         </div>
 
                         <div class="d-grid gap-2">
-                            <div id="save-status" class="alert alert-success d-none" role="alert">
+                            <div id="save-status" class="alert alert-success d-none" role="alert" data-save-url="{% url 'accounts:auto_save_preferences' %}">
                                 <i class="fas fa-check-circle me-2"></i>Preferences saved automatically!
                             </div>
                             <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">
@@ -105,96 +125,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Get CSRF token
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    const csrftoken = getCookie('csrftoken');
-
-    // Function to show save status
-    function showSaveStatus(success, message) {
-        const statusDiv = document.getElementById('save-status');
-        statusDiv.className = success ? 'alert alert-success' : 'alert alert-danger';
-        statusDiv.innerHTML = success ?
-            '<i class="fas fa-check-circle me-2"></i>Preferences saved automatically!' :
-            '<i class="fas fa-exclamation-triangle me-2"></i>Error saving preferences: ' + message;
-        statusDiv.classList.remove('d-none');
-
-        // Hide after 3 seconds
-        setTimeout(() => {
-            statusDiv.classList.add('d-none');
-        }, 3000);
-    }
-
-    // Function to auto-save preference
-    function autoSavePreference(fieldName, fieldValue) {
-        fetch('{% url "accounts:auto_save_preferences" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': csrftoken,
-            },
-            body: JSON.stringify({
-                field: fieldName,
-                value: fieldValue
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            showSaveStatus(data.success, data.error || data.message);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showSaveStatus(false, 'Network error occurred');
-        });
-    }
-
-    // Add event listeners to all form controls
-
-    // Checkbox switches
-    document.getElementById('enable_fact_check').addEventListener('change', function() {
-        autoSavePreference('enable_fact_check', this.checked);
-    });
-
-    document.getElementById('enable_bias_analysis').addEventListener('change', function() {
-        autoSavePreference('enable_bias_analysis', this.checked);
-    });
-
-    document.getElementById('enable_logical_fallacy_analysis').addEventListener('change', function() {
-        autoSavePreference('enable_logical_fallacy_analysis', this.checked);
-    });
-
-    document.getElementById('enable_sentiment_analysis').addEventListener('change', function() {
-        autoSavePreference('enable_sentiment_analysis', this.checked);
-    });
-
-    // Only add event listener for misinformation alerts if the checkbox is not disabled
-    const misinformationAlertsCheckbox = document.getElementById('receive_misinformation_alerts');
-    if (misinformationAlertsCheckbox && !misinformationAlertsCheckbox.disabled) {
-        misinformationAlertsCheckbox.addEventListener('change', function() {
-            autoSavePreference('receive_misinformation_alerts', this.checked);
-        });
-    }
-
-    // Select dropdown
-    document.querySelector('select[name="political_filter"]').addEventListener('change', function() {
-        autoSavePreference('political_filter', this.value);
-    });
-});
-</script>
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/preferences.js' %}"></script>
 {% endblock %}

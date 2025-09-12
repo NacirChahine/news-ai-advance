@@ -227,6 +227,41 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 - **fallacy_detail.html**: Detail page for a single logical fallacy; shows description, example, and paginated list of related article detections
 - **news_aggregator/source_list.html**: Sources overview with reliability scores, political bias badges, and per-source article counts
 
+
+### Display Preference Controls (Summary & Key Insights)
+- accounts.models.UserPreferences now includes:
+  - enable_key_insights: bool = True
+  - enable_summary_display: bool = True
+- accounts.views.preferences persists these via POST and an AJAX auto-save endpoint (`accounts:auto_save_preferences`).
+- Template logic (templates/news_aggregator/article_detail.html):
+  - Summary and Key Insights sections render when:
+    - User is not authenticated (default ON for visitors), OR
+    - Authenticated and `request.user.preferences.<flag>` is True
+- Frontend auto-save JS extracted to static/js/preferences.js.
+
+### Key Insights UI & Assets
+- Collapsible panel defaults to expanded (`.collapse.show`) with arrow button toggling:
+  - ▲ when expanded (aria-expanded=true), ▼ when collapsed
+- JS: static/js/article_detail.js updates the arrow on show/hide events and contains robust fallacy highlight logic (moved from inline script).
+- CSS: static/css/article_detail.css styles the highlight states.
+- Base stylesheet: static/css/site.css (moved navbar/footer styles from base.html; also removes underline from all `.breadcrumb a`).
+- All templates use `{% load static %}` and reference static files via `<link>`/`<script src>`.
+
+## Source Reliability Scoring
+- Implemented in `news_aggregator.utils`:
+  - `compute_source_reliability(source) -> float` (0..100)
+    - Fact-check component (~60%): rating mapped to [0..1] with a gentle confidence weighting; averaged and scaled to 0..100.
+    - Bias consistency (~20%): 1 - stdev(bias_score) (bounded [0..1]) → higher is better. Defaults to 85 with one data point, 60 when none.
+    - Fallacy component (~20%): penalty up to 20 points when avg fallacies/article ≥ 3; component = 100 - penalty.
+    - Final score is a weighted aggregate, clamped to [0, 100]. Safe fallback returns existing score on exceptions.
+  - `update_source_reliability(source) -> float`: computes and persists only if materially changed (epsilon 1e-6).
+- Management Command: `news_aggregator/management/commands/recalculate_reliability.py`
+  - Usage: `python manage.py recalculate_reliability [--only-zero]`
+- Pipeline Integration:
+  - `news_analysis.management.commands.analyze_articles` calls `update_source_reliability(article.source)` after completing analysis for each article; logs the updated score with 3-decimal precision.
+- UI Formatting:
+  - On the article detail page, source reliability displayed with Django `floatformat:3` (rounding): e.g., `87.679/100`.
+
 - **alert_detail.html**: Detailed view of individual misinformation alerts
 
 ### Accounts Templates

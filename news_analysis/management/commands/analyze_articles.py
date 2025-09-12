@@ -26,6 +26,8 @@ from news_analysis.utils import (
     verify_claim_with_ai,
     detect_logical_fallacies_with_ai,
 )
+from news_aggregator.utils import update_source_reliability
+
 from news_analysis.match_utils import find_related_alerts_for_article
 
 # Download necessary NLTK data
@@ -231,6 +233,14 @@ class Command(BaseCommand):
 
             # Mark article as analyzed
             article.is_analyzed = True
+
+            # Recalculate source reliability based on updated analyses
+            try:
+                new_score = update_source_reliability(article.source)
+                self.stdout.write(f"  Updated source reliability: {new_score:.3f}/100 for '{article.source.name}'")
+            except Exception as e:
+                self.stderr.write(f"  Failed to update source reliability: {e}")
+
             article.save()
 
             self.stdout.write(self.style.SUCCESS(f"  Analysis complete for article ID {article.id}"))

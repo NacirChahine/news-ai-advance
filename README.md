@@ -201,6 +201,41 @@ This will create:
 - Key insights extraction and display (collapsible panel on article pages)
 
 
+### Display Preferences (Summary & Key Insights)
+- New user preference toggles in Accounts → Preferences:
+  - enable_summary_display (default: True)
+  - enable_key_insights (default: True)
+- Behavior on article pages:
+  - Visitors (not logged in): AI Summary and Key Insights are shown by default
+  - Logged-in users: Sections are shown only if the corresponding toggle is enabled
+
+### Key Insights UI
+- The Key Insights section is expanded by default and uses a collapse toggle with an arrow:
+  - ▲ when expanded, ▼ when collapsed
+- Implemented via static/js/article_detail.js; styling via static/css/article_detail.css
+
+### Static Assets
+- Inline CSS/JS moved to static files:
+  - CSS: static/css/site.css, static/css/article_detail.css
+  - JS: static/js/article_detail.js, static/js/preferences.js
+- Templates now include `{% load static %}` and reference these files (see base.html and article_detail.html)
+
+### Source Reliability Scoring
+- NewsSource.reliability_score is automatically updated after article analysis and can be recalculated in bulk:
+  - Per-article update occurs at the end of `analyze_articles`
+  - Bulk recalculation:
+    ```bash
+    python manage.py recalculate_reliability
+    # or only sources with zero score
+    python manage.py recalculate_reliability --only-zero
+    ```
+- Scoring considers:
+  - Fact-check ratings (weighted) ~60%
+  - Bias consistency (lower variance is better) ~20%
+  - Logical fallacy frequency (fewer per article is better) ~20%
+- On article pages, source reliability is displayed rounded to 3 decimals (e.g., 87.679/100)
+
+
 #### Logical Fallacies
 - Public reference page: visit `/analysis/fallacies/` for the catalog (name, description, example, detection counts). Each item has a URL anchor and a link icon for easy sharing.
 - Detail pages: `/analysis/fallacies/<slug>/` show the fallacy details and a paginated list of articles where it was detected.

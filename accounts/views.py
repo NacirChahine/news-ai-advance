@@ -52,6 +52,9 @@ def preferences(request):
         preferences.enable_sentiment_analysis = 'enable_sentiment_analysis' in request.POST
         preferences.enable_logical_fallacy_analysis = 'enable_logical_fallacy_analysis' in request.POST
 
+        preferences.enable_key_insights = 'enable_key_insights' in request.POST
+        preferences.enable_summary_display = 'enable_summary_display' in request.POST
+
         # Only update political_filter if it's not disabled
         if 'political_filter' in request.POST:
             preferences.political_filter = request.POST.get('political_filter', 'balanced')
@@ -87,6 +90,10 @@ def auto_save_preferences(request):
             preferences.enable_sentiment_analysis = field_value
         elif field_name == 'enable_logical_fallacy_analysis':
             preferences.enable_logical_fallacy_analysis = field_value
+        elif field_name == 'enable_key_insights':
+            preferences.enable_key_insights = field_value
+        elif field_name == 'enable_summary_display':
+            preferences.enable_summary_display = field_value
         elif field_name == 'political_filter':
             preferences.political_filter = field_value
         elif field_name == 'receive_misinformation_alerts':
@@ -143,7 +150,7 @@ def saved_articles(request):
     if search_query:
         from django.db.models import Q
         saved_articles = saved_articles.filter(
-            Q(article__title__icontains=search_query) | 
+            Q(article__title__icontains=search_query) |
             Q(article__content__icontains=search_query) |
             Q(notes__icontains=search_query)
         )
@@ -235,7 +242,7 @@ def bulk_delete_saved(request):
 
     # Delete selected articles
     deleted_count = UserSavedArticle.objects.filter(
-        id__in=selected_articles, 
+        id__in=selected_articles,
         user=request.user
     ).delete()[0]
 
@@ -309,7 +316,7 @@ def change_password(request):
             messages.error(request, 'Please correct the error below.')
     else:
         form = PasswordChangeForm(request.user)
-    
+
     return render(request, 'accounts/password_change.html', {'form': form})
 
 def forgot_password(request):
