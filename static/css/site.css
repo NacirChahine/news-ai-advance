@@ -414,6 +414,50 @@ a.badge { text-decoration: none; }
 a.badge:hover { filter: brightness(1.05); }
 [data-theme="light"] .badge.bg-dark { box-shadow: 0 2px 6px rgba(0,0,0,.25); color: #fff; }
 
+
+/* Breadcrumb readability in dark theme */
+[data-theme="dark"] .breadcrumb .breadcrumb-item { color: rgba(255,255,255,.85); }
+[data-theme="dark"] .breadcrumb .breadcrumb-item a { color: rgba(255,255,255,.85); }
+[data-theme="dark"] .breadcrumb .breadcrumb-item.active { color: rgba(255,255,255,.92); }
+[data-theme="dark"] .breadcrumb .breadcrumb-item + .breadcrumb-item::before { color: rgba(255,255,255,.55); }
+
+/* Save/Unsave buttons: keep white label on hover for contrast */
+.btn-outline-primary:hover,
+.btn-outline-danger:hover { color: #ffffff !important; }
+
+/* Keep white text on focus/active as well for outline buttons */
+.btn-outline-primary:focus, .btn-outline-primary:active,
+.btn-outline-danger:focus, .btn-outline-danger:active { color: #ffffff !important; }
+
+
+/* Ensure destructive remove/unsave buttons are danger-styled consistently */
+.remove-saved-btn {
+  color: var(--bs-danger) !important;
+  border-color: var(--bs-danger) !important;
+}
+.remove-saved-btn:hover {
+  background-color: var(--bs-danger) !important;
+  border-color: var(--bs-danger) !important;
+  color: #ffffff !important;
+}
+
+/* Dark theme: make alert-light follow glass styling on analysis pages */
+
+/* Dark theme: ensure fallacy highlights have strong readability globally */
+[data-theme="dark"] .fallacy-highlight {
+  background-color: rgba(255,214,102,.85) !important;
+  color: #111827 !important;
+}
+
+[data-theme="dark"] .alert-light {
+  background: rgba(17,25,40, var(--na-glass-alpha)) !important;
+  -webkit-backdrop-filter: blur(var(--na-blur));
+  backdrop-filter: blur(var(--na-blur));
+  color: var(--na-text) !important;
+  border-color: rgba(var(--na-surface-rgb), var(--na-border-alpha)) !important;
+}
+[data-theme="dark"] .alert-light strong { color: #ffffff; }
+
 /* Reduced motion for accessibility */
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
