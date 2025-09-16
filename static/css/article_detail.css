@@ -42,3 +42,12 @@
 [data-theme="light"] .fallacy-highlight.active {
   background-color: #ffd24d;
 }
+
+
+/* Reinforce contrast for fallacy highlights (final overrides) */
+[data-theme="dark"] .fallacy-highlight {
+  background-color: rgba(255, 214, 102, 0.85) !important;
+  color: #111827 !important; /* near-black */
+}
+[data-theme="dark"] .fallacy-highlight.hover { background-color: rgba(255, 214, 102, 0.92) !important; }
+[data-theme="dark"] .fallacy-highlight a { color: #111827 !important; text-decoration: underline; }
