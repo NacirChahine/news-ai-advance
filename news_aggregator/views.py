@@ -103,15 +103,22 @@ def source_list(request):
 def source_detail(request, source_id):
     """View to display a single news source with its articles"""
     source = get_object_or_404(NewsSource, pk=source_id)
-    
+
     # Get all articles from this source
     articles = source.articles.all().order_by('-published_date')
-    
+
     # Paginate the results
     paginator = Paginator(articles, 12)  # Show 12 articles per page
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    
+
+    # Mark saved state for each article to persist across refresh
+    if request.user.is_authenticated:
+        # Create a set of saved article IDs for efficient lookup
+        saved_article_ids = set(request.user.saved_articles.values_list('article_id', flat=True))
+        for a in page_obj:
+            a.is_saved = a.id in saved_article_ids
+
     context = {
         'source': source,
         'page_obj': page_obj,

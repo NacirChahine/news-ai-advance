@@ -462,3 +462,45 @@ a.badge:hover { filter: brightness(1.05); }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+
+/* === UX refinements: remove hover animations for specific elements === */
+/* Keep article page content cards static */
+.card.mb-4,
+.card.mb-4:hover,
+.card.mb-4:focus-within { transform: none !important; box-shadow: var(--na-shadow) !important; }
+
+/* Remove transitions from the homepage primary CTA button */
+a.btn.btn-primary.btn-lg.px-4.gap-3,
+a.btn.btn-primary.btn-lg.px-4.gap-3:hover,
+a.btn.btn-primary.btn-lg.px-4.gap-3:focus { transition: none !important; transform: none !important; }
+
+/* Remove transitions from all "Read Article" primary buttons (icon-based selector) */
+a.btn.btn-primary:has(.fa-book-reader),
+a.btn.btn-primary:has(.fa-book-reader):hover,
+a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; transform: none !important; }
+
+/* Source detail: top info card body should be static (no hover anims) */
+.breadcrumb + .card > .card-body { transition: none !important; }
+
+/* Light theme: Unsave (outline-danger) text must be red, not blue */
+[data-theme="light"] .btn-outline-danger { color: var(--bs-danger) !important; }
+
+/* Tooltips should appear above navbar and dropdowns */
+.tooltip { z-index: 2100 !important; }
+
+/* Key Insights header: make arrow button borderless and hint clickable header */
+.card-header [data-bs-target="#keyInsightsCollapse"] {
+  border: 0 !important; box-shadow: none !important;
+}
+/* Visual cue for clickable area (functionality wired in JS) */
+.card-header:has([data-bs-target="#keyInsightsCollapse"]) { cursor: pointer; }
+
+
+/* Source detail: ensure the top info card does not lift on hover */
+.breadcrumb + .card,
+.breadcrumb + .card:hover,
+.breadcrumb + .card:focus-within {
+  transform: none !important;
+  box-shadow: var(--na-shadow) !important;
+}

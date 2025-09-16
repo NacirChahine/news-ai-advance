@@ -174,11 +174,23 @@ document.addEventListener('DOMContentLoaded', function(){
   const btn = document.querySelector('[data-bs-target="#keyInsightsCollapse"]');
   const collapseEl = document.getElementById('keyInsightsCollapse');
   if (!btn || !collapseEl) return;
-  const update = () => {
-    btn.textContent = collapseEl.classList.contains('show') ? '▲' : '▼';
-  };
+  const update = () => { btn.textContent = collapseEl.classList.contains('show') ? '▲' : '▼'; };
   update();
   collapseEl.addEventListener('shown.bs.collapse', update);
   collapseEl.addEventListener('hidden.bs.collapse', update);
 });
 
+// Make entire Key Insights header clickable (not just the arrow)
+document.addEventListener('DOMContentLoaded', function(){
+  const toggleBtn = document.querySelector('.card-header [data-bs-target="#keyInsightsCollapse"]');
+  if (!toggleBtn) return;
+  const header = toggleBtn.closest('.card-header');
+  const collapseEl = document.getElementById('keyInsightsCollapse');
+  if (!header || !collapseEl) return;
+  const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+  header.addEventListener('click', function(e){
+    // Prevent double toggle when clicking the button itself; let button's default work
+    if (e.target === toggleBtn || toggleBtn.contains(e.target)) return;
+    if (collapseEl.classList.contains('show')) { bsCollapse.hide(); } else { bsCollapse.show(); }
+  });
+});
