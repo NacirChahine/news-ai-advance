@@ -480,9 +480,6 @@ a.btn.btn-primary:has(.fa-book-reader),
 a.btn.btn-primary:has(.fa-book-reader):hover,
 a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; transform: none !important; }
 
-/* Source detail: top info card body should be static (no hover anims) */
-.breadcrumb + .card > .card-body { transition: none !important; }
-
 /* Light theme: Unsave (outline-danger) text must be red, not blue */
 [data-theme="light"] .btn-outline-danger { color: var(--bs-danger) !important; }
 
@@ -496,11 +493,10 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 /* Visual cue for clickable area (functionality wired in JS) */
 .card-header:has([data-bs-target="#keyInsightsCollapse"]) { cursor: pointer; }
 
-
 /* Source detail: ensure the top info card does not lift on hover */
-.breadcrumb + .card,
-.breadcrumb + .card:hover,
-.breadcrumb + .card:focus-within {
+[aria-label="breadcrumb"] + .card,
+[aria-label="breadcrumb"] + .card:hover,
+[aria-label="breadcrumb"] + .card:focus-within {
   transform: none !important;
   box-shadow: var(--na-shadow) !important;
 }
