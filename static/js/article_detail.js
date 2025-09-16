@@ -173,8 +173,13 @@
 document.addEventListener('DOMContentLoaded', function(){
   const btn = document.querySelector('[data-bs-target="#keyInsightsCollapse"]');
   const collapseEl = document.getElementById('keyInsightsCollapse');
+  const header = document.getElementById('keyInsightsHeader');
   if (!btn || !collapseEl) return;
-  const update = () => { btn.textContent = collapseEl.classList.contains('show') ? '▲' : '▼'; };
+  const update = () => {
+    const isOpen = collapseEl.classList.contains('show');
+    btn.textContent = isOpen ? '▲' : '▼';
+    if (header) header.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  };
   update();
   collapseEl.addEventListener('shown.bs.collapse', update);
   collapseEl.addEventListener('hidden.bs.collapse', update);

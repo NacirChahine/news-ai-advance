@@ -74,8 +74,8 @@
 
                         {% if article.insights.all|length > 0 %}
                         {% if not request.user.is_authenticated or request.user.preferences.enable_key_insights %}
-                        <div class="card mb-4">
-                            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <div class="card key-insights-card mb-4">
+                            <div id="keyInsightsHeader" class="card-header bg-light d-flex justify-content-between align-items-center" role="button" aria-controls="keyInsightsCollapse" aria-expanded="true">
                                 <h5 class="mb-0"><i class="fas fa-lightbulb me-2"></i>Key Insights</h5>
                                 <button class="btn btn-sm btn-outline-secondary" type="button"
                                         data-bs-toggle="collapse" data-bs-target="#keyInsightsCollapse"

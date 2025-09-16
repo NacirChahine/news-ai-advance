@@ -493,6 +493,17 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 /* Visual cue for clickable area (functionality wired in JS) */
 .card-header:has([data-bs-target="#keyInsightsCollapse"]) { cursor: pointer; }
 
+
+/* Key Insights: remove underline, reduce elevation, make header fully clickable */
+.key-insights-card .card-header { border-bottom: 0 !important; text-decoration: none !important; box-shadow: none !important; }
+#keyInsightsHeader { cursor: pointer; }
+.key-insights-card .card-header h5, .key-insights-card .card-header .btn { text-decoration: none !important; }
+/* Keep nested Key Insights card flat (no lift) to match article content */
+.key-insights-card, .key-insights-card:hover, .key-insights-card:focus-within { transform: none !important; }
+/* Light theme: minimize shadow and avoid layering issues */
+[data-theme="light"] .card-body > .key-insights-card { box-shadow: none !important; z-index: auto !important; border-radius: 22px; transform: none !important;}
+[data-theme="light"] .key-insights-card .card-header { box-shadow: none !important; z-index: auto !important; border-radius: 22px;}
+
 /* Source detail: ensure the top info card does not lift on hover */
 [aria-label="breadcrumb"] + .card,
 [aria-label="breadcrumb"] + .card:hover,
