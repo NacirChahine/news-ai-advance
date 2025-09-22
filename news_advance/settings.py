@@ -33,7 +33,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-!9*c%v_!spk=eium3^1+n4unuw
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['samollteran.pythonanywhere.com']
 
 
 # Application definition
@@ -86,10 +86,11 @@ WSGI_APPLICATION = 'news_advance.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+sqlite_name = os.getenv("SQLITE_DB_NAME", "news_advance_db_local.sqlite3" if DEBUG else "news_advance_db_prod.sqlite3")
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / sqlite_name,
     }
 }
 
