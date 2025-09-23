@@ -14,7 +14,7 @@ import random  # Used as a fallback if AI analysis fails
 
 import re
 
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, TextIO
 
 # Import advanced AI analysis functions
 from news_analysis.utils import (
@@ -57,7 +57,7 @@ def _build_fuzzy_pattern(excerpt: str) -> Optional[re.Pattern]:
         return None
 
 
-def _robust_find_positions(content: str, excerpt: str, ai_start: Optional[int], ai_end: Optional[int]) -> Tuple[Optional[int], Optional[int], str]:
+def _robust_find_positions(content: str, excerpt: str, ai_start: Optional[int], ai_end: Optional[int]) -> tuple[int, int, str] | None:
     """Return best-effort (start, end, strategy) positions of excerpt in content.
     Strategy indicates which method succeeded: 'ai', 'exact', 'ci', 'fuzzy', or 'none'.
     """
@@ -89,6 +89,7 @@ def _robust_find_positions(content: str, excerpt: str, ai_start: Optional[int], 
         m = rx.search(text)
         if m:
             return m.start(), m.end(), "fuzzy"
+    return None
 
 
 # Normalize raw article text to approximate DOM-visible text produced by Django's `linebreaks` filter
@@ -121,6 +122,20 @@ logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
     help = 'Analyzes news articles for bias and sentiment'
+
+    def __init__(
+            self,
+            stdout: TextIO | None = None,
+            stderr: TextIO | None = None,
+            no_color: bool = False,
+            force_color: bool = False,
+    ):
+        super().__init__(stdout, stderr, no_color, force_color)
+        self.nlp = None
+        self.sentiment_analyzer = None
+        self.use_ai = None
+        self.model = None
+        self.force = None
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -341,7 +356,7 @@ class Command(BaseCommand):
                 self.stdout.write("  Using random bias generation (demo mode)...")
 
                 # Extract some basic features
-                doc = self.nlp(article.content[:5000])  # Limit text length for performance
+                self.nlp(article.content[:5000])
 
                 # For demo purposes, generate a random bias score between -1 and 1
                 # -1 = far left, 0 = center, 1 = far right
@@ -578,11 +593,11 @@ class Command(BaseCommand):
                 if x in ('[', ']', '[[', ']]', '[...', '...]', '...', '""', "''"):
                     return ''
                 # Drop lines that are just brackets/commas
-                if re.fullmatch(r"^[\[\]\{\}\,]+$", x):
+                if re.fullmatch(r"^[\[\]{},]+$", x):
                     return ''
                 # Remove markdown/number bullets ("- ", "* ", "1. ", "1) ", "1: ")
                 x = re.sub(r"^[-*\u2022]\s+", '', x)
-                x = re.sub(r"^\d+\s*[\.)\]:-]\s*", '', x)
+                x = re.sub(r"^\d+\s*[.)\]:-]\s*", '', x)
                 # Trim wrapping quotes
                 x = x.strip().strip('"').strip("'")
                 # Remove trailing commas/semicolons leftover from JSON-ish lists
@@ -655,7 +670,7 @@ class Command(BaseCommand):
                     self.stderr.write(f"  Verification error: {ve}")
                     result = {"rating": "unverified", "confidence": 0.0, "explanation": "Verification failed", "sources": ""}
 
-                fc = FactCheckResult.objects.create(
+                FactCheckResult.objects.create(
                     article=article,
                     claim=claim,
                     rating=result.get('rating', 'unverified'),
