@@ -32,10 +32,14 @@ def profile(request):
     """User profile view"""
     user = request.user
     profile = user.profile
+    # Comment statistics
+    from news_aggregator.models import Comment
+    comment_count = Comment.objects.filter(user=user).count()
 
     context = {
         'user': user,
         'profile': profile,
+        'comment_count': comment_count,
     }
     return render(request, 'accounts/profile.html', context)
 

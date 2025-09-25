@@ -39,23 +39,33 @@
   }
 
   function renderCommentItem(c, isReply=false){
-    const item = el(`<div class="list-group-item ${isReply? 'ms-4' : ''}" data-comment-id="${c.id}">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <strong>${escapeHtml(c.user.username)}</strong>
+    const isAuthed = section.dataset.authenticated === 'true';
+    const depthClass = `depth-${Math.min(c.depth || 0, 6)}`;
+    const item = el(`<div class="list-group-item comment-item ${depthClass} ${isReply? 'ms-3' : ''}" data-comment-id="${c.id}">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div class="flex-grow-1 min-w-0">
+          <strong class="text-truncate">${escapeHtml(c.user.username)}</strong>
           <small class="text-muted ms-2">${new Date(c.created_at).toLocaleString()}</small>
           ${c.is_edited ? '<small class="text-muted ms-1">(edited)</small>' : ''}
-          <div class="mt-1">${escapeHtml(c.content)}</div>
+          <div class="mt-1 comment-content">${escapeHtml(c.content)}</div>
         </div>
-        <div class="ms-2 btn-group btn-group-sm">
-          ${c.can_moderate ? `<button class="btn btn-outline-danger js-mod" data-remove="${!c.is_removed_moderator}">${c.is_removed_moderator? 'Restore' : 'Remove'}</button>` : ''}
-          ${c.can_edit ? '<button class="btn btn-outline-secondary js-edit">Edit</button>' : ''}
-          ${c.can_delete ? '<button class="btn btn-outline-secondary js-del">Delete</button>' : ''}
-          <button class="btn btn-outline-secondary js-reply">Reply</button>
-          <button class="btn btn-outline-secondary js-flag">Flag</button>
+        <div class="d-flex align-items-center gap-2">
+          ${isAuthed ? `<button class="btn btn-sm btn-outline-primary js-reply"><i class="fa-regular fa-comment-dots me-1"></i>Reply</button>` : ''}
+          <div class="btn-group">
+            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Comment actions">
+              <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+              ${c.can_edit ? '<li><a class="dropdown-item js-edit" href="#">Edit</a></li>' : ''}
+              ${c.can_delete ? '<li><a class="dropdown-item text-danger js-del" href="#">Delete</a></li>' : ''}
+              ${isAuthed ? '<li><a class="dropdown-item js-flag" href="#">Flag</a></li>' : ''}
+              ${c.can_moderate ? `<li><a class="dropdown-item js-mod" href="#" data-remove="${!c.is_removed_moderator}">${c.is_removed_moderator? 'Restore (Moderator)' : 'Remove (Moderator)'}</a></li>` : ''}
+            </ul>
+          </div>
         </div>
       </div>
       <div class="replies mt-2"></div>
+      ${c.replies && c.replies.length ? `<button class="btn btn-sm btn-link text-decoration-none px-0 js-toggle-replies" aria-expanded="true">Hide replies (${c.replies.length})</button>` : ''}
     </div>`);
 
     // Render nested replies if included
@@ -73,16 +83,28 @@
     if(replyBtn){ replyBtn.addEventListener('click', () => showReplyForm(item, c)); }
 
     const editBtn = item.querySelector('.js-edit');
-    if(editBtn){ editBtn.addEventListener('click', () => showEditForm(item, c)); }
+    if(editBtn){ editBtn.addEventListener('click', (e)=>{ e.preventDefault(); showEditForm(item, c); }); }
 
     const delBtn = item.querySelector('.js-del');
-    if(delBtn){ delBtn.addEventListener('click', () => deleteComment(c.id)); }
+    if(delBtn){ delBtn.addEventListener('click', (e)=>{ e.preventDefault(); deleteComment(c.id); }); }
 
     const flagBtn = item.querySelector('.js-flag');
-    if(flagBtn){ flagBtn.addEventListener('click', () => flagComment(c.id)); }
+    if(flagBtn){ flagBtn.addEventListener('click', (e)=>{ e.preventDefault(); flagComment(c.id); }); }
 
     const modBtn = item.querySelector('.js-mod');
-    if(modBtn){ modBtn.addEventListener('click', () => moderateComment(c.id, modBtn.dataset.remove==='true')); }
+    if(modBtn){ modBtn.addEventListener('click', (e)=>{ e.preventDefault(); moderateComment(c.id, modBtn.dataset.remove==='true'); }); }
+
+    const toggleBtn = item.querySelector('.js-toggle-replies');
+    if(toggleBtn){
+      const holder = item.querySelector('.replies');
+      toggleBtn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
+        holder.style.display = expanded ? 'none' : '';
+        toggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        toggleBtn.textContent = (expanded ? 'Show replies' : 'Hide replies') + (holder.children.length ? ` (${holder.children.length})` : '');
+      });
+    }
   }
 
   function renderPagination(data, page){
@@ -128,7 +150,7 @@
   }
 
   function showEditForm(item, c){
-    const contentDiv = item.querySelector('.mt-1');
+    const contentDiv = item.querySelector('.comment-content');
     const original = contentDiv.textContent;
     contentDiv.innerHTML = '';
     const form = el(`<form class="edit-form"><div class="mb-2"><textarea class="form-control" rows="3" maxlength="5000">${escapeHtml(original)}</textarea></div><button class="btn btn-primary btn-sm">Save</button> <button class="btn btn-link btn-sm">Cancel</button></form>`);

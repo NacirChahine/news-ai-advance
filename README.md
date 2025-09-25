@@ -298,13 +298,23 @@ This will create:
 
 ### Comments
 - Threaded comments on article pages (login required to post)
-- Actions: reply (nested), edit/delete own comments, report/flag, staff moderation (remove/restore)
+- Authentication-based UI:
+  - Visitors (not logged in): see comment content and metadata only (author, timestamp, edited); no Reply/Flag buttons
+  - Logged-in users: primary Reply button + a three-dots dropdown for secondary actions
+- Actions (permissions-aware):
+  - Reply (nested threading)
+  - Edit/Delete own comments
+  - Flag/report (logged-in users)
+  - Staff moderation remove/restore (staff only), also in dropdown
+- UI/UX enhancements:
+  - Dropdown-based actions (Bootstrap) with Reply as the primary visible action
+  - Reddit-style threading visuals: colored left borders and indentation per depth, mobile wrapping safeguards, and per-thread collapse/expand toggle
 - Rate limiting to prevent spam (per-user, short rolling window)
-- Preferences: Accounts → Preferences
-  - Show comments (show_comments)
+- Preferences: Accounts → Preferences (auto-saves via AJAX)
+  - Show comments (show_comments) controls visibility on article pages
   - Email me on replies (notify_on_comment_reply) [optional]
 - Profile: My Comments at `/accounts/comments/` with pagination and quick stats (total, last 30 days)
-- Frontend: Bootstrap UI via `templates/news_aggregator/partials/comments.html` and behavior in `static/js/comments.js`
+- Frontend: `templates/news_aggregator/partials/comments.html`, `static/js/comments.js`, and styles in `static/css/site.css`
 
 
 ### Misinformation Alerts (Manual Management and Email Notifications)

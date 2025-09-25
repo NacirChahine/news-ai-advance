@@ -93,8 +93,12 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - Rate limiting: cache-backed throttle per user+endpoint with short TTL; returns HTTP 429 JSON when exceeded
 - Serialization: lightweight dicts (id, content, user, created_at ISO, flags, permissions, replies[])
 - Templates: `templates/news_aggregator/partials/comments.html` (included in `article_detail.html` when allowed)
-- Frontend: `static/js/comments.js` handles fetch/list, pagination, create, reply, edit, delete, flag, moderation
-- Profile integration: `accounts.views.comment_history` at `/accounts/comments/` with pagination and stats (total, last 30 days)
+- Frontend (static/js/comments.js + static/css/site.css):
+  - Authentication-based controls: when `data-authenticated="false"`, Reply and Flag are hidden; only content/metadata render. Logged-in users see a primary Reply button plus a Bootstrap dropdown (three dots) for secondary actions.
+  - Actions in dropdown: Edit/Delete (owner only), Flag (logged-in), Moderate remove/restore (staff only); availability driven by server-provided permissions in the serialized payload.
+  - Threading UX: Reddit-style visual nesting with depth-specific left borders and indentation; mobile-safe wrapping; per-thread collapse/expand toggle to manage long subthreads.
+  - Accessibility: all interactive elements have aria-labels; dropdowns use Bootstrap’s JS; keyboard focus states preserved.
+- Profile integration: `accounts.views.comment_history` at `/accounts/comments/` with pagination and stats (total, last 30 days). Profile page shows total comment count and a "View My Comments" button.
 
 ## Processing Pipelines
 

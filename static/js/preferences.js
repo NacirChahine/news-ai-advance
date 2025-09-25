@@ -55,6 +55,9 @@ document.addEventListener('DOMContentLoaded', function() {
   bindToggle('enable_sentiment_analysis', 'enable_sentiment_analysis');
   bindToggle('enable_key_insights', 'enable_key_insights');
   bindToggle('enable_summary_display', 'enable_summary_display');
+  // Comments preferences
+  bindToggle('show_comments', 'show_comments');
+  bindToggle('notify_on_comment_reply', 'notify_on_comment_reply');
 
   const misinformationAlertsCheckbox = document.getElementById('receive_misinformation_alerts');
   if (misinformationAlertsCheckbox && !misinformationAlertsCheckbox.disabled) {

@@ -90,17 +90,17 @@ class CommentApiTests(TestCase):
     def test_create_requires_login(self):
         url = reverse('news_aggregator:comments_list_create', args=[self.article.id])
         resp = self.client.post(url, {'content': 'hello'})
-        # Django login_required redirects to login
-        self.assertEqual(resp.status_code, 302)
-        self.assertIn('/accounts/login/', resp['Location'])
+        # JSON API returns 401 for unauthenticated
+        self.assertEqual(resp.status_code, 401)
+        self.assertIn('error', resp.json())
 
     def test_create_and_list_comment(self):
         self.client.login(username='u2', password='x')
         list_url = reverse('news_aggregator:comments_list_create', args=[self.article.id])
         resp = self.client.post(list_url, {'content': 'First!'})
-        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.status_code, 201)
         data = resp.json()
-        self.assertTrue(data.get('success'))
+        self.assertIn('comment', data)
         self.assertEqual(data['comment']['content'], 'First!')
 
         # Now list

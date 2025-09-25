@@ -86,7 +86,7 @@
                             <p class="text-muted">Saved Articles</p>
                         </div>
                         <div class="col-md-4">
-                            <div class="display-4">0</div>
+                            <div class="display-4">{{ comment_count }}</div>
                             <p class="text-muted">Comments</p>
                         </div>
                         <div class="col-md-4">
@@ -95,9 +95,12 @@
                         </div>
                     </div>
                 </div>
-                <div class="card-footer">
+                <div class="card-footer d-flex flex-wrap gap-2">
                     <a href="{% url 'accounts:saved_articles' %}" class="btn btn-outline-info">
                         <i class="fas fa-bookmark me-2"></i>View Saved Articles
+                    </a>
+                    <a href="{% url 'accounts:comment_history' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-comments me-2"></i>View My Comments
                     </a>
                 </div>
             </div>
