@@ -295,6 +295,18 @@ This will create:
   - **Automated Detection**: *In development* - Real-time misinformation detection pipeline
 
 
+
+### Comments
+- Threaded comments on article pages (login required to post)
+- Actions: reply (nested), edit/delete own comments, report/flag, staff moderation (remove/restore)
+- Rate limiting to prevent spam (per-user, short rolling window)
+- Preferences: Accounts → Preferences
+  - Show comments (show_comments)
+  - Email me on replies (notify_on_comment_reply) [optional]
+- Profile: My Comments at `/accounts/comments/` with pagination and quick stats (total, last 30 days)
+- Frontend: Bootstrap UI via `templates/news_aggregator/partials/comments.html` and behavior in `static/js/comments.js`
+
+
 ### Misinformation Alerts (Manual Management and Email Notifications)
 
 - Manage alerts in Django Admin: Admin > News Analysis > Misinformation alerts

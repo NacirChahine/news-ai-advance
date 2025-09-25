@@ -55,6 +55,10 @@ def preferences(request):
         preferences.enable_key_insights = 'enable_key_insights' in request.POST
         preferences.enable_summary_display = 'enable_summary_display' in request.POST
 
+        # Comments settings
+        preferences.show_comments = 'show_comments' in request.POST
+        preferences.notify_on_comment_reply = 'notify_on_comment_reply' in request.POST
+
         # Only update political_filter if it's not disabled
         if 'political_filter' in request.POST:
             preferences.political_filter = request.POST.get('political_filter', 'balanced')
@@ -94,6 +98,10 @@ def auto_save_preferences(request):
             preferences.enable_key_insights = field_value
         elif field_name == 'enable_summary_display':
             preferences.enable_summary_display = field_value
+        elif field_name == 'show_comments':
+            preferences.show_comments = field_value
+        elif field_name == 'notify_on_comment_reply':
+            preferences.notify_on_comment_reply = field_value
         elif field_name == 'political_filter':
             preferences.political_filter = field_value
         elif field_name == 'receive_misinformation_alerts':
@@ -399,3 +407,29 @@ def reset_password(request, user_id, otp_id):
         form = SetPasswordForm(user)
 
     return render(request, 'accounts/reset_password.html', {'form': form})
+
+
+@login_required
+def comment_history(request):
+    """List the user's comment history with pagination and simple stats."""
+    from news_aggregator.models import Comment
+    qs = (Comment.objects.filter(user=request.user)
+          .select_related('article')
+          .order_by('-created_at'))
+    from django.core.paginator import Paginator
+    paginator = Paginator(qs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Stats
+    from django.utils import timezone
+    from datetime import timedelta
+    total_count = qs.count()
+    last_30 = qs.filter(created_at__gte=timezone.now() - timedelta(days=30)).count()
+
+    context = {
+        'page_obj': page_obj,
+        'total_count': total_count,
+        'last_30_days': last_30,
+    }
+    return render(request, 'accounts/comment_history.html', context)

@@ -70,6 +70,32 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - Fields: user, political_filter, show_politics, show_business, show_tech, show_health, show_entertainment, email_newsletter, enable_logical_fallacy_analysis, etc.
   - Relationships: one-to-one with User
 
+
+### Commenting System
+
+- Models (news_aggregator.models):
+  - Comment(article, user, parent=null, content, created_at, updated_at, depth, is_edited, edited_at, is_deleted_by_user, is_removed_moderator)
+  - CommentFlag(comment, user, reason, created_at)
+- Indexes: (article, created_at), (parent, created_at), (user, created_at)
+- Depth enforcement: computed on save, max depth (e.g., 5) to avoid infinite nesting
+- Soft deletion: user deletes => content replaced with "[deleted]"; moderator removes => hidden to non-staff
+- Preferences (accounts.models.UserPreferences):
+  - show_comments: bool (controls visibility on article pages)
+  - notify_on_comment_reply: bool (optional email notifications)
+- Views (news_aggregator.views):
+  - comments_list_create(article_id): GET paginated top-level comments (+ eager replies), POST create
+  - comment_reply(comment_id): POST create child
+  - comment_edit(comment_id): POST owner-only edit
+  - comment_delete(comment_id): POST owner-only soft-delete
+  - comment_moderate(comment_id): POST staff remove/restore
+  - comment_flag(comment_id): POST user flag/report
+- URLs (news_aggregator/urls.py): named routes under namespace `news_aggregator`
+- Rate limiting: cache-backed throttle per user+endpoint with short TTL; returns HTTP 429 JSON when exceeded
+- Serialization: lightweight dicts (id, content, user, created_at ISO, flags, permissions, replies[])
+- Templates: `templates/news_aggregator/partials/comments.html` (included in `article_detail.html` when allowed)
+- Frontend: `static/js/comments.js` handles fetch/list, pagination, create, reply, edit, delete, flag, moderation
+- Profile integration: `accounts.views.comment_history` at `/accounts/comments/` with pagination and stats (total, last 30 days)
+
 ## Processing Pipelines
 
 ### News Collection Pipeline

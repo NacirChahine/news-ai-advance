@@ -46,6 +46,10 @@ class UserPreferences(models.Model):
     enable_key_insights = models.BooleanField(default=True)
     enable_summary_display = models.BooleanField(default=True)
 
+    # Comments feature preferences
+    show_comments = models.BooleanField(default=True)
+    notify_on_comment_reply = models.BooleanField(default=False)
+
     receive_misinformation_alerts = models.BooleanField(default=True)
     daily_digest_email = models.BooleanField(default=False)
 

@@ -79,6 +79,12 @@
                                     <div class="form-text">Toggle visibility of the Key Insights panel on article pages</div>
                                 </div>
 
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="show_comments" name="show_comments" {% if preferences.show_comments %}checked{% endif %}>
+                                    <label class="form-check-label" for="show_comments">Show Comments</label>
+                                    <div class="form-text">Toggle visibility of the comments section on article pages</div>
+                                </div>
+
                             </div>
                         </div>
 
@@ -96,6 +102,21 @@
                                     {% else %}
                                         <input class="form-check-input" type="checkbox" id="receive_misinformation_alerts" name="receive_misinformation_alerts" disabled>
                                         <label class="form-check-label text-muted" for="receive_misinformation_alerts">Misinformation Alerts</label>
+                                        <div class="form-text text-warning">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>
+                                            Email address required. <a href="{% url 'accounts:edit_profile' %}" class="text-decoration-none">Add email address</a> to enable notifications.
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="form-check form-switch mb-3">
+                                    {% if user.email %}
+                                        <input class="form-check-input" type="checkbox" id="notify_on_comment_reply" name="notify_on_comment_reply" {% if preferences.notify_on_comment_reply %}checked{% endif %}>
+                                        <label class="form-check-label" for="notify_on_comment_reply">Notify me when someone replies to my comment</label>
+                                        <div class="form-text">Email notifications are sent for direct replies to your comments</div>
+                                    {% else %}
+                                        <input class="form-check-input" type="checkbox" id="notify_on_comment_reply" name="notify_on_comment_reply" disabled>
+                                        <label class="form-check-label text-muted" for="notify_on_comment_reply">Notify me on comment replies</label>
                                         <div class="form-text text-warning">
                                             <i class="fas fa-exclamation-triangle me-1"></i>
                                             Email address required. <a href="{% url 'accounts:edit_profile' %}" class="text-decoration-none">Add email address</a> to enable notifications.

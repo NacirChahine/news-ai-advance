@@ -415,6 +415,11 @@
                     </a>
                 </div>
             </div>
+
+            {% if not request.user.is_authenticated or request.user.preferences.show_comments %}
+            {% include 'news_aggregator/partials/comments.html' %}
+            {% endif %}
+
         </div>
     </div>
 </div>

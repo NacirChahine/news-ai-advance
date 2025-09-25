@@ -20,4 +20,7 @@ urlpatterns = [
     path('forgot-password/', views.forgot_password, name='forgot_password'),
     path('verify-otp/<int:user_id>/', views.verify_otp, name='verify_otp'),
     path('reset-password/<int:user_id>/<int:otp_id>/', views.reset_password, name='reset_password'),
+
+    # Comments
+    path('comments/', views.comment_history, name='comment_history'),
 ]
