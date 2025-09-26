@@ -298,17 +298,22 @@ This will create:
 
 ### Comments
 - Threaded comments on article pages (login required to post)
+- Placement/layout:
+  - Full-width comments section positioned below the main article and sidebar (under the article content)
+  - Responsive threading layout; uses available horizontal space on wide screens
 - Authentication-based UI:
-  - Visitors (not logged in): see comment content and metadata only (author, timestamp, edited); no Reply/Flag buttons
-  - Logged-in users: primary Reply button + a three-dots dropdown for secondary actions
+  - Visitors (not logged in): see comment content and metadata only (author, time-ago, edited); no Reply/Flag/action buttons
+  - Logged-in users: actions appear below the comment text
+    - Wide screens: separate buttons (Reply, Edit, Delete, Flag, Moderate when permitted)
+    - Narrow screens or deep threads: actions collapse into a Bootstrap dropdown automatically
 - Actions (permissions-aware):
   - Reply (nested threading)
   - Edit/Delete own comments
   - Flag/report (logged-in users)
-  - Staff moderation remove/restore (staff only), also in dropdown
+  - Staff moderation remove/restore (staff only)
 - UI/UX enhancements:
-  - Dropdown-based actions (Bootstrap) with Reply as the primary visible action
-  - Reddit-style threading visuals: colored left borders and indentation per depth, mobile wrapping safeguards, and per-thread collapse/expand toggle
+  - Reddit-style threading: colored left borders and indentation per depth, capped indentation to prevent overflow, per-thread collapse/expand toggle
+  - Relative timestamps (e.g., "2 hours ago") with tooltip showing absolute time
 - Rate limiting to prevent spam (per-user, short rolling window)
 - Preferences: Accounts → Preferences (auto-saves via AJAX)
   - Show comments (show_comments) controls visibility on article pages

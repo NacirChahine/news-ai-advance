@@ -14,7 +14,30 @@
     return div.firstChild;
   }
 
+  function timeAgo(date){
+    const now = new Date();
+    let diff = Math.floor((now - date) / 1000); // seconds
+    if (isNaN(diff)) return '';
+    // Future dates or negative -> treat as just now
+
+    if (diff < 0) diff = 0;
+    const mins = Math.floor(diff/60);
+    const hours = Math.floor(diff/3600);
+    const days = Math.floor(diff/86400);
+    const weeks = Math.floor(diff/604800);
+    if (diff < 60) return 'just now';
+    if (mins < 60) return `${mins} min${mins!==1?'s':''} ago`;
+    if (hours < 24) return `${hours} hour${hours!==1?'s':''} ago`;
+    if (days < 7) return `${days} day${days!==1?'s':''} ago`;
+    if (weeks < 5) return `${weeks} week${weeks!==1?'s':''} ago`;
+    // Fallback to absolute for very old
+    return date.toLocaleDateString();
+  }
+
   const section = document.getElementById('comments-section');
+  let currentPage = 1;
+  let resizeTimer = null;
+
   if(!section){ return; }
   const articleId = section.dataset.articleId;
   const listUrl = section.dataset.listUrl;
@@ -22,6 +45,7 @@
   const pagerEl = document.getElementById('comments-pagination');
 
   async function fetchComments(page=1){
+    currentPage = page;
     listEl.innerHTML = '<div class="text-center text-muted py-3">Loading comments…</div>';
     try{
       const res = await fetch(`${listUrl}?page=${page}`);
@@ -41,28 +65,41 @@
   function renderCommentItem(c, isReply=false){
     const isAuthed = section.dataset.authenticated === 'true';
     const depthClass = `depth-${Math.min(c.depth || 0, 6)}`;
+    const created = new Date(c.created_at);
+    const rel = timeAgo(created);
+    const abs = created.toLocaleString();
+    const useDropdown = isAuthed && (window.matchMedia('(max-width: 768px)').matches || (c.depth || 0) >= 3);
+
+    const actionsDropdown = `
+      <div class="btn-group">
+        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More comment actions">
+          <i class="fa-solid fa-ellipsis-vertical"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+          ${c.can_edit ? '<li><a class="dropdown-item js-edit" href="#">Edit</a></li>' : ''}
+          ${c.can_delete ? '<li><a class="dropdown-item text-danger js-del" href="#">Delete</a></li>' : ''}
+          <li><a class="dropdown-item js-flag" href="#">Flag</a></li>
+          ${c.can_moderate ? `<li><a class="dropdown-item js-mod" href="#" data-remove="${!c.is_removed_moderator}">${c.is_removed_moderator? 'Restore (Moderator)' : 'Remove (Moderator)'}</a></li>` : ''}
+        </ul>
+      </div>`;
+
+    const actionsInline = `
+      <div class="comment-actions mt-2">
+        <button class="btn btn-sm btn-outline-primary js-reply" aria-label="Reply to comment"><i class="fa-regular fa-comment-dots me-1"></i>Reply</button>
+        ${c.can_edit ? '<button class="btn btn-sm btn-outline-secondary js-edit">Edit</button>' : ''}
+        ${c.can_delete ? '<button class="btn btn-sm btn-outline-danger js-del">Delete</button>' : ''}
+        <button class="btn btn-sm btn-outline-secondary js-flag">Flag</button>
+        ${c.can_moderate ? `<button class="btn btn-sm btn-outline-warning js-mod" data-remove="${!c.is_removed_moderator}">${c.is_removed_moderator? 'Restore (Moderator)' : 'Remove (Moderator)'}</button>` : ''}
+      </div>`;
+
     const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}">
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div class="flex-grow-1 min-w-0">
           <strong class="text-truncate">${escapeHtml(c.user.username)}</strong>
-          <small class="text-muted ms-2">${new Date(c.created_at).toLocaleString()}</small>
+          <small class="text-muted ms-2" title="${abs}">${rel}</small>
           ${c.is_edited ? '<small class="text-muted ms-1">(edited)</small>' : ''}
           <div class="mt-1 comment-content">${escapeHtml(c.content)}</div>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          ${isAuthed ? `<button class="btn btn-sm btn-outline-primary js-reply" aria-label="Reply to comment"><i class="fa-regular fa-comment-dots me-1"></i>Reply</button>` : ''}
-          ${isAuthed ? `
-          <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More comment actions">
-              <i class="fa-solid fa-ellipsis-vertical"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-              ${c.can_edit ? '<li><a class="dropdown-item js-edit" href="#">Edit</a></li>' : ''}
-              ${c.can_delete ? '<li><a class="dropdown-item text-danger js-del" href="#">Delete</a></li>' : ''}
-              <li><a class="dropdown-item js-flag" href="#">Flag</a></li>
-              ${c.can_moderate ? `<li><a class="dropdown-item js-mod" href="#" data-remove="${!c.is_removed_moderator}">${c.is_removed_moderator? 'Restore (Moderator)' : 'Remove (Moderator)'}</a></li>` : ''}
-            </ul>
-          </div>` : ''}
+          ${isAuthed ? (useDropdown ? actionsDropdown : actionsInline) : ''}
         </div>
       </div>
       <div class="replies mt-2"></div>
@@ -81,6 +118,7 @@
 
   function bindItemActions(item, c){
     const replyBtn = item.querySelector('.js-reply');
+
     if(replyBtn){ replyBtn.addEventListener('click', () => showReplyForm(item, c)); }
 
     const editBtn = item.querySelector('.js-edit');
@@ -236,6 +274,12 @@
       }catch(err){ alert('Failed to post'); }
     });
   }
+
+  // Re-render actions layout on resize (debounced)
+  window.addEventListener('resize', ()=>{
+    if(resizeTimer){ clearTimeout(resizeTimer); }
+    resizeTimer = setTimeout(()=>{ fetchComments(currentPage); }, 250);
+  });
 
   fetchComments(1);
 })();

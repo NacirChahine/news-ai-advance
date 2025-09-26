@@ -94,10 +94,15 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - Serialization: lightweight dicts (id, content, user, created_at ISO, flags, permissions, replies[])
 - Templates: `templates/news_aggregator/partials/comments.html` (included in `article_detail.html` when allowed)
 - Frontend (static/js/comments.js + static/css/site.css):
-  - Authentication-based controls: when `data-authenticated="false"`, Reply and Flag are hidden; only content/metadata render. Logged-in users see a primary Reply button plus a Bootstrap dropdown (three dots) for secondary actions.
-  - Actions in dropdown: Edit/Delete (owner only), Flag (logged-in), Moderate remove/restore (staff only); availability driven by server-provided permissions in the serialized payload.
-  - Threading UX: Reddit-style visual nesting with depth-specific left borders and indentation; mobile-safe wrapping; per-thread collapse/expand toggle to manage long subthreads.
-  - Accessibility: all interactive elements have aria-labels; dropdowns use Bootstrap’s JS; keyboard focus states preserved.
+  - Authentication-based controls: when `data-authenticated="false"`, no action buttons render. Logged-in users see actions below the comment text.
+    - Wide screens: separate buttons (Reply, Edit, Delete, Flag, Moderate when permitted)
+    - Narrow screens or deep threads (depth ≥ 3): actions collapse into a Bootstrap dropdown automatically
+  - Threading UX: Reddit-style visual nesting with depth-specific left borders and indentation; capped indentation to avoid overflow; per-thread collapse/expand toggle.
+  - Time display: relative "time ago" labels with a tooltip (`title`) containing the absolute timestamp.
+  - Accessibility: interactive elements have aria-labels; dropdowns use Bootstrap JS; keyboard focus states preserved.
+- Placement: comments section is included full-width below the article and sidebar in `article_detail.html`.
+- Backend serialization/loading:
+  - `comments_list_create` now recursively prefetches and serializes replies up to depth 6 so all existing levels load on refresh.
 - Profile integration: `accounts.views.comment_history` at `/accounts/comments/` with pagination and stats (total, last 30 days). Profile page shows total comment count and a "View My Comments" button.
 
 ## Processing Pipelines

@@ -521,7 +521,7 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 
 /* === Comments threading and responsiveness === */
 /* Indentation mapping per depth (limit max-left to avoid overflow on small screens) */
-#comments-list .comment-item.depth-1 { margin-left: 0rem; }
+#comments-list .comment-item.depth-1 { margin-left: 0; }
 #comments-list .comment-item.depth-2 { margin-left: .75rem; }
 #comments-list .comment-item.depth-3 { margin-left: 1.25rem; }
 #comments-list .comment-item.depth-4 { margin-left: 1.75rem; }
@@ -532,8 +532,11 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 #comments-list .list-group-item {
   border-top: 0 !important;
   border-right: 0 !important;
-  border-bottom: 1px solid rgba(var(--na-surface-rgb), var(--na-border-alpha)) !important;
+  border-bottom: 0 !important;
 }
+/* Comment actions layout below content */
+#comments-list .comment-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
+#comments-list .comment-actions .btn { flex: 0 0 auto; }
 
 #comments-list .comment-item { border-left: 3px solid rgba(148,163,184,.35); padding-left: .75rem; }
 #comments-list .comment-item .comment-content { overflow-wrap: anywhere; word-break: break-word; }

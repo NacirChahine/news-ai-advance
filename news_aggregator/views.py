@@ -256,25 +256,37 @@ def comments_list_create(request, article_id):
         paginator = Paginator(top_level, 10)
         page_obj = paginator.get_page(page_number)
 
-        # Optionally, prefetch replies (one level) for convenience
-        comment_ids = [c.id for c in page_obj.object_list]
-        replies = (Comment.objects.filter(parent_id__in=comment_ids, is_approved=True)
-                   .select_related('user').order_by('created_at', 'id'))
-        replies_by_parent = {}
-        for r in replies:
-            replies_by_parent.setdefault(r.parent_id, []).append(_serialize_comment(request, r))
+        # Recursively prefetch replies up to a max depth so that all existing levels load on refresh
+        top_ids = [c.id for c in page_obj.object_list]
+        children_by_parent = {}
+        current_ids = top_ids[:]
+        # Load up to 5 additional depths (total depths visible up to 6)
+        for _ in range(5):
+            if not current_ids:
+                break
+            qs = (Comment.objects
+                  .filter(parent_id__in=current_ids, is_approved=True)
+                  .select_related('user').order_by('created_at', 'id'))
+            next_ids = []
+            for r in qs:
+                children_by_parent.setdefault(r.parent_id, []).append(r)
+                next_ids.append(r.id)
+            current_ids = next_ids
+
+        def serialize_with_children(node):
+            data = _serialize_comment(request, node)
+            children = children_by_parent.get(node.id, [])
+            if children:
+                data['replies'] = [serialize_with_children(ch) for ch in children]
+            else:
+                data['replies'] = []
+            return data
 
         data = {
             'count': paginator.count,
             'num_pages': paginator.num_pages,
             'page': page_obj.number,
-            'results': [
-                {
-                    **_serialize_comment(request, c),
-                    'replies': replies_by_parent.get(c.id, []),
-                }
-                for c in page_obj.object_list
-            ],
+            'results': [serialize_with_children(c) for c in page_obj.object_list],
         }
         return JsonResponse(data)
 
