@@ -41,7 +41,7 @@
   function renderCommentItem(c, isReply=false){
     const isAuthed = section.dataset.authenticated === 'true';
     const depthClass = `depth-${Math.min(c.depth || 0, 6)}`;
-    const item = el(`<div class="list-group-item comment-item ${depthClass} ${isReply? 'ms-3' : ''}" data-comment-id="${c.id}">
+    const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}">
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div class="flex-grow-1 min-w-0">
           <strong class="text-truncate">${escapeHtml(c.user.username)}</strong>
@@ -50,18 +50,19 @@
           <div class="mt-1 comment-content">${escapeHtml(c.content)}</div>
         </div>
         <div class="d-flex align-items-center gap-2">
-          ${isAuthed ? `<button class="btn btn-sm btn-outline-primary js-reply"><i class="fa-regular fa-comment-dots me-1"></i>Reply</button>` : ''}
+          ${isAuthed ? `<button class="btn btn-sm btn-outline-primary js-reply" aria-label="Reply to comment"><i class="fa-regular fa-comment-dots me-1"></i>Reply</button>` : ''}
+          ${isAuthed ? `
           <div class="btn-group">
-            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Comment actions">
+            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More comment actions">
               <i class="fa-solid fa-ellipsis-vertical"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
               ${c.can_edit ? '<li><a class="dropdown-item js-edit" href="#">Edit</a></li>' : ''}
               ${c.can_delete ? '<li><a class="dropdown-item text-danger js-del" href="#">Delete</a></li>' : ''}
-              ${isAuthed ? '<li><a class="dropdown-item js-flag" href="#">Flag</a></li>' : ''}
+              <li><a class="dropdown-item js-flag" href="#">Flag</a></li>
               ${c.can_moderate ? `<li><a class="dropdown-item js-mod" href="#" data-remove="${!c.is_removed_moderator}">${c.is_removed_moderator? 'Restore (Moderator)' : 'Remove (Moderator)'}</a></li>` : ''}
             </ul>
-          </div>
+          </div>` : ''}
         </div>
       </div>
       <div class="replies mt-2"></div>

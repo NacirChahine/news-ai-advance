@@ -520,6 +520,21 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 
 
 /* === Comments threading and responsiveness === */
+/* Indentation mapping per depth (limit max-left to avoid overflow on small screens) */
+#comments-list .comment-item.depth-1 { margin-left: 0rem; }
+#comments-list .comment-item.depth-2 { margin-left: .75rem; }
+#comments-list .comment-item.depth-3 { margin-left: 1.25rem; }
+#comments-list .comment-item.depth-4 { margin-left: 1.75rem; }
+#comments-list .comment-item.depth-5 { margin-left: 2.25rem; }
+#comments-list .comment-item.depth-6 { margin-left: 2.5rem; }
+
+/* Cleaner visual: remove top/right borders on each comment item, keep subtle bottom */
+#comments-list .list-group-item {
+  border-top: 0 !important;
+  border-right: 0 !important;
+  border-bottom: 1px solid rgba(var(--na-surface-rgb), var(--na-border-alpha)) !important;
+}
+
 #comments-list .comment-item { border-left: 3px solid rgba(148,163,184,.35); padding-left: .75rem; }
 #comments-list .comment-item .comment-content { overflow-wrap: anywhere; word-break: break-word; }
 #comments-list .comment-item.depth-1 { border-color: #60a5fa; }
@@ -532,3 +547,36 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
   #comments-list .d-flex.flex-wrap { gap: .5rem 1rem; }
   #comments-list .btn-group, #comments-list .btn { flex-shrink: 0; }
 }
+
+/* === Comment actions & pagination: dark theme fixes === */
+#comments-list .btn-outline-secondary.dropdown-toggle {
+  color: var(--na-text);
+  border-color: rgba(var(--na-surface-rgb), var(--na-border-alpha));
+  background: rgba(255,255,255,.06);
+}
+#comments-list .btn-outline-secondary.dropdown-toggle:hover {
+  background: rgba(255,255,255,.12);
+}
+[data-theme="light"] #comments-list .btn-outline-secondary.dropdown-toggle {
+  background: rgba(0,0,0,.02);
+  border-color: rgba(0,0,0,.15);
+}
+[data-theme="light"] #comments-list .btn-outline-secondary.dropdown-toggle:hover {
+  background: rgba(0,0,0,.06);
+}
+
+/* Pagination (dark/light theme accessible states) */
+.pagination .page-item.active .page-link {
+  color: #fff;
+}
+.pagination .page-item.disabled .page-link {
+  background: rgba(255,255,255,.04);
+  border-color: rgba(var(--na-surface-rgb), var(--na-border-alpha));
+  color: rgba(230,237,247,.45);
+}
+[data-theme="light"] .pagination .page-item.disabled .page-link {
+  background: rgba(0,0,0,.02);
+  border-color: rgba(0,0,0,.10);
+  color: rgba(2,12,27,.45);
+}
+
