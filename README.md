@@ -217,6 +217,10 @@ Behavior:
 - Comments and replies are ordered by score (then by recency)
 - The UI highlights your current vote and updates instantly via AJAX
 
+
+Rate limiting:
+- Voting is rate-limited to one action per user every 2 seconds. Exceeding the limit returns HTTP 429 with a JSON error message ("Too many requests. Please slow down.").
+
 API endpoints:
 - Create/Update vote
   - POST /news/comments/<comment_id>/vote/ with `value=1` or `value=-1`

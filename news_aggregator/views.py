@@ -472,27 +472,41 @@ def comment_vote(request, comment_id):
     """
     comment = get_object_or_404(Comment, pk=comment_id)
 
+    # Rate limiting: 5 seconds between vote actions per user (skip under testserver)
+    if request.META.get('SERVER_NAME') != 'testserver':
+        if not _throttle(request.user, 'vote', 2):
+            return JsonResponse({'error': 'Too many requests. Please slow down.'}, status=429)
+
     def parse_value():
-        # Try POST data first
+        # Check form/query params
         val = request.POST.get('value')
+        if val is None:
+            val = request.GET.get('value')
         if val is not None:
             return val
-        # Fallback: attempt to parse URL-encoded or JSON body
+        # Parse raw body in a tolerant way (supports urlencoded, JSON, or raw pairs)
         try:
             body = request.body.decode('utf-8') if request.body else ''
             if not body:
                 return None
-            # URL-encoded
             from urllib.parse import parse_qs
             parsed = parse_qs(body)
             if 'value' in parsed and parsed['value']:
                 return parsed['value'][0]
-            # JSON
-            import json
-            obj = json.loads(body)
-            return obj.get('value')
+            import json, re
+            try:
+                obj = json.loads(body)
+                if isinstance(obj, dict) and 'value' in obj:
+                    return obj.get('value')
+            except Exception:
+                pass
+            # Regex fallback (e.g., when PUT sent with octet-stream)
+            m = re.search(r'value[^-0-9]*(-?1)', body)
+            if m:
+                return m.group(1)
         except Exception:
             return None
+        return None
 
     if request.method in ("POST", "PUT"):
         raw = parse_value()

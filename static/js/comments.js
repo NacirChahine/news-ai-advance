@@ -56,9 +56,20 @@
     }
   }
 
+  function initTooltips(scope){
+    try{
+      if(window.bootstrap && bootstrap.Tooltip){
+        const els = (scope || document).querySelectorAll('[data-bs-toggle="tooltip"]');
+        els.forEach(el => new bootstrap.Tooltip(el));
+      }
+    }catch(e){ /* no-op if bootstrap not available */ }
+  }
+
   function renderComments(data, page){
     listEl.innerHTML = '';
     data.results.forEach(c => listEl.appendChild(renderCommentItem(c)));
+    // Initialize tooltips for newly inserted elements
+    initTooltips(listEl);
     renderPagination(data, page);
   }
 
@@ -71,11 +82,12 @@
 
     const upActive = c.user_vote === 1 ? 'active' : '';
     const downActive = c.user_vote === -1 ? 'active' : '';
+    const scoreText = (typeof c.score === 'number') ? c.score : 0;
     const voteBlock = `
       <div class="vote-block d-flex flex-column align-items-center me-2">
-        ${isAuthed ? `<button class="btn btn-sm btn-link text-decoration-none js-upvote ${upActive}" aria-label="Upvote"><i class=\"fa-solid fa-caret-up\"></i></button>` : '<span class="opacity-50"><i class="fa-solid fa-caret-up"></i></span>'}
-        <div class="comment-score" aria-live="polite">${(typeof c.score === 'number') ? c.score : 0}</div>
-        ${isAuthed ? `<button class="btn btn-sm btn-link text-decoration-none js-downvote ${downActive}" aria-label="Downvote"><i class=\"fa-solid fa-caret-down\"></i></button>` : '<span class="opacity-50"><i class="fa-solid fa-caret-down"></i></span>'}
+        ${isAuthed ? `<button class="btn btn-sm btn-link text-decoration-none js-upvote ${upActive}" aria-label="Upvote" data-bs-toggle="tooltip" data-bs-placement="right" title="Upvote this comment"><i class=\"fa-solid fa-caret-up\"></i></button>` : '<span class="opacity-50" data-bs-toggle="tooltip" data-bs-placement="right" title="Log in to vote"><i class="fa-solid fa-caret-up"></i></span>'}
+        <div class="comment-score" aria-live="polite" data-bs-toggle="tooltip" data-bs-placement="right" title="Score: ${scoreText} (upvotes minus downvotes)">${scoreText}</div>
+        ${isAuthed ? `<button class="btn btn-sm btn-link text-decoration-none js-downvote ${downActive}" aria-label="Downvote" data-bs-toggle="tooltip" data-bs-placement="right" title="Downvote this comment"><i class=\"fa-solid fa-caret-down\"></i></button>` : '<span class="opacity-50" data-bs-toggle="tooltip" data-bs-placement="right" title="Log in to vote"><i class="fa-solid fa-caret-down"></i></span>'}
       </div>`;
 
     const actionsDropdown = `
@@ -260,9 +272,15 @@
       const data = await res.json();
       if(!res.ok){ throw new Error(data.error || 'Vote failed'); }
       // Update UI
-      if(scoreEl){ scoreEl.textContent = (typeof data.score === 'number') ? data.score : 0; }
+      if(scoreEl){
+        const s = (typeof data.score === 'number') ? data.score : 0;
+        scoreEl.textContent = s;
+        scoreEl.setAttribute('title', `Score: ${s} (upvotes minus downvotes)`);
+      }
       if(upBtn){ upBtn.classList.toggle('active', data.user_vote === 1); }
       if(downBtn){ downBtn.classList.toggle('active', data.user_vote === -1); }
+      // Re-init tooltips in case attributes changed
+      initTooltips(item);
     }catch(err){
       alert(err.message || 'Vote failed');
     }
@@ -313,6 +331,7 @@
         if(res.ok){
           document.getElementById('comment-content').value='';
           listEl.prepend(renderCommentItem(data.comment));
+          initTooltips(listEl);
         } else { alert(data.error || 'Failed to post'); }
       }catch(err){ alert('Failed to post'); }
     });

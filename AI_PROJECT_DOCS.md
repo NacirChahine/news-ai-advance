@@ -92,14 +92,14 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - comment_flag(comment_id): POST user flag/report
   - comment_vote(comment_id): POST/PUT/DELETE create/update/remove user vote; returns { success, score, user_vote }
 - URLs (news_aggregator/urls.py): named routes under namespace `news_aggregator`
-- Rate limiting: cache-backed throttle per user+endpoint with short TTL; returns HTTP 429 JSON when exceeded
+- Rate limiting: cache-backed throttle per user+endpoint; voting limited to one action per 2 seconds. Excess attempts return HTTP 429 with JSON `{ "error": "Too many requests. Please slow down." }`.
 - Serialization: lightweight dicts (id, content, user, created_at ISO, flags, permissions, score, user_vote, replies[])
 - Templates: `templates/news_aggregator/partials/comments.html` (included in `article_detail.html` when allowed)
 - Frontend (static/js/comments.js + static/css/site.css):
   - Authentication-based controls: when `data-authenticated="false"`, no action buttons render. Logged-in users see actions below the comment text.
     - Reply is a standalone button
     - All other actions (Edit, Delete, Flag, Moderate when permitted) live in a dropdown across all screen sizes and depths
-  - Voting UI: vertical up/down caret buttons with live score; active selection is colored; unauthenticated users see disabled icons.
+  - Voting UI: vertical up/down caret buttons with live score; active selection is colored (upvote green, downvote red); unauthenticated users see disabled icons with tooltips.
   - Threading UX: Reddit-style visual nesting with depth-specific left borders and indentation; capped indentation to avoid overflow; per-thread collapse/expand toggle.
   - Time display: relative "time ago" labels with a tooltip (`title`) containing the absolute timestamp.
   - Accessibility: interactive elements have aria-labels; dropdowns use Bootstrap JS; keyboard focus states preserved.
