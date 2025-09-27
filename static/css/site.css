@@ -571,6 +571,19 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 #comments-list .comment-item.collapsed .comment-actions { display: none; }
 #comments-list .js-toggle-replies { display: none !important; }
 
+/* Collapsed comment minimal view: show only username + timestamp */
+#comments-list .comment-item.collapsed .vote-block { display: none !important; }
+#comments-list .comment-item.collapsed .comment-content { display: none !important; }
+#comments-list .comment-item.collapsed .comment-actions { display: none !important; }
+#comments-list .comment-item.collapsed .btn-group { display: none !important; }
+#comments-list .comment-item.collapsed .replies { display: none !important; }
+#comments-list .comment-item.collapsed .d-flex { align-items: center; }
+#comments-list .comment-item.collapsed { padding-top: .25rem; padding-bottom: .25rem; }
+
+/* Hide circular +/- indicator for cleaner design (kept for backward compat if present) */
+#comments-list .comment-item .thread-collapse-indicator { display: none !important; }
+
+
 #comments-list .btn-group .dropdown-menu { min-width: 12rem; }
 @media (max-width: 576px){
   #comments-list .d-flex.flex-wrap { gap: .5rem 1rem; }

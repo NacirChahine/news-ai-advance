@@ -114,8 +114,7 @@
       </div>`;
 
     const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}">
-      <div class="thread-left-gutter" role="button" aria-label="Toggle thread" tabindex="0"></div>
-      <button type="button" class="thread-collapse-indicator" aria-expanded="true" aria-label="Collapse thread" title="Collapse thread">−</button>
+      <div class="thread-left-gutter" role="button" aria-label="Toggle thread" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="left" title="Click to collapse/expand thread"></div>
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         ${voteBlock}
         <div class="flex-grow-1 min-w-0">
@@ -191,14 +190,6 @@
 
   function setupThreadControls(item){
     const gutter = item.querySelector('.thread-left-gutter');
-    const indicator = item.querySelector('.thread-collapse-indicator');
-    const borderColor = getComputedStyle(item).borderLeftColor;
-    if(indicator){
-      indicator.style.borderColor = borderColor;
-      indicator.style.color = borderColor;
-      indicator.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); toggleThread(item); });
-      indicator.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleThread(item); } });
-    }
     if(gutter){
       gutter.addEventListener('click', (e)=>{ e.preventDefault(); toggleThread(item); });
       gutter.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleThread(item); } });
