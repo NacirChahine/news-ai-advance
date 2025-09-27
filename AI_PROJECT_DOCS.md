@@ -103,6 +103,8 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - Placement: comments section is included full-width below the article and sidebar in `article_detail.html`.
 - Backend serialization/loading:
   - `comments_list_create` now recursively prefetches and serializes replies up to depth 6 so all existing levels load on refresh.
+- Depth restriction: replies allowed up to MAX_DEPTH=5; UI hides Reply at depth 5 and server rejects replies when parent depth >= 5.
+
 - Profile integration: `accounts.views.comment_history` at `/accounts/comments/` with pagination and stats (total, last 30 days). Profile page shows total comment count and a "View My Comments" button.
 
 ## Processing Pipelines

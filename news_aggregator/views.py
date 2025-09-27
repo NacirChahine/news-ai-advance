@@ -332,6 +332,10 @@ def comment_reply(request, comment_id):
     if not _throttle(request.user, 'reply', 10):
         return JsonResponse({'error': 'Too many requests. Please slow down.'}, status=429)
 
+    # Enforce maximum nesting depth on the server as well
+    if parent.depth >= Comment.MAX_DEPTH:
+        return JsonResponse({'error': 'Maximum reply depth reached'}, status=400)
+
     content = (request.POST.get('content') or '').strip()
     if not content:
         return JsonResponse({'error': 'Content is required'}, status=400)

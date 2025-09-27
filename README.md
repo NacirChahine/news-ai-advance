@@ -314,6 +314,8 @@ This will create:
 - UI/UX enhancements:
   - Reddit-style threading: colored left borders and indentation per depth, capped indentation to prevent overflow, per-thread collapse/expand toggle
   - Relative timestamps (e.g., "2 hours ago") with tooltip showing absolute time
+  - Maximum depth: replies allowed up to depth 5; Reply button hidden at max depth (server also enforces this)
+
 - Rate limiting to prevent spam (per-user, short rolling window)
 - Preferences: Accounts → Preferences (auto-saves via AJAX)
   - Show comments (show_comments) controls visibility on article pages

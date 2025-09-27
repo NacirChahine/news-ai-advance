@@ -74,7 +74,7 @@
         <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More comment actions">
           <i class="fa-solid fa-ellipsis-vertical"></i>
         </button>
-        <ul class="dropdown-menu dropdown-menu-end">
+        <ul class="dropdown-menu">
           ${c.can_edit ? '<li><a class="dropdown-item js-edit" href="#">Edit</a></li>' : ''}
           ${c.can_delete ? '<li><a class="dropdown-item text-danger js-del" href="#">Delete</a></li>' : ''}
           <li><a class="dropdown-item js-flag" href="#">Flag</a></li>
@@ -89,7 +89,7 @@
           <small class="text-muted ms-2" title="${abs}">${rel}</small>
           ${c.is_edited ? '<small class="text-muted ms-1">(edited)</small>' : ''}
           <div class="mt-1 comment-content">${escapeHtml(c.content)}</div>
-          ${isAuthed ? `<div class="comment-actions mt-2"><button class="btn btn-sm btn-outline-primary js-reply" aria-label="Reply to comment"><i class=\"fa-regular fa-comment-dots me-1\"></i>Reply</button> ${actionsDropdown}</div>` : ''}
+          ${isAuthed ? `<div class="comment-actions mt-2">${(c.depth || 0) < 5 ? '<button class="btn btn-sm btn-outline-primary js-reply" aria-label="Reply to comment"><i class=\"fa-regular fa-comment-dots me-1\"></i>Reply</button>' : ''} ${actionsDropdown}</div>` : ''}
         </div>
       </div>
       <div class="replies mt-2"></div>
