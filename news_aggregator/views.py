@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, F
 from django.http import JsonResponse
 from .models import NewsArticle, NewsSource, UserSavedArticle
 
@@ -197,7 +197,7 @@ from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from django.core.cache import cache
 from django.contrib.auth.decorators import user_passes_test
-from .models import Comment, CommentFlag
+from .models import Comment, CommentFlag, CommentVote
 
 MAX_COMMENT_LENGTH = 5000
 
@@ -210,6 +210,21 @@ def _serialize_comment(request, c: Comment):
         content = "[deleted]"
     elif c.is_removed_moderator:
         content = "[removed by moderator]"
+
+    # Determine current user's vote if available
+    user_vote = 0
+    if request.user.is_authenticated:
+        mapping = getattr(request, '_comment_user_votes', None)
+        if mapping is not None:
+            user_vote = mapping.get(c.id, 0)
+        else:
+            # Fallback single lookup to avoid missing state in non-list endpoints
+            try:
+                from .models import CommentVote
+                v = CommentVote.objects.filter(user=request.user, comment_id=c.id).only('value').first()
+                user_vote = v.value if v else 0
+            except Exception:
+                user_vote = 0
 
     return {
         'id': c.id,
@@ -224,6 +239,8 @@ def _serialize_comment(request, c: Comment):
         'is_removed_moderator': c.is_removed_moderator,
         'is_deleted_by_user': c.is_deleted_by_user,
         'is_approved': c.is_approved,
+        'score': getattr(c, 'cached_score', 0),
+        'user_vote': user_vote,
         'depth': c.depth,
         'can_edit': is_owner and not c.is_removed_moderator,
         'can_delete': is_owner,
@@ -252,7 +269,7 @@ def comments_list_create(request, article_id):
         top_level = (Comment.objects
                      .filter(article=article, parent__isnull=True, is_approved=True)
                      .select_related('user')
-                     .order_by('created_at', 'id'))
+                     .order_by('-cached_score', '-created_at', '-id'))
         paginator = Paginator(top_level, 10)
         page_obj = paginator.get_page(page_number)
 
@@ -266,12 +283,22 @@ def comments_list_create(request, article_id):
                 break
             qs = (Comment.objects
                   .filter(parent_id__in=current_ids, is_approved=True)
-                  .select_related('user').order_by('created_at', 'id'))
+                  .select_related('user').order_by('-cached_score', '-created_at', '-id'))
             next_ids = []
             for r in qs:
                 children_by_parent.setdefault(r.parent_id, []).append(r)
                 next_ids.append(r.id)
             current_ids = next_ids
+        # Build user vote map for these comments to include in serialization
+        if request.user.is_authenticated:
+            all_ids = set(top_ids)
+            for lst in children_by_parent.values():
+                for obj in lst:
+                    all_ids.add(obj.id)
+            user_votes = CommentVote.objects.filter(user=request.user, comment_id__in=list(all_ids))
+            request._comment_user_votes = {v.comment_id: v.value for v in user_votes}
+        else:
+            request._comment_user_votes = {}
 
         def serialize_with_children(node):
             data = _serialize_comment(request, node)
@@ -313,9 +340,17 @@ def comment_replies(request, comment_id):
     page_number = request.GET.get('page')
     qs = (Comment.objects.filter(parent=parent, is_approved=True)
           .select_related('user')
-          .order_by('created_at', 'id'))
+          .order_by('-cached_score', '-created_at', '-id'))
     paginator = Paginator(qs, 10)
     page_obj = paginator.get_page(page_number)
+    # Include user vote mapping for these replies
+    if request.user.is_authenticated:
+        ids = list(page_obj.object_list.values_list('id', flat=True))
+        user_votes = CommentVote.objects.filter(user=request.user, comment_id__in=ids)
+        request._comment_user_votes = {v.comment_id: v.value for v in user_votes}
+    else:
+        request._comment_user_votes = {}
+
     data = {
         'count': paginator.count,
         'num_pages': paginator.num_pages,
@@ -425,3 +460,81 @@ def comment_flag(request, comment_id):
         obj.note = note
         obj.save(update_fields=['reason', 'note'])
     return JsonResponse({'success': True})
+
+
+
+@require_http_methods(["POST", "PUT", "DELETE"])
+@login_required
+def comment_vote(request, comment_id):
+    """Create/update/delete a user's vote on a comment.
+    POST/PUT: expects 'value' in {-1, 1}. DELETE: removes existing vote.
+    Returns JSON: { success, score, user_vote }
+    """
+    comment = get_object_or_404(Comment, pk=comment_id)
+
+    def parse_value():
+        # Try POST data first
+        val = request.POST.get('value')
+        if val is not None:
+            return val
+        # Fallback: attempt to parse URL-encoded or JSON body
+        try:
+            body = request.body.decode('utf-8') if request.body else ''
+            if not body:
+                return None
+            # URL-encoded
+            from urllib.parse import parse_qs
+            parsed = parse_qs(body)
+            if 'value' in parsed and parsed['value']:
+                return parsed['value'][0]
+            # JSON
+            import json
+            obj = json.loads(body)
+            return obj.get('value')
+        except Exception:
+            return None
+
+    if request.method in ("POST", "PUT"):
+        raw = parse_value()
+        try:
+            v = int(raw)
+        except (TypeError, ValueError):
+            return JsonResponse({'error': 'value must be -1 or 1'}, status=400)
+        if v not in (-1, 1):
+            return JsonResponse({'error': 'value must be -1 or 1'}, status=400)
+        new_val = 1 if v > 0 else -1
+
+        vote, created = CommentVote.objects.get_or_create(
+            comment=comment, user=request.user, defaults={'value': new_val}
+        )
+        delta = 0
+        if created:
+            delta = new_val
+            current_user_vote = new_val
+        else:
+            if vote.value == new_val:
+                current_user_vote = vote.value
+            else:
+                delta = new_val - vote.value
+                vote.value = new_val
+                vote.save(update_fields=['value', 'updated_at'])
+                current_user_vote = new_val
+
+        if delta:
+            Comment.objects.filter(pk=comment.id).update(cached_score=F('cached_score') + delta)
+        comment.refresh_from_db(fields=['cached_score'])
+        return JsonResponse({'success': True, 'score': comment.cached_score, 'user_vote': current_user_vote})
+
+    # DELETE -> remove existing vote if any
+    try:
+        vote = CommentVote.objects.get(comment=comment, user=request.user)
+    except CommentVote.DoesNotExist:
+        # Nothing to delete; return current score
+        return JsonResponse({'success': True, 'score': comment.cached_score, 'user_vote': 0})
+
+    delta = -vote.value
+    vote.delete()
+    if delta:
+        Comment.objects.filter(pk=comment.id).update(cached_score=F('cached_score') + delta)
+    comment.refresh_from_db(fields=['cached_score'])
+    return JsonResponse({'success': True, 'score': comment.cached_score, 'user_vote': 0})

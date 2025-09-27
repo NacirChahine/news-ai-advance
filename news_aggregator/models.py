@@ -87,11 +87,16 @@ class Comment(models.Model):
     is_deleted_by_user = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=True)
 
+
+    # Voting cache: net upvotes - downvotes (denormalized)
+    cached_score = models.IntegerField(default=0)
+
     class Meta:
         ordering = ['created_at', 'id']
         indexes = [
             models.Index(fields=['article', 'created_at']),
             models.Index(fields=['parent', 'created_at']),
+            models.Index(fields=['cached_score']),
         ]
 
     def __str__(self):
@@ -132,3 +137,35 @@ class CommentFlag(models.Model):
 
     def __str__(self):
         return f"Flag by {self.user.username} on Comment #{self.comment_id} ({self.reason})"
+
+
+class CommentVote(models.Model):
+    """User vote on a comment: value is -1 (down) or +1 (up)."""
+    UPVOTE = 1
+    DOWNVOTE = -1
+    VALUE_CHOICES = [
+        (UPVOTE, 'upvote'),
+        (DOWNVOTE, 'downvote'),
+    ]
+
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='votes')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comment_votes')
+    value = models.SmallIntegerField(choices=VALUE_CHOICES)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('comment', 'user')
+        indexes = [
+            models.Index(fields=['comment']),
+            models.Index(fields=['user']),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(value__in=[-1, 1]),
+                name='comment_vote_value_valid'
+            )
+        ]
+
+    def __str__(self):
+        return f"Vote({self.value}) by {self.user.username} on Comment #{self.comment_id}"

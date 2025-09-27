@@ -198,6 +198,49 @@ For testing with multiple articles at once:
 python manage.py generate_test_data --sources 5 --articles 10 --users 2
 ```
 
+
+## Comment Voting (Upvote/Downvote)
+
+Community voting helps surface the most valuable comments. Each user can upvote or downvote a comment, change their vote, or remove it.
+
+Setup/migration:
+
+- Run migrations to create `CommentVote` and add `cached_score` to comments:
+  ```bash
+  python manage.py migrate
+  ```
+
+Behavior:
+- One vote per user per comment (up or down)
+- Users can toggle the same vote to remove it
+- Comment score is cached on the comment (`cached_score = upvotes - downvotes`)
+- Comments and replies are ordered by score (then by recency)
+- The UI highlights your current vote and updates instantly via AJAX
+
+API endpoints:
+- Create/Update vote
+  - POST /news/comments/<comment_id>/vote/ with `value=1` or `value=-1`
+  - PUT   /news/comments/<comment_id>/vote/ with `value=1` or `value=-1` (used when switching from the opposite vote)
+- Remove vote
+  - DELETE /news/comments/<comment_id>/vote/
+
+Examples:
+```bash
+# Upvote
+curl -X POST -b cookiejar -d "value=1" http://127.0.0.1:8000/news/comments/42/vote/
+
+# Switch to downvote
+curl -X PUT -b cookiejar -d "value=-1" http://127.0.0.1:8000/news/comments/42/vote/
+
+# Remove current vote
+curl -X DELETE -b cookiejar http://127.0.0.1:8000/news/comments/42/vote/
+```
+
+Frontend:
+- Vote buttons and score appear next to each comment
+- Active state is indicated by color; counts update without page reload
+- Requires the existing comments bundle `static/js/comments.js` and CSS in `static/css/site.css`
+
 This will create:
 - 5 news sources
 - 10 articles per source (50 total)

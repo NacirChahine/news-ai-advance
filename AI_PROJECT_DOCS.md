@@ -74,9 +74,10 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 ### Commenting System
 
 - Models (news_aggregator.models):
-  - Comment(article, user, parent=null, content, created_at, updated_at, depth, is_edited, edited_at, is_deleted_by_user, is_removed_moderator)
+  - Comment(article, user, parent=null, content, created_at, updated_at, depth, is_edited, edited_at, is_deleted_by_user, is_removed_moderator, cached_score=int)
   - CommentFlag(comment, user, reason, created_at)
-- Indexes: (article, created_at), (parent, created_at), (user, created_at)
+  - CommentVote(comment, user, value in {-1, 1}, created_at, updated_at)
+- Indexes: (article, created_at), (parent, created_at), (cached_score)
 - Depth enforcement: computed on save, max depth (e.g., 5) to avoid infinite nesting
 - Soft deletion: user deletes => content replaced with "[deleted]"; moderator removes => hidden to non-staff
 - Preferences (accounts.models.UserPreferences):
@@ -89,23 +90,50 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - comment_delete(comment_id): POST owner-only soft-delete
   - comment_moderate(comment_id): POST staff remove/restore
   - comment_flag(comment_id): POST user flag/report
+  - comment_vote(comment_id): POST/PUT/DELETE create/update/remove user vote; returns { success, score, user_vote }
 - URLs (news_aggregator/urls.py): named routes under namespace `news_aggregator`
 - Rate limiting: cache-backed throttle per user+endpoint with short TTL; returns HTTP 429 JSON when exceeded
-- Serialization: lightweight dicts (id, content, user, created_at ISO, flags, permissions, replies[])
+- Serialization: lightweight dicts (id, content, user, created_at ISO, flags, permissions, score, user_vote, replies[])
 - Templates: `templates/news_aggregator/partials/comments.html` (included in `article_detail.html` when allowed)
 - Frontend (static/js/comments.js + static/css/site.css):
   - Authentication-based controls: when `data-authenticated="false"`, no action buttons render. Logged-in users see actions below the comment text.
     - Reply is a standalone button
     - All other actions (Edit, Delete, Flag, Moderate when permitted) live in a dropdown across all screen sizes and depths
+  - Voting UI: vertical up/down caret buttons with live score; active selection is colored; unauthenticated users see disabled icons.
   - Threading UX: Reddit-style visual nesting with depth-specific left borders and indentation; capped indentation to avoid overflow; per-thread collapse/expand toggle.
   - Time display: relative "time ago" labels with a tooltip (`title`) containing the absolute timestamp.
   - Accessibility: interactive elements have aria-labels; dropdowns use Bootstrap JS; keyboard focus states preserved.
 - Placement: comments section is included full-width below the article and sidebar in `article_detail.html`.
 - Backend serialization/loading:
-  - `comments_list_create` now recursively prefetches and serializes replies up to depth 6 so all existing levels load on refresh.
+  - `comments_list_create` recursively prefetches and serializes replies up to depth 6 and includes current-user vote mapping for all loaded comments.
+  - Replies endpoint (`comment_replies`) includes user vote mapping for the page of replies returned.
 - Depth restriction: replies allowed up to MAX_DEPTH=5; UI hides Reply at depth 5 and server rejects replies when parent depth >= 5.
 
 - Profile integration: `accounts.views.comment_history` at `/accounts/comments/` with pagination and stats (total, last 30 days). Profile page shows total comment count and a "View My Comments" button.
+
+#### Voting Logic Details
+- Data integrity:
+  - Unique constraint on (comment, user) in `CommentVote`
+  - Check constraint restricts `value` to -1 or 1
+- Cached score:
+  - `Comment.cached_score` stores net score; updated atomically via `F('cached_score') + delta` during vote changes
+  - Scenarios:
+    - New vote (+1/-1): delta = value
+    - Change vote (e.g., -1 -> +1): delta = new - old (e.g., +2)
+    - Remove vote: delta = -old (e.g., +1 if removing -1)
+- Ordering:
+  - Top-level and replies are ordered by `-cached_score, -created_at, -id`
+- API behavior:
+  - POST or PUT with `value` in {-1, 1} creates or updates a vote; DELETE removes it
+  - Returns updated `score` and the caller's `user_vote` for immediate UI update
+- Frontend behavior:
+  - Buttons toggle active class based on `user_vote`; score updates via AJAX without reload
+  - Guests see disabled caret icons and are prompted to log in when attempting to vote
+
+#### Migration
+- Ensure migrations are applied:
+  - `python manage.py migrate`
+- Backfill is not required; existing comments start at score 0.
 
 ## Processing Pipelines
 

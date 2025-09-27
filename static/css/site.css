@@ -624,3 +624,10 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
   color: rgba(2,12,27,.45);
 }
 
+
+
+/* Voting UI */
+.vote-block .btn{ line-height:1; padding:0 .25rem; }
+.vote-block .comment-score{ font-weight:600; min-width:2ch; text-align:center; }
+.vote-block .js-upvote.active{ color:#0d6efd; }
+.vote-block .js-downvote.active{ color:#dc3545; }

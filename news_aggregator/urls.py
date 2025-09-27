@@ -17,4 +17,6 @@ urlpatterns = [
     path('comments/<int:comment_id>/flag/', views.comment_flag, name='comment_flag'),
     path('comments/<int:comment_id>/moderate/', views.comment_moderate, name='comment_moderate'),
     path('comments/<int:comment_id>/', views.comment_delete, name='comment_delete'),
+    path('comments/<int:comment_id>/vote/', views.comment_vote, name='comment_vote'),
+
 ]

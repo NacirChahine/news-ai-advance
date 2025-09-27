@@ -69,6 +69,15 @@
     const rel = timeAgo(created);
     const abs = created.toLocaleString();
 
+    const upActive = c.user_vote === 1 ? 'active' : '';
+    const downActive = c.user_vote === -1 ? 'active' : '';
+    const voteBlock = `
+      <div class="vote-block d-flex flex-column align-items-center me-2">
+        ${isAuthed ? `<button class="btn btn-sm btn-link text-decoration-none js-upvote ${upActive}" aria-label="Upvote"><i class=\"fa-solid fa-caret-up\"></i></button>` : '<span class="opacity-50"><i class="fa-solid fa-caret-up"></i></span>'}
+        <div class="comment-score" aria-live="polite">${(typeof c.score === 'number') ? c.score : 0}</div>
+        ${isAuthed ? `<button class="btn btn-sm btn-link text-decoration-none js-downvote ${downActive}" aria-label="Downvote"><i class=\"fa-solid fa-caret-down\"></i></button>` : '<span class="opacity-50"><i class="fa-solid fa-caret-down"></i></span>'}
+      </div>`;
+
     const actionsDropdown = `
       <div class="btn-group">
         <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" aria-label="More comment actions">
@@ -84,6 +93,7 @@
 
     const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}">
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        ${voteBlock}
         <div class="flex-grow-1 min-w-0">
           <strong class="text-truncate">${escapeHtml(c.user.username)}</strong>
           <small class="text-muted ms-2" title="${abs}">${rel}</small>
@@ -124,6 +134,11 @@
     if(modBtn){ modBtn.addEventListener('click', (e)=>{ e.preventDefault(); moderateComment(c.id, modBtn.dataset.remove==='true'); }); }
 
     const toggleBtn = item.querySelector('.js-toggle-replies');
+    const upBtn = item.querySelector('.js-upvote');
+    const downBtn = item.querySelector('.js-downvote');
+    if(upBtn){ upBtn.addEventListener('click', async (e)=>{ e.preventDefault(); await handleVote(c.id, 1, item); }); }
+    if(downBtn){ downBtn.addEventListener('click', async (e)=>{ e.preventDefault(); await handleVote(c.id, -1, item); }); }
+
     if(toggleBtn){
       const holder = item.querySelector('.replies');
       toggleBtn.addEventListener('click', (e)=>{
@@ -213,6 +228,44 @@
         if(item){ item.querySelector('.mt-1').textContent = data.comment.content; }
       } else { alert(data.error || 'Failed to delete'); }
     }catch(err){ alert('Failed to delete'); }
+  }
+
+  async function handleVote(commentId, value, item){
+    const isAuthed = section.dataset.authenticated === 'true';
+    if(!isAuthed){ alert('Please log in to vote.'); return; }
+    const upBtn = item.querySelector('.js-upvote');
+    const downBtn = item.querySelector('.js-downvote');
+    const scoreEl = item.querySelector('.comment-score');
+    const upActive = upBtn && upBtn.classList.contains('active');
+    const downActive = downBtn && downBtn.classList.contains('active');
+
+    let method = 'POST';
+    let body = undefined;
+    if(value === 1){
+      if(upActive){ method = 'DELETE'; }
+      else if(downActive){ method = 'PUT'; body = new URLSearchParams({ value: '1' }); }
+      else { method = 'POST'; body = new URLSearchParams({ value: '1' }); }
+    } else if(value === -1){
+      if(downActive){ method = 'DELETE'; }
+      else if(upActive){ method = 'PUT'; body = new URLSearchParams({ value: '-1' }); }
+      else { method = 'POST'; body = new URLSearchParams({ value: '-1' }); }
+    }
+
+    try{
+      const res = await fetch(`/news/comments/${commentId}/vote/`, {
+        method,
+        headers: { ...(body ? { 'Content-Type': 'application/x-www-form-urlencoded' } : {}), ...csrfHeader() },
+        body
+      });
+      const data = await res.json();
+      if(!res.ok){ throw new Error(data.error || 'Vote failed'); }
+      // Update UI
+      if(scoreEl){ scoreEl.textContent = (typeof data.score === 'number') ? data.score : 0; }
+      if(upBtn){ upBtn.classList.toggle('active', data.user_vote === 1); }
+      if(downBtn){ downBtn.classList.toggle('active', data.user_vote === -1); }
+    }catch(err){
+      alert(err.message || 'Vote failed');
+    }
   }
 
   async function moderateComment(id, remove){

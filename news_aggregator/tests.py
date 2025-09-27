@@ -153,3 +153,49 @@ class CommentModelTests(TestCase):
         self.assertEqual(resp2.status_code, 200)
         c.refresh_from_db()
         self.assertFalse(c.is_removed_moderator)
+
+
+
+class CommentVotingTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.source = NewsSource.objects.create(name='SV', url='https://sv.example')
+        self.article = NewsArticle.objects.create(title='TV', source=self.source, url='https://sv.example/tv', content='cv')
+        self.user = User.objects.create_user(username='uv', email='uv@example.com', password='x')
+        from news_aggregator.models import Comment
+        self.comment = Comment.objects.create(article=self.article, user=self.user, content='hello')
+
+    def test_vote_requires_login(self):
+        url = reverse('news_aggregator:comment_vote', args=[self.comment.id])
+        resp = self.client.post(url, {'value': 1})
+        self.assertEqual(resp.status_code, 302)  # redirected to login due to @login_required
+
+    def test_upvote_and_remove(self):
+        self.client.login(username='uv', password='x')
+        url = reverse('news_aggregator:comment_vote', args=[self.comment.id])
+        # Upvote
+        r1 = self.client.post(url, {'value': 1})
+        self.assertEqual(r1.status_code, 200)
+        data = r1.json()
+        self.assertEqual(data['user_vote'], 1)
+        self.comment.refresh_from_db()
+        self.assertEqual(self.comment.cached_score, 1)
+        # Remove via DELETE
+        r2 = self.client.delete(url)
+        self.assertEqual(r2.status_code, 200)
+        self.comment.refresh_from_db()
+        self.assertEqual(self.comment.cached_score, 0)
+
+    def test_switch_vote(self):
+        self.client.login(username='uv', password='x')
+        url = reverse('news_aggregator:comment_vote', args=[self.comment.id])
+        # Downvote first
+        r1 = self.client.post(url, {'value': -1})
+        self.assertEqual(r1.status_code, 200)
+        self.comment.refresh_from_db()
+        self.assertEqual(self.comment.cached_score, -1)
+        # Switch to upvote -> delta +2
+        r2 = self.client.put(url, {'value': 1})
+        self.assertEqual(r2.status_code, 200)
+        self.comment.refresh_from_db()
+        self.assertEqual(self.comment.cached_score, 1)
