@@ -95,8 +95,8 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - Templates: `templates/news_aggregator/partials/comments.html` (included in `article_detail.html` when allowed)
 - Frontend (static/js/comments.js + static/css/site.css):
   - Authentication-based controls: when `data-authenticated="false"`, no action buttons render. Logged-in users see actions below the comment text.
-    - Wide screens: separate buttons (Reply, Edit, Delete, Flag, Moderate when permitted)
-    - Narrow screens or deep threads (depth ≥ 3): actions collapse into a Bootstrap dropdown automatically
+    - Reply is a standalone button
+    - All other actions (Edit, Delete, Flag, Moderate when permitted) live in a dropdown across all screen sizes and depths
   - Threading UX: Reddit-style visual nesting with depth-specific left borders and indentation; capped indentation to avoid overflow; per-thread collapse/expand toggle.
   - Time display: relative "time ago" labels with a tooltip (`title`) containing the absolute timestamp.
   - Accessibility: interactive elements have aria-labels; dropdowns use Bootstrap JS; keyboard focus states preserved.

@@ -95,7 +95,7 @@ class Comment(models.Model):
         ]
 
     def __str__(self):
-        return f"Comment by {self.user.username} on {self.article.title}"
+        return f"Comment by {self.user.username} on {self.article.title[:15]}...: {self.content[:10]}..."
 
     def save(self, *args, **kwargs):
         # Compute depth from parent

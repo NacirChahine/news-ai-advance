@@ -68,7 +68,6 @@
     const created = new Date(c.created_at);
     const rel = timeAgo(created);
     const abs = created.toLocaleString();
-    const useDropdown = isAuthed && (window.matchMedia('(max-width: 768px)').matches || (c.depth || 0) >= 3);
 
     const actionsDropdown = `
       <div class="btn-group">
@@ -83,15 +82,6 @@
         </ul>
       </div>`;
 
-    const actionsInline = `
-      <div class="comment-actions mt-2">
-        <button class="btn btn-sm btn-outline-primary js-reply" aria-label="Reply to comment"><i class="fa-regular fa-comment-dots me-1"></i>Reply</button>
-        ${c.can_edit ? '<button class="btn btn-sm btn-outline-secondary js-edit">Edit</button>' : ''}
-        ${c.can_delete ? '<button class="btn btn-sm btn-outline-danger js-del">Delete</button>' : ''}
-        <button class="btn btn-sm btn-outline-secondary js-flag">Flag</button>
-        ${c.can_moderate ? `<button class="btn btn-sm btn-outline-warning js-mod" data-remove="${!c.is_removed_moderator}">${c.is_removed_moderator? 'Restore (Moderator)' : 'Remove (Moderator)'}</button>` : ''}
-      </div>`;
-
     const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}">
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         <div class="flex-grow-1 min-w-0">
@@ -99,7 +89,7 @@
           <small class="text-muted ms-2" title="${abs}">${rel}</small>
           ${c.is_edited ? '<small class="text-muted ms-1">(edited)</small>' : ''}
           <div class="mt-1 comment-content">${escapeHtml(c.content)}</div>
-          ${isAuthed ? (useDropdown ? actionsDropdown : actionsInline) : ''}
+          ${isAuthed ? `<div class="comment-actions mt-2"><button class="btn btn-sm btn-outline-primary js-reply" aria-label="Reply to comment"><i class=\"fa-regular fa-comment-dots me-1\"></i>Reply</button> ${actionsDropdown}</div>` : ''}
         </div>
       </div>
       <div class="replies mt-2"></div>

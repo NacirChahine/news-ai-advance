@@ -304,8 +304,8 @@ This will create:
 - Authentication-based UI:
   - Visitors (not logged in): see comment content and metadata only (author, time-ago, edited); no Reply/Flag/action buttons
   - Logged-in users: actions appear below the comment text
-    - Wide screens: separate buttons (Reply, Edit, Delete, Flag, Moderate when permitted)
-    - Narrow screens or deep threads: actions collapse into a Bootstrap dropdown automatically
+    - Reply is a standalone button
+    - All other actions (Edit, Delete, Flag, Moderate when permitted) are in a dropdown menu across all screen sizes
 - Actions (permissions-aware):
   - Reply (nested threading)
   - Edit/Delete own comments

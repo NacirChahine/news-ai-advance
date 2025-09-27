@@ -48,6 +48,9 @@ body {
   --na-text-muted: #a8b3cf;
   --na-primary: #3b82f6;       /* tailwind blue-500 */
   --na-primary-600: #2563eb;   /* blue-600 */
+  --bs-danger: #dc3545;
+  --na-surface: rgba(17,25,40, 85%); /* surface color for glass elements , var(--na-glass-alpha) */
+
 }
 
 /* Background and typography */
@@ -210,6 +213,8 @@ h3 { font-weight: 600; line-height: 1.3; font-size: clamp(1.25rem, 1vw + 1rem, 1
   --na-bg-2: #ffffff;
   --na-surface-rgb: 255, 255, 255;
   --na-glass-alpha: 0.55;      /* stronger translucency on light */
+  --na-surface: rgba(255,255,255, .85);
+
   --na-border-alpha: 0.30;     /* clearer edges on light */
   --na-text: #0b1220;
   --na-text-muted: #475569;
@@ -567,6 +572,42 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 [data-theme="light"] #comments-list .btn-outline-secondary.dropdown-toggle:hover {
   background: rgba(0,0,0,.06);
 }
+
+/* Comments dropdown menu theming */
+#comments-list .dropdown-menu {
+  background: var(--na-surface);
+  color: var(--na-text);
+  border: 1px solid rgba(var(--na-surface-rgb), var(--na-border-alpha));
+  box-shadow: 0 8px 24px rgba(0,0,0,.25);
+}
+#comments-list .dropdown-item {
+  color: var(--na-text);
+}
+#comments-list .dropdown-item:hover,
+#comments-list .dropdown-item:focus {
+  background: rgba(255,255,255,.08);
+  color: var(--na-text);
+}
+#comments-list .dropdown-item.active,
+#comments-list .dropdown-item:active {
+  background: rgba(255,255,255,.16);
+  color: var(--na-text);
+}
+
+/* Light theme overrides */
+[data-theme="light"] #comments-list .dropdown-menu {
+  background: #fff;
+  color: #212529;
+  border: 1px solid rgba(0,0,0,.15);
+  box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+}
+[data-theme="light"] #comments-list .dropdown-item { color: #212529; }
+[data-theme="light"] #comments-list .dropdown-item:hover,
+[data-theme="light"] #comments-list .dropdown-item:focus { background: rgba(0,0,0,.05); color: #212529; }
+[data-theme="light"] #comments-list .dropdown-item.active,
+[data-theme="light"] #comments-list .dropdown-item:active { background: rgba(0,0,0,.1); color: #212529; }
+
+
 
 /* Pagination (dark/light theme accessible states) */
 .pagination .page-item.active .page-link {
