@@ -176,11 +176,10 @@ To analyze articles for bias, sentiment, and generate summaries:
    python manage.py analyze_articles --model llama3
    python manage.py analyze_articles --model qwen2:1.5b
    python manage.py analyze_articles --model deepseek-r1:8b
-   ```
-
+   
    # To toggle AI usage (defaults to on)
    python manage.py analyze_articles --use-ai
-
+   ```
 
 3. **Verify the Results**
    - Return to the admin panel
@@ -224,7 +223,7 @@ Rate limiting:
 API endpoints:
 - Create/Update vote
   - POST /news/comments/<comment_id>/vote/ with `value=1` or `value=-1`
-  - PUT   /news/comments/<comment_id>/vote/ with `value=1` or `value=-1` (used when switching from the opposite vote)
+  - PUT /news/comments/<comment_id>/vote/ with `value=1` or `value=-1` (used when switching from the opposite vote)
 - Remove vote
   - DELETE /news/comments/<comment_id>/vote/
 
@@ -242,7 +241,7 @@ curl -X DELETE -b cookiejar http://127.0.0.1:8000/news/comments/42/vote/
 
 Frontend:
 - Vote buttons and score appear next to each comment
-- Active state is indicated by color; counts update without page reload
+- Color indicates active state; counts update without a page reload
 - Requires the existing comments bundle `static/js/comments.js` and CSS in `static/css/site.css`
 
 ## Features
@@ -257,7 +256,7 @@ Frontend:
 ### Sources Overview
 - Browse all sources at `/news/sources/` with reliability scores, political bias indicators (Left/Center/Right), and article counts.
 - Click a source to view its articles (`/news/source/<id>/`).
-- Also accessible from the navbar under Analysis Tools → Sources Overview.
+- Also, accessible from the navbar under Analysis Tools → Sources Overview.
 
 ### News Analysis
 - Political bias detection and visualization using advanced NLP techniques
@@ -339,7 +338,7 @@ Frontend:
 ### Comments
 - Threaded comments on article pages (login required to post)
 - Placement/layout:
-  - Full-width comments section positioned below the main article and sidebar (under the article content)
+  - The full-width comments section is positioned below the main article and sidebar (under the article content)
   - Responsive threading layout; uses available horizontal space on wide screens
 - Authentication-based UI:
   - Visitors (not logged in): see comment content and metadata only (author, time-ago, edited); no Reply/Flag/action buttons
@@ -456,7 +455,7 @@ The ML-based summarizer is automatically used when available. You can control it
 ```python
 # ML Models Configuration
 SUMMARIZATION_MODEL_DIR = BASE_DIR / 'news_analysis' / 'ml_models' / 'summarization' / 'trained_model'
-SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'  # Fallback if trained model not available
+SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'  # Fallback if the trained model not available
 USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 ```
 
@@ -471,7 +470,7 @@ The model is evaluated using ROUGE metrics:
 
 News Advance supports integration with [Ollama](https://ollama.ai/) for advanced AI analysis using local large language models (LLMs). This integration provides:
 
-- Enhanced article summarization (fallback when ML model not used)
+- Enhanced article summarization (fallback when ML model is not used)
 - More nuanced sentiment analysis
 - Advanced political bias detection
 - Key insights extraction from articles
@@ -547,7 +546,7 @@ USE_ML_SUMMARIZATION = True
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License — see the LICENSE file for details.
 
 ## Support
 
