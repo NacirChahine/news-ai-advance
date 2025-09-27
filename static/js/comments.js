@@ -60,7 +60,17 @@
     try{
       if(window.bootstrap && bootstrap.Tooltip){
         const els = (scope || document).querySelectorAll('[data-bs-toggle="tooltip"]');
-        els.forEach(el => new bootstrap.Tooltip(el));
+        els.forEach(el => {
+          const existing = bootstrap.Tooltip.getInstance(el);
+          if(!existing){
+            new bootstrap.Tooltip(el, { container: 'body' });
+          } else {
+            // Ensure updated title is used on next show without re-instantiating
+            const t = el.getAttribute('title');
+            if(t){ el.setAttribute('data-bs-original-title', t); }
+            existing.update();
+          }
+        });
       }
     }catch(e){ /* no-op if bootstrap not available */ }
   }
@@ -104,6 +114,8 @@
       </div>`;
 
     const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}">
+      <div class="thread-left-gutter" role="button" aria-label="Toggle thread" tabindex="0"></div>
+      <button type="button" class="thread-collapse-indicator" aria-expanded="true" aria-label="Collapse thread" title="Collapse thread">−</button>
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         ${voteBlock}
         <div class="flex-grow-1 min-w-0">
@@ -124,13 +136,13 @@
       c.replies.forEach(r => holder.appendChild(renderCommentItem(r, true)));
     }
 
+    setupThreadControls(item);
     bindItemActions(item, c);
     return item;
   }
 
   function bindItemActions(item, c){
     const replyBtn = item.querySelector('.js-reply');
-
     if(replyBtn){ replyBtn.addEventListener('click', () => showReplyForm(item, c)); }
 
     const editBtn = item.querySelector('.js-edit');
@@ -155,13 +167,44 @@
       const holder = item.querySelector('.replies');
       toggleBtn.addEventListener('click', (e)=>{
         e.preventDefault();
-        const expanded = toggleBtn.getAttribute('aria-expanded') === 'true';
-        holder.style.display = expanded ? 'none' : '';
-        toggleBtn.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-        toggleBtn.textContent = (expanded ? 'Show replies' : 'Hide replies') + (holder.children.length ? ` (${holder.children.length})` : '');
+        const collapsed = item.classList.contains('collapsed');
+        toggleThread(item, !collapsed);
+        toggleBtn.setAttribute('aria-expanded', (!item.classList.contains('collapsed')).toString());
+        toggleBtn.textContent = (item.classList.contains('collapsed') ? 'Show replies' : 'Hide replies') + (holder.children.length ? ` (${holder.children.length})` : '');
       });
     }
   }
+
+  function toggleThread(item, collapse){
+    const holder = item.querySelector('.replies');
+    const shouldCollapse = (typeof collapse === 'boolean') ? collapse : !item.classList.contains('collapsed');
+    item.classList.toggle('collapsed', shouldCollapse);
+    if(holder){ holder.style.display = shouldCollapse ? 'none' : ''; }
+    const indicator = item.querySelector('.thread-collapse-indicator');
+    if(indicator){
+      indicator.textContent = shouldCollapse ? '+' : '\u2212';
+      indicator.setAttribute('aria-expanded', (!shouldCollapse).toString());
+      indicator.setAttribute('aria-label', shouldCollapse ? 'Expand thread' : 'Collapse thread');
+      indicator.setAttribute('title', shouldCollapse ? 'Expand thread' : 'Collapse thread');
+    }
+  }
+
+  function setupThreadControls(item){
+    const gutter = item.querySelector('.thread-left-gutter');
+    const indicator = item.querySelector('.thread-collapse-indicator');
+    const borderColor = getComputedStyle(item).borderLeftColor;
+    if(indicator){
+      indicator.style.borderColor = borderColor;
+      indicator.style.color = borderColor;
+      indicator.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); toggleThread(item); });
+      indicator.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleThread(item); } });
+    }
+    if(gutter){
+      gutter.addEventListener('click', (e)=>{ e.preventDefault(); toggleThread(item); });
+      gutter.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggleThread(item); } });
+    }
+  }
+
 
   function renderPagination(data, page){
     pagerEl.innerHTML = '';
@@ -275,12 +318,17 @@
       if(scoreEl){
         const s = (typeof data.score === 'number') ? data.score : 0;
         scoreEl.textContent = s;
-        scoreEl.setAttribute('title', `Score: ${s} (upvotes minus downvotes)`);
+        const title = `Score: ${s} (upvotes minus downvotes)`;
+        scoreEl.setAttribute('title', title);
+        // Update Bootstrap tooltip content without re-instantiation
+        if(window.bootstrap && bootstrap.Tooltip){
+          const inst = bootstrap.Tooltip.getInstance(scoreEl);
+          if(inst){ scoreEl.setAttribute('data-bs-original-title', title); inst.update(); }
+        }
       }
       if(upBtn){ upBtn.classList.toggle('active', data.user_vote === 1); }
       if(downBtn){ downBtn.classList.toggle('active', data.user_vote === -1); }
-      // Re-init tooltips in case attributes changed
-      initTooltips(item);
+      // Do not re-initialize tooltips to avoid flicker
     }catch(err){
       alert(err.message || 'Vote failed');
     }

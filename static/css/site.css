@@ -527,7 +527,7 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 /* === Comments threading and responsiveness === */
 /* Indentation mapping per depth (limit max-left to avoid overflow on small screens) */
 #comments-list .comment-item.depth-1 { margin-left: 0; }
-#comments-list .comment-item.depth-2 { margin-left: .75rem; }
+#comments-list .comment-item.depth-2 { margin-left: 1rem; }
 #comments-list .comment-item.depth-3 { margin-left: 1.25rem; }
 #comments-list .comment-item.depth-4 { margin-left: 1.75rem; }
 #comments-list .comment-item.depth-5 { margin-left: 2.25rem; }
@@ -550,6 +550,27 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 #comments-list .comment-item.depth-3 { border-color: #f59e0b; }
 #comments-list .comment-item.depth-4 { border-color: #f472b6; }
 #comments-list .comment-item.depth-5, #comments-list .comment-item.depth-6 { border-color: #a78bfa; }
+
+/* Thread collapse controls: left gutter clickable + +/- indicator that curves into border */
+#comments-list .comment-item { position: relative; }
+#comments-list .comment-item .thread-left-gutter {
+  position: absolute; left: 0; top: 0; bottom: 0; width: .75rem; cursor: pointer; background: transparent;
+}
+#comments-list .comment-item .thread-collapse-indicator {
+  position: absolute; left: -10px; bottom: -8px; width: 18px; height: 18px; border-radius: 999px; line-height: 14px; font-size: 12px;
+  text-align: center; background: var(--na-surface, #fff); border: 2px solid rgba(0,0,0,.25); color: rgba(0,0,0,.6);
+  box-shadow: 0 0 0 2px var(--na-surface, #fff);
+}
+[data-theme="dark"] #comments-list .comment-item .thread-collapse-indicator {
+  background: var(--na-surface, #111);
+  border-color: rgba(255,255,255,.25);
+  color: rgba(255,255,255,.8);
+  box-shadow: 0 0 0 2px var(--na-surface, #111);
+}
+#comments-list .comment-item.collapsed { opacity: .98; }
+#comments-list .comment-item.collapsed .comment-actions { display: none; }
+#comments-list .js-toggle-replies { display: none !important; }
+
 #comments-list .btn-group .dropdown-menu { min-width: 12rem; }
 @media (max-width: 576px){
   #comments-list .d-flex.flex-wrap { gap: .5rem 1rem; }
