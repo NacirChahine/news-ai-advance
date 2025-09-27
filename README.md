@@ -198,17 +198,17 @@ For testing with multiple articles at once:
 python manage.py generate_test_data --sources 5 --articles 10 --users 2
 ```
 
+This will create:
+- 5 news sources
+- 10 articles per source (50 total)
+- 2 test users
+- Analysis data for most articles
+
 
 ## Comment Voting (Upvote/Downvote)
 
 Community voting helps surface the most valuable comments. Each user can upvote or downvote a comment, change their vote, or remove it.
 
-Setup/migration:
-
-- Run migrations to create `CommentVote` and add `cached_score` to comments:
-  ```bash
-  python manage.py migrate
-  ```
 
 Behavior:
 - One vote per user per comment (up or down)
@@ -244,13 +244,6 @@ Frontend:
 - Vote buttons and score appear next to each comment
 - Active state is indicated by color; counts update without page reload
 - Requires the existing comments bundle `static/js/comments.js` and CSS in `static/css/site.css`
-
-This will create:
-- 5 news sources
-- 10 articles per source (50 total)
-- 2 test users
-- Analysis data for most articles
-
 
 ## Features
 
