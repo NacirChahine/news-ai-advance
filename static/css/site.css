@@ -1,3 +1,59 @@
+/* Article Like/Dislike Buttons */
+.article-likes-container {
+    display: inline-flex;
+    gap: 0.25rem;
+}
+
+.like-article-btn,
+.dislike-article-btn {
+    transition: all 0.2s ease-in-out;
+    border-width: 1px;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+.like-article-btn:hover,
+.dislike-article-btn:hover {
+    transform: scale(1.05);
+}
+
+.like-article-btn.active {
+    background-color: #198754;
+    border-color: #198754;
+    color: white;
+}
+
+.dislike-article-btn.active {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.like-article-btn i,
+.dislike-article-btn i {
+    margin-right: 0.25rem;
+}
+
+.like-count,
+.dislike-count {
+    font-weight: 600;
+    margin-left: 0.25rem;
+}
+
+/* Ensure buttons don't wrap on small screens */
+@media (max-width: 576px) {
+    .article-likes-container {
+        flex-wrap: nowrap;
+    }
+
+    .like-article-btn,
+    .dislike-article-btn {
+        font-size: 0.75rem;
+        padding: 0.2rem 0.4rem;
+    }
+}
+
+
 /* Base site-wide styles extracted from base.html */
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

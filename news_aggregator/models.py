@@ -64,6 +64,27 @@ class UserSavedArticle(models.Model):
         return f"{self.user.username} - {self.article.title}"
 
 
+class ArticleLike(models.Model):
+    """Model for article likes and dislikes by users"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='article_likes')
+    article = models.ForeignKey(NewsArticle, on_delete=models.CASCADE, related_name='likes')
+    is_like = models.BooleanField(help_text='True for like, False for dislike')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'article')
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['article', 'is_like']),
+            models.Index(fields=['user', 'created_at']),
+        ]
+
+    def __str__(self):
+        action = "liked" if self.is_like else "disliked"
+        return f"{self.user.username} {action} {self.article.title}"
+
+
 # --- Comments ---
 
 class Comment(models.Model):

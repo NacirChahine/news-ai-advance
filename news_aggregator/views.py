@@ -2,9 +2,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q, F
+from django.db.models import Q, F, Count, Case, When, IntegerField
 from django.http import JsonResponse
-from .models import NewsArticle, NewsSource, UserSavedArticle
+from .models import NewsArticle, NewsSource, UserSavedArticle, ArticleLike
 
 def latest_news(request):
     """View to display the latest news articles with filters"""
@@ -55,9 +55,27 @@ def latest_news(request):
         # Create a set of saved article IDs for efficient lookup
         saved_article_ids = set(request.user.saved_articles.values_list('article_id', flat=True))
 
-        # Add a saved flag to each article
+        # Get user's likes/dislikes for these articles
+        article_ids = [article.id for article in page_obj]
+        user_likes = ArticleLike.objects.filter(user=request.user, article_id__in=article_ids)
+        user_likes_dict = {like.article_id: ('like' if like.is_like else 'dislike') for like in user_likes}
+
+        # Add a saved flag and like status to each article
         for article in page_obj:
             article.is_saved = article.id in saved_article_ids
+            article.user_like_status = user_likes_dict.get(article.id, None)
+
+    # Get like/dislike counts for all articles in the page
+    article_ids = [article.id for article in page_obj]
+    like_counts = ArticleLike.objects.filter(article_id__in=article_ids, is_like=True).values('article_id').annotate(count=Count('id'))
+    dislike_counts = ArticleLike.objects.filter(article_id__in=article_ids, is_like=False).values('article_id').annotate(count=Count('id'))
+
+    like_counts_dict = {item['article_id']: item['count'] for item in like_counts}
+    dislike_counts_dict = {item['article_id']: item['count'] for item in dislike_counts}
+
+    for article in page_obj:
+        article.like_count = like_counts_dict.get(article.id, 0)
+        article.dislike_count = dislike_counts_dict.get(article.id, 0)
 
     context = {
         'page_obj': page_obj,
@@ -72,8 +90,19 @@ def article_detail(request, article_id):
     article = get_object_or_404(NewsArticle, pk=article_id)
     # Check if the user has saved this article
     user_saved = False
+    user_like_status = None  # None, 'like', or 'dislike'
+
     if request.user.is_authenticated:
         user_saved = UserSavedArticle.objects.filter(user=request.user, article=article).exists()
+
+        # Check if user has liked/disliked this article
+        user_like = ArticleLike.objects.filter(user=request.user, article=article).first()
+        if user_like:
+            user_like_status = 'like' if user_like.is_like else 'dislike'
+
+    # Get like/dislike counts
+    like_count = ArticleLike.objects.filter(article=article, is_like=True).count()
+    dislike_count = ArticleLike.objects.filter(article=article, is_like=False).count()
 
     # Get related articles from the same source
     related_articles = NewsArticle.objects.filter(source=article.source)\
@@ -82,6 +111,9 @@ def article_detail(request, article_id):
     context = {
         'article': article,
         'user_saved': user_saved,
+        'user_like_status': user_like_status,
+        'like_count': like_count,
+        'dislike_count': dislike_count,
         'related_articles': related_articles,
     }
     return render(request, 'news_aggregator/article_detail.html', context)
@@ -190,6 +222,79 @@ def save_article_ajax(request):
         # If it doesn't exist, create it (save)
         UserSavedArticle.objects.create(user=request.user, article=article)
         return JsonResponse({'saved': True, 'message': 'Article saved to your collection'})
+
+
+@login_required
+def article_like_toggle(request):
+    """AJAX view to like, dislike, or remove like/dislike for an article"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
+
+    # Get the article ID and action from the request
+    article_id = request.POST.get('article_id')
+    action = request.POST.get('action')  # 'like', 'dislike', or 'remove'
+
+    if not article_id:
+        return JsonResponse({'error': 'Article ID is required'}, status=400)
+
+    if action not in ['like', 'dislike', 'remove']:
+        return JsonResponse({'error': 'Invalid action. Must be "like", "dislike", or "remove"'}, status=400)
+
+    try:
+        article = NewsArticle.objects.get(pk=article_id)
+    except NewsArticle.DoesNotExist:
+        return JsonResponse({'error': 'Article not found'}, status=404)
+
+    # Check if the user has already liked/disliked this article
+    existing_like = ArticleLike.objects.filter(user=request.user, article=article).first()
+
+    if action == 'remove':
+        # Remove any existing like/dislike
+        if existing_like:
+            existing_like.delete()
+        user_action = None
+    elif action == 'like':
+        if existing_like:
+            if existing_like.is_like:
+                # User already liked it, so remove the like (toggle off)
+                existing_like.delete()
+                user_action = None
+            else:
+                # User had disliked it, change to like
+                existing_like.is_like = True
+                existing_like.save()
+                user_action = 'like'
+        else:
+            # Create a new like
+            ArticleLike.objects.create(user=request.user, article=article, is_like=True)
+            user_action = 'like'
+    else:  # action == 'dislike'
+        if existing_like:
+            if not existing_like.is_like:
+                # User already disliked it, so remove the dislike (toggle off)
+                existing_like.delete()
+                user_action = None
+            else:
+                # User had liked it, change to dislike
+                existing_like.is_like = False
+                existing_like.save()
+                user_action = 'dislike'
+        else:
+            # Create a new dislike
+            ArticleLike.objects.create(user=request.user, article=article, is_like=False)
+            user_action = 'dislike'
+
+    # Get updated counts
+    like_count = ArticleLike.objects.filter(article=article, is_like=True).count()
+    dislike_count = ArticleLike.objects.filter(article=article, is_like=False).count()
+
+    return JsonResponse({
+        'success': True,
+        'like_count': like_count,
+        'dislike_count': dislike_count,
+        'user_action': user_action,  # 'like', 'dislike', or None
+        'message': f'Article {action}d successfully' if user_action else 'Reaction removed'
+    })
 
 
 # --- Comments API Views ---

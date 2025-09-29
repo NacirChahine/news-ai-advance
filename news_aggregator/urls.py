@@ -8,6 +8,7 @@ urlpatterns = [
     path('source/<int:source_id>/', views.source_detail, name='source_detail'),
     path('save-article/', views.save_article_ajax, name='save_article'),
     path('save-article/<int:article_id>/', views.save_article, name='save_article_by_id'),
+    path('article-like-toggle/', views.article_like_toggle, name='article_like_toggle'),
 
     # Comment API endpoints (AJAX JSON)
     path('article/<int:article_id>/comments/', views.comments_list_create, name='comments_list_create'),

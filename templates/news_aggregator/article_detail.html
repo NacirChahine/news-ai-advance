@@ -59,6 +59,36 @@
                         </div>
                     </div>
 
+                    <!-- Like/Dislike Section -->
+                    {% if user.is_authenticated %}
+                    <div class="article-likes-container mb-3 d-flex align-items-center">
+                        <button class="btn btn-sm btn-outline-success like-article-btn {% if user_like_status == 'like' %}active{% endif %}"
+                                data-article-id="{{ article.id }}"
+                                data-like-url="{% url 'news_aggregator:article_like_toggle' %}">
+                            <i class="{% if user_like_status == 'like' %}fas{% else %}far{% endif %} fa-thumbs-up"></i>
+                            <span class="like-count">{{ like_count }}</span>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger dislike-article-btn ms-2 {% if user_like_status == 'dislike' %}active{% endif %}"
+                                data-article-id="{{ article.id }}"
+                                data-like-url="{% url 'news_aggregator:article_like_toggle' %}">
+                            <i class="{% if user_like_status == 'dislike' %}fas{% else %}far{% endif %} fa-thumbs-down"></i>
+                            <span class="dislike-count">{{ dislike_count }}</span>
+                        </button>
+                    </div>
+                    {% else %}
+                    <div class="article-likes-container mb-3 d-flex align-items-center">
+                        <span class="text-muted">
+                            <i class="far fa-thumbs-up"></i> <span class="like-count">{{ like_count }}</span>
+                        </span>
+                        <span class="text-muted ms-3">
+                            <i class="far fa-thumbs-down"></i> <span class="dislike-count">{{ dislike_count }}</span>
+                        </span>
+                        <span class="text-muted ms-3 small">
+                            <a href="{% url 'accounts:login' %}">Log in</a> to like or dislike
+                        </span>
+                    </div>
+                    {% endif %}
+
                     {% if article.image_url %}
                         <img src="{{ article.image_url }}" class="img-fluid rounded mb-4" alt="{{ article.title }}">
                     {% endif %}
@@ -434,4 +464,5 @@
 {% block extra_js %}
 {% load static %}
 <script src="{% static 'js/article_detail.js' %}"></script>
+<script src="{% static 'js/article_likes.js' %}"></script>
 {% endblock %}

@@ -62,7 +62,7 @@
                             {% if article.is_analyzed %}
                                 <div class="d-flex mb-2">
                                     {% if article.bias_analysis %}
-                                        <span class="badge 
+                                        <span class="badge
                                             {% if article.bias_analysis.political_leaning == 'left' %}bg-primary
                                             {% elif article.bias_analysis.political_leaning == 'center-left' %}bg-info
                                             {% elif article.bias_analysis.political_leaning == 'center' %}bg-success
@@ -74,7 +74,7 @@
                                     {% endif %}
 
                                     {% if article.sentiment_analysis %}
-                                        <span class="badge 
+                                        <span class="badge
                                             {% if article.sentiment_analysis.sentiment_score > 0.3 %}bg-success
                                             {% elif article.sentiment_analysis.sentiment_score < -0.3 %}bg-danger
                                             {% else %}bg-secondary{% endif %} me-1">
@@ -89,20 +89,50 @@
                             <p class="card-text">{{ article.summary|default:article.content|truncatewords:30 }}</p>
                         </div>
                         <div class="card-footer bg-transparent">
-                            <a href="{% url 'news_aggregator:article_detail' article.id %}" class="btn btn-sm btn-primary">
-                                <i class="fas fa-book-reader"></i> Read Article
-                            </a>
-                            {% if user.is_authenticated %}
-                                {% if article.is_saved %}
-                                    <a href="#" class="btn btn-sm btn-outline-danger float-end save-article-btn" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
-                                        <i class="fas fa-bookmark"></i> <span>Unsave</span>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <a href="{% url 'news_aggregator:article_detail' article.id %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-book-reader"></i> Read Article
                                     </a>
-                                {% else %}
-                                    <a href="#" class="btn btn-sm btn-outline-primary float-end save-article-btn" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
-                                        <i class="far fa-bookmark"></i> <span>Save</span>
-                                    </a>
-                                {% endif %}
-                            {% endif %}
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    {% if user.is_authenticated %}
+                                        <!-- Like/Dislike buttons -->
+                                        <div class="article-likes-container me-2">
+                                            <button class="btn btn-sm btn-outline-success like-article-btn {% if article.user_like_status == 'like' %}active{% endif %}"
+                                                    data-article-id="{{ article.id }}"
+                                                    data-like-url="{% url 'news_aggregator:article_like_toggle' %}">
+                                                <i class="{% if article.user_like_status == 'like' %}fas{% else %}far{% endif %} fa-thumbs-up"></i>
+                                                <span class="like-count">{{ article.like_count }}</span>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger dislike-article-btn {% if article.user_like_status == 'dislike' %}active{% endif %}"
+                                                    data-article-id="{{ article.id }}"
+                                                    data-like-url="{% url 'news_aggregator:article_like_toggle' %}">
+                                                <i class="{% if article.user_like_status == 'dislike' %}fas{% else %}far{% endif %} fa-thumbs-down"></i>
+                                                <span class="dislike-count">{{ article.dislike_count }}</span>
+                                            </button>
+                                        </div>
+                                        <!-- Save button -->
+                                        {% if article.is_saved %}
+                                            <a href="#" class="btn btn-sm btn-outline-danger save-article-btn" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
+                                                <i class="fas fa-bookmark"></i> <span>Unsave</span>
+                                            </a>
+                                        {% else %}
+                                            <a href="#" class="btn btn-sm btn-outline-primary save-article-btn" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
+                                                <i class="far fa-bookmark"></i> <span>Save</span>
+                                            </a>
+                                        {% endif %}
+                                    {% else %}
+                                        <!-- Show counts only for non-authenticated users -->
+                                        <span class="text-muted me-2">
+                                            <i class="far fa-thumbs-up"></i> {{ article.like_count }}
+                                        </span>
+                                        <span class="text-muted">
+                                            <i class="far fa-thumbs-down"></i> {{ article.dislike_count }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -175,4 +205,10 @@
         </nav>
     {% endif %}
 </div>
+{% endblock %}
+
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/article_likes.js' %}"></script>
 {% endblock %}

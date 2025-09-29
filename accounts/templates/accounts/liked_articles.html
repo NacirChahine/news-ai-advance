@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Liked Articles | News Advance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0"><i class="fas fa-thumbs-up me-2"></i>Your Liked Articles</h4>
+                        <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-light">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Profile
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if liked_articles %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <colgroup>
+                                    <col style="width: 50%;"> <!-- Title & badges -->
+                                    <col style="width: 20%;"> <!-- Source -->
+                                    <col style="width: 15%;"> <!-- Date -->
+                                    <col style="width: 15%;"> <!-- Actions -->
+                                </colgroup>
+                                <thead>
+                                    <tr>
+                                        <th>Article</th>
+                                        <th>Source</th>
+                                        <th>Liked On</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for liked in liked_articles %}
+                                        <tr>
+                                            <td>
+                                                <a href="{% url 'news_aggregator:article_detail' liked.article.id %}">
+                                                    {{ liked.article.title }}
+                                                </a>
+                                                {% if liked.article.is_analyzed %}
+                                                    <div class="mt-1">
+                                                        {% if liked.article.bias_analysis %}
+                                                            <span class="badge 
+                                                                {% if liked.article.bias_analysis.political_leaning == 'left' %}bg-primary
+                                                                {% elif liked.article.bias_analysis.political_leaning == 'center-left' %}bg-info
+                                                                {% elif liked.article.bias_analysis.political_leaning == 'center' %}bg-success
+                                                                {% elif liked.article.bias_analysis.political_leaning == 'center-right' %}bg-warning text-dark
+                                                                {% elif liked.article.bias_analysis.political_leaning == 'right' %}bg-danger
+                                                                {% else %}bg-secondary{% endif %} me-1">
+                                                                {{ liked.article.bias_analysis.get_political_leaning_display }}
+                                                            </span>
+                                                        {% endif %}
+
+                                                        {% if liked.article.sentiment_analysis %}
+                                                            <span class="badge 
+                                                                {% if liked.article.sentiment_analysis.sentiment_score > 0.3 %}bg-success
+                                                                {% elif liked.article.sentiment_analysis.sentiment_score < -0.3 %}bg-danger
+                                                                {% else %}bg-secondary{% endif %} me-1">
+                                                                {% if liked.article.sentiment_analysis.sentiment_score > 0.3 %}Positive
+                                                                {% elif liked.article.sentiment_analysis.sentiment_score < -0.3 %}Negative
+                                                                {% else %}Neutral{% endif %}
+                                                            </span>
+                                                        {% endif %}
+                                                    </div>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'news_aggregator:source_detail' liked.article.source.id %}">
+                                                    {{ liked.article.source.name }}
+                                                </a>
+                                            </td>
+                                            <td>{{ liked.created_at|date:"M d, Y" }}</td>
+                                            <td>
+                                                <a href="{% url 'news_aggregator:article_detail' liked.article.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-book-reader"></i> Read
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Pagination -->
+                        {% if liked_articles.has_other_pages %}
+                            <nav aria-label="Page navigation" class="mt-4">
+                                <ul class="pagination justify-content-center">
+                                    {% if liked_articles.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1" aria-label="First">
+                                                <i class="fas fa-angle-double-left"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ liked_articles.previous_page_number }}" aria-label="Previous">
+                                                <i class="fas fa-angle-left"></i>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                                        </li>
+                                        <li class="page-item disabled">
+                                            <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in liked_articles.paginator.page_range %}
+                                        {% if liked_articles.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > liked_articles.number|add:'-3' and num < liked_articles.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if liked_articles.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ liked_articles.next_page_number }}" aria-label="Next">
+                                                <i class="fas fa-angle-right"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ liked_articles.paginator.num_pages }}" aria-label="Last">
+                                                <i class="fas fa-angle-double-right"></i>
+                                            </a>
+                                        </li>
+                                    {% else %}
+                                        <li class="page-item disabled">
+                                            <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                                        </li>
+                                        <li class="page-item disabled">
+                                            <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            You haven't liked any articles yet. When you find interesting articles, click the "Like" button to collect them here.
+                        </div>
+                        <div class="text-center mt-4">
+                            <a href="{% url 'news_aggregator:latest' %}" class="btn btn-success">
+                                <i class="fas fa-newspaper me-2"></i>Browse Latest News
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if liked_articles %}
+                    <div class="card-footer">
+                        <div class="text-muted">
+                            <small>You have liked {{ total_count }} article{{ total_count|pluralize }}</small>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

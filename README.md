@@ -334,6 +334,7 @@ This will create:
   - User authentication and profile management
   - Personalized news preferences
   - Saved articles with notes
+  - Article likes/dislikes with dedicated liked articles page
 
 ### Misinformation Tracking
   - **Models & Infrastructure**: Complete database models for alerts and fact-checking

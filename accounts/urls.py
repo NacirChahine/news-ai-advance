@@ -13,6 +13,7 @@ urlpatterns = [
     path('preferences/', views.preferences, name='preferences'),
     path('auto-save-preferences/', views.auto_save_preferences, name='auto_save_preferences'),
     path('saved-articles/', views.saved_articles, name='saved_articles'),
+    path('liked-articles/', views.liked_articles, name='liked_articles'),
     path('update-saved-notes/', views.update_saved_notes, name='update_saved_notes'),
     path('delete-saved/', views.delete_saved, name='delete_saved'),
     path('bulk-delete-saved/', views.bulk_delete_saved, name='bulk_delete_saved'),

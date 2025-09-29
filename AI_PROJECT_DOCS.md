@@ -29,6 +29,12 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - Fields: user, article, saved_at, notes
   - Relationships: many-to-one with User and NewsArticle
 
+- **ArticleLike**: Tracks user likes/dislikes on articles
+  - Fields: user, article, is_like (boolean: True=like, False=dislike), created_at, updated_at
+  - Relationships: many-to-one with User and NewsArticle
+  - Constraints: unique_together on (user, article) - one reaction per user per article
+  - Indexes: (article, is_like), (user, created_at)
+
 ### News Analysis Models
 
 - **BiasAnalysis**: Political bias detection results
@@ -91,7 +97,9 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - comment_moderate(comment_id): POST staff remove/restore
   - comment_flag(comment_id): POST user flag/report
   - comment_vote(comment_id): POST/PUT/DELETE create/update/remove user vote; returns { success, score, user_vote }
+  - article_like_toggle(): POST like/dislike/remove article reaction; returns { success, like_count, dislike_count, user_action }
 - URLs (news_aggregator/urls.py): named routes under namespace `news_aggregator`
+  - article-like-toggle/: POST endpoint for like/dislike actions
 - Rate limiting: cache-backed throttle per user+endpoint; voting limited to one action per 2 seconds. Excess attempts return HTTP 429 with JSON `{ "error": "Too many requests. Please slow down." }`.
 - Serialization: lightweight dicts (id, content, user, created_at ISO, flags, permissions, score, user_vote, replies[])
 - Templates: `templates/news_aggregator/partials/comments.html` (included in `article_detail.html` when allowed)
@@ -134,6 +142,37 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - Ensure migrations are applied:
   - `python manage.py migrate`
 - Backfill is not required; existing comments start at score 0.
+
+### Article Likes/Dislikes
+
+- **Model**: `ArticleLike` (news_aggregator.models)
+  - Fields: user, article, is_like (boolean: True=like, False=dislike), created_at, updated_at
+  - Constraints: unique_together on (user, article) - one reaction per user per article
+  - Indexes: (article, is_like), (user, created_at)
+
+- **API Endpoint**: `/news/article-like-toggle/` (POST, requires authentication)
+  - Parameters: article_id (required), action (required: 'like', 'dislike', or 'remove')
+  - Behavior:
+    - 'like': Creates a like or toggles off existing like; converts dislike to like
+    - 'dislike': Creates a dislike or toggles off existing dislike; converts like to dislike
+    - 'remove': Removes any existing like/dislike
+  - Returns: { success, like_count, dislike_count, user_action }
+
+- **Views**:
+  - article_detail and latest_news: Include like/dislike counts and user's current reaction status
+  - accounts.views.liked_articles: Displays all articles the user has liked with pagination
+  - accounts.views.profile: Shows liked articles count in stats section
+
+- **Frontend**:
+  - Like/dislike buttons on article detail pages and article cards
+  - Real-time count updates via AJAX (static/js/article_likes.js)
+  - Active state styling for user's current reaction
+  - Non-authenticated users see counts but cannot interact
+
+- **Profile Integration**:
+  - Profile stats show "Liked Articles" count (replaces "Topic Following")
+  - "View Liked Articles" button navigates to `/accounts/liked-articles/`
+  - Liked articles page displays articles in table format with pagination
 
 ## Processing Pipelines
 

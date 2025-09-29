@@ -33,13 +33,17 @@ def profile(request):
     user = request.user
     profile = user.profile
     # Comment statistics
-    from news_aggregator.models import Comment
+    from news_aggregator.models import Comment, ArticleLike
     comment_count = Comment.objects.filter(user=user).count()
+
+    # Liked articles count
+    liked_articles_count = ArticleLike.objects.filter(user=user, is_like=True).count()
 
     context = {
         'user': user,
         'profile': profile,
         'comment_count': comment_count,
+        'liked_articles_count': liked_articles_count,
     }
     return render(request, 'accounts/profile.html', context)
 
@@ -120,6 +124,28 @@ def auto_save_preferences(request):
         return JsonResponse({'success': False, 'error': 'Invalid JSON data'})
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+@login_required
+def liked_articles(request):
+    """View for user's liked articles"""
+    user = request.user
+    from news_aggregator.models import ArticleLike
+    from django.core.paginator import Paginator
+
+    # Get all articles the user has liked
+    liked_article_objs = ArticleLike.objects.filter(user=user, is_like=True).select_related('article', 'article__source').order_by('-created_at')
+
+    # Paginate the results
+    paginator = Paginator(liked_article_objs, 20)  # Show 20 articles per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'liked_articles': page_obj,
+        'total_count': liked_article_objs.count(),
+    }
+    return render(request, 'accounts/liked_articles.html', context)
+
 
 @login_required
 def saved_articles(request):
