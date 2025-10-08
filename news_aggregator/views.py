@@ -165,8 +165,17 @@ def source_list(request):
         .order_by('name')
     )
 
+    # Get preferred source IDs for authenticated users
+    preferred_source_ids = set()
+    if request.user.is_authenticated:
+        try:
+            preferred_source_ids = set(request.user.profile.preferred_sources.values_list('id', flat=True))
+        except:
+            pass
+
     context = {
         'sources': sources,
+        'preferred_source_ids': preferred_source_ids,
     }
     return render(request, 'news_aggregator/source_list.html', context)
 

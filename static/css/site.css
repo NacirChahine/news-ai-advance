@@ -758,6 +758,35 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 .comment-avatar-letter:nth-of-type(9) { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
 .comment-avatar-letter:nth-of-type(10) { background: linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%); }
 
+/* Comment username link */
+.comment-username-link {
+  text-decoration: none;
+  color: inherit;
+  transition: color 0.2s ease;
+}
+
+.comment-username-link:hover {
+  text-decoration: underline;
+}
+
+/* Dark theme */
+[data-theme="dark"] .comment-username-link {
+  color: #e2e8f0;
+}
+
+[data-theme="dark"] .comment-username-link:hover {
+  color: #60a5fa;
+}
+
+/* Light theme */
+[data-theme="light"] .comment-username-link {
+  color: #1e293b;
+}
+
+[data-theme="light"] .comment-username-link:hover {
+  color: #3b82f6;
+}
+
 
 /* === Reply Indicators (for all replies depth >= 1) === */
 .reply-indicator {
@@ -1000,19 +1029,31 @@ a.text-muted:hover .fa-comments {
 }
 
 
-/* === Article Cards - Clickable with Hover Effects === */
-.article-card {
+/* === Standardized Card Design with Glassmorphism === */
+.card {
+  border-radius: 12px;
+  border: 1px solid rgba(var(--na-surface-rgb), var(--na-border-alpha));
+  /*background: rgba(var(--na-surface-rgb), 0.7);*/
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
 }
 
+/* Card hover effect for interactive cards */
+.card.card-hover:hover,
 .article-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
+[data-theme="light"] .card.card-hover:hover,
 [data-theme="light"] .article-card:hover {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* === Article Cards - Clickable with Hover Effects === */
+.article-card {
+  cursor: pointer;
 }
 
 /* Article card link - invisible but covers entire card */

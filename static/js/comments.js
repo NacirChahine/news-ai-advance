@@ -155,7 +155,9 @@
         </div>
         <div class="flex-grow-1 min-w-0">
           ${replyIndicator}
-          <strong class="text-truncate">${escapeHtml(c.user.username)}</strong>
+          <strong class="text-truncate">
+            <a href="/accounts/user/${escapeHtml(c.user.username)}/" class="comment-username-link" title="View ${escapeHtml(c.user.username)}'s profile">${escapeHtml(c.user.username)}</a>
+          </strong>
           <small class="text-muted ms-2" title="${abs}">${rel}</small>
           ${c.is_edited ? '<small class="text-muted ms-1">(edited)</small>' : ''}
           <div class="mt-1 comment-content">${escapeHtml(c.content)}</div>

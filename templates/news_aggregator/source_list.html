@@ -11,37 +11,51 @@
   <p class="text-muted mb-4">Overview of sources we aggregate from, with reliability and political bias indicators.</p>
 
   {% if sources %}
-  <div class="table-responsive">
-    <table class="table align-middle">
-      <thead>
-        <tr class="text-muted small">
-          <th scope="col">Source</th>
-          <th scope="col" class="text-center">Reliability</th>
-          <th scope="col" class="text-center">Political Bias</th>
-          <th scope="col" class="text-center">Articles</th>
-          <th scope="col" class="text-end">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for s in sources %}
-        <tr>
-          <td>
-            <div class="d-flex align-items-center">
-              {% if s.logo %}
-              <img src="{{ s.logo.url }}" alt="{{ s.name }} logo" class="me-2" style="width:28px;height:28px;object-fit:contain;"/>
+  <div class="row">
+    {% for s in sources %}
+    <div class="col-md-6 col-lg-4 mb-4">
+      <div class="card card-hover h-100">
+        <div class="card-body">
+          <div class="d-flex justify-content-between align-items-start mb-3">
+            <div class="flex-grow-1">
+              <h5 class="card-title mb-1">
+                <a class="text-decoration-none" href="{% url 'news_aggregator:source_detail' source_id=s.id %}">{{ s.name }}</a>
+              </h5>
+              {% if s.url %}
+              <p class="card-text small text-muted mb-0">
+                <a class="text-muted" href="{{ s.url }}" target="_blank" rel="noopener">
+                  <i class="fas fa-external-link-alt me-1"></i>{{ s.url|truncatechars:40 }}
+                </a>
+              </p>
               {% endif %}
-              <div>
-                <div class="fw-semibold"><a class="text-decoration-none" href="{% url 'news_aggregator:source_detail' source_id=s.id %}">{{ s.name }}</a></div>
-                {% if s.url %}
-                <div class="small"><a class="text-muted" href="{{ s.url }}" target="_blank" rel="noopener">{{ s.url }}</a></div>
-                {% endif %}
-              </div>
             </div>
-          </td>
-          <td class="text-center">
-            <span class="badge bg-{% if s.reliability_score >= 80 %}success{% elif s.reliability_score >= 60 %}primary{% elif s.reliability_score >= 40 %}warning{% else %}danger{% endif %}">{{ s.reliability_score|floatformat:0 }}/100</span>
-          </td>
-          <td class="text-center">
+            {% if user.is_authenticated %}
+            <div class="ms-2">
+              {% if s.id in preferred_source_ids %}
+                <button class="btn btn-sm btn-danger toggle-preferred-btn"
+                        data-source-id="{{ s.id }}"
+                        data-is-preferred="true"
+                        title="Remove from preferred sources"
+                        aria-label="Remove {{ s.name }} from preferred sources">
+                  <i class="fas fa-star"></i>
+                </button>
+              {% else %}
+                <button class="btn btn-sm btn-outline-primary toggle-preferred-btn"
+                        data-source-id="{{ s.id }}"
+                        data-is-preferred="false"
+                        title="Add to preferred sources"
+                        aria-label="Add {{ s.name }} to preferred sources">
+                  <i class="far fa-star"></i>
+                </button>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="d-flex gap-2 mb-3 flex-wrap">
+            <span class="badge bg-{% if s.reliability_score >= 80 %}success{% elif s.reliability_score >= 60 %}primary{% elif s.reliability_score >= 40 %}warning{% else %}danger{% endif %}">
+              <i class="fas fa-shield-alt me-1"></i>{{ s.reliability_score|floatformat:0 }}/100
+            </span>
             {% with b=s.political_bias %}
             {% if b < -0.4 %}
               <span class="badge bg-info">Left</span>
@@ -51,21 +65,107 @@
               <span class="badge bg-secondary">Center</span>
             {% endif %}
             {% endwith %}
-          </td>
-          <td class="text-center">
-            <span class="badge bg-light text-dark">{{ s.article_count }}</span>
-          </td>
-          <td class="text-end">
-            <a class="btn btn-sm btn-outline-primary" href="{% url 'news_aggregator:source_detail' source_id=s.id %}"><i class="fas fa-eye me-1"></i> View Source</a>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            <span class="badge bg-light text-dark">
+              <i class="fas fa-newspaper me-1"></i>{{ s.article_count }} article{{ s.article_count|pluralize }}
+            </span>
+          </div>
+
+          <a class="btn btn-sm btn-outline-primary w-100" href="{% url 'news_aggregator:source_detail' source_id=s.id %}">
+            <i class="fas fa-eye me-1"></i> View Source
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
   </div>
   {% else %}
   <div class="alert alert-info">No sources available.</div>
   {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleButtons = document.querySelectorAll('.toggle-preferred-btn');
+
+    toggleButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const sourceId = this.dataset.sourceId;
+            const isPreferred = this.dataset.isPreferred === 'true';
+
+            // Disable button during request
+            btn.disabled = true;
+
+            fetch('{% url "accounts:toggle_preferred_source" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({ source_id: sourceId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update button state
+                    const newIsPreferred = data.is_preferred;
+                    btn.dataset.isPreferred = newIsPreferred;
+
+                    if (newIsPreferred) {
+                        btn.className = 'btn btn-sm btn-danger toggle-preferred-btn';
+                        btn.querySelector('i').className = 'fas fa-star';
+                        btn.title = 'Remove from preferred sources';
+                    } else {
+                        btn.className = 'btn btn-sm btn-outline-primary toggle-preferred-btn';
+                        btn.querySelector('i').className = 'far fa-star';
+                        btn.title = 'Add to preferred sources';
+                    }
+                } else {
+                    showError(data.error || 'Failed to update preference');
+                }
+            })
+            .catch(error => {
+                showError('Network error occurred');
+            })
+            .finally(() => {
+                btn.disabled = false;
+            });
+        });
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function showError(message) {
+        // Create alert element
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger alert-dismissible fade show position-fixed';
+        alert.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        alert.innerHTML = `
+            <i class="fas fa-exclamation-triangle me-2"></i>${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.body.appendChild(alert);
+
+        // Auto-dismiss after 3 seconds
+        setTimeout(() => {
+            alert.remove();
+        }, 3000);
+    }
+});
+</script>
 {% endblock %}
 

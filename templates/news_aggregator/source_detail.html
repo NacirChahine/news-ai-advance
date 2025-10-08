@@ -94,40 +94,49 @@
                 <div class="row">
                     {% for article in page_obj %}
                         <div class="col-md-4 mb-4">
-                            <div class="card h-100">
-                                {% if article.image_url %}
-                                    <img src="{{ article.image_url }}" class="card-img-top" alt="{{ article.title }}">
-                                {% else %}
-                                    <div class="card-img-top bg-light text-center py-5">
-                                        <i class="fas fa-newspaper fa-3x text-secondary"></i>
-                                    </div>
-                                {% endif %}
-                                <div class="card-body">
-                                    <h5 class="card-title">{{ article.title }}</h5>
-                                    <p class="card-text text-muted small">
-                                        <i class="far fa-calendar-alt me-1"></i> {{ article.published_date|date:"F d, Y" }}
-                                    </p>
-                                    <p class="card-text">{{ article.summary|default:article.content|truncatewords:30 }}</p>
-                                </div>
-                                <div class="card-footer bg-transparent">
-                                    <a href="{% url 'news_aggregator:article_detail' article.id %}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-book-reader"></i> Read Article
-                                    </a>
+                            <div class="card article-card h-100 position-relative">
+                                <!-- Clickable card wrapper -->
+                                <a href="{% url 'news_aggregator:article_detail' article.id %}"
+                                   class="article-card-link stretched-link"
+                                   aria-label="Read article: {{ article.title }}">
+                                </a>
+
+                                <!-- Image container with save button overlay -->
+                                <div class="article-image-container position-relative">
+                                    <img src="{{ article.image_url }}"
+                                         class="card-img-top article-image"
+                                         alt="{{ article.title }}"
+                                         onerror="this.onerror=null; this.src='/static/images/article_placeholder.svg';"
+                                         loading="lazy">
+
+                                    <!-- Save/Unsave button positioned over image -->
                                     {% if user.is_authenticated %}
                                         {% if article.is_saved %}
-                                            <a href="#" class="btn btn-sm btn-outline-danger float-end save-article-btn"
-                                               data-article-id="{{ article.id }}"
-                                               data-save-url="{% url 'news_aggregator:save_article' %}">
-                                                <i class="fas fa-bookmark"></i> <span>Unsave</span>
-                                            </a>
+                                            <button class="btn btn-sm btn-danger save-article-btn article-save-overlay"
+                                                    data-article-id="{{ article.id }}"
+                                                    data-save-url="{% url 'news_aggregator:save_article' %}"
+                                                    title="Unsave article"
+                                                    aria-label="Unsave article">
+                                                <i class="fas fa-bookmark"></i>
+                                            </button>
                                         {% else %}
-                                            <a href="#" class="btn btn-sm btn-outline-primary float-end save-article-btn"
-                                               data-article-id="{{ article.id }}"
-                                               data-save-url="{% url 'news_aggregator:save_article' %}">
-                                                <i class="far fa-bookmark"></i> <span>Save</span>
-                                            </a>
+                                            <button class="btn btn-sm btn-outline-light save-article-btn article-save-overlay"
+                                                    data-article-id="{{ article.id }}"
+                                                    data-save-url="{% url 'news_aggregator:save_article' %}"
+                                                    title="Save article"
+                                                    aria-label="Save article">
+                                                <i class="far fa-bookmark"></i>
+                                            </button>
                                         {% endif %}
                                     {% endif %}
+                                </div>
+
+                                <div class="card-body">
+                                    <h5 class="card-title">{{ article.title }}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">
+                                        {{ article.published_date|date:"M d, Y" }}
+                                    </h6>
+                                    <p class="card-text">{{ article.summary|default:article.content|truncatewords:20 }}</p>
                                 </div>
                             </div>
                         </div>
@@ -238,8 +247,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     btn.title = 'Add to preferred sources';
                 }
 
-                // Show success message
-                showMessage(data.message, 'success');
+                // Success - button state update is enough visual feedback
+                // No success message needed
             } else {
                 showMessage(data.error || 'Failed to update preference', 'danger');
             }
