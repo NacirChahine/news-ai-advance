@@ -721,3 +721,159 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 .vote-block .comment-score{ font-weight:600; min-width:2ch; text-align:center; }
 .vote-block .js-upvote.active{ color:#198754; } /* Bootstrap success green */
 .vote-block .js-downvote.active{ color:#dc3545; }
+
+
+/* === Reply Indicators (for flat replies at max depth) === */
+.reply-indicator {
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+}
+
+.reply-indicator i {
+  opacity: 0.7;
+}
+
+.reply-to-text {
+  color: var(--na-text);
+  opacity: 0.8;
+}
+
+.reply-to-username {
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+/* Dark theme reply indicator colors - WCAG AA compliant */
+[data-theme="dark"] .reply-to-username {
+  color: #60a5fa; /* Light blue with 4.5:1 contrast on dark bg */
+}
+
+[data-theme="dark"] .reply-to-username:hover {
+  color: #93c5fd; /* Lighter blue on hover */
+  text-decoration: underline;
+}
+
+/* Light theme reply indicator colors - WCAG AA compliant */
+[data-theme="light"] .reply-to-username {
+  color: #2563eb; /* Dark blue with 4.5:1 contrast on light bg */
+}
+
+[data-theme="light"] .reply-to-username:hover {
+  color: #1d4ed8; /* Darker blue on hover */
+  text-decoration: underline;
+}
+
+
+/* === Comment Highlight Animation === */
+@keyframes commentHighlight {
+  0% {
+    background-color: rgba(96, 165, 250, 0.3);
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.3);
+  }
+  50% {
+    background-color: rgba(96, 165, 250, 0.2);
+    box-shadow: 0 0 0 5px rgba(96, 165, 250, 0.2);
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
+}
+
+.comment-item.comment-highlight {
+  animation: commentHighlight 2s ease-out;
+  border-left-color: #60a5fa !important;
+  border-left-width: 4px !important;
+}
+
+[data-theme="light"] .comment-item.comment-highlight {
+  border-left-color: #2563eb !important;
+}
+
+
+/* === Comment Counter Styling === */
+.comment-count-badge {
+  font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+/* Comment counter buttons - WCAG AA compliant colors */
+.btn-outline-info {
+  transition: all 0.2s ease;
+}
+
+/* Dark theme comment counter */
+[data-theme="dark"] .btn-outline-info {
+  color: #60a5fa;
+  border-color: #60a5fa;
+}
+
+[data-theme="dark"] .btn-outline-info:hover {
+  background-color: rgba(96, 165, 250, 0.15);
+  border-color: #93c5fd;
+  color: #93c5fd;
+}
+
+/* Light theme comment counter */
+[data-theme="light"] .btn-outline-info {
+  color: #0c63e4;
+  border-color: #0c63e4;
+}
+
+[data-theme="light"] .btn-outline-info:hover {
+  background-color: #0c63e4;
+  border-color: #0c63e4;
+  color: #fff;
+}
+
+/* Comment counter in text (non-button) */
+a.text-muted .fa-comments {
+  transition: color 0.2s ease;
+}
+
+a.text-muted:hover .fa-comments {
+  color: #60a5fa !important;
+}
+
+[data-theme="light"] a.text-muted:hover .fa-comments {
+  color: #0c63e4 !important;
+}
+
+
+/* === Load More Replies Button === */
+.load-more-replies-container {
+  margin-top: 0.5rem;
+}
+
+.js-load-more-replies {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.75rem;
+  transition: all 0.2s ease;
+}
+
+/* Dark theme */
+[data-theme="dark"] .js-load-more-replies {
+  color: #94a3b8;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+[data-theme="dark"] .js-load-more-replies:hover {
+  background-color: rgba(148, 163, 184, 0.1);
+  border-color: #94a3b8;
+  color: #cbd5e1;
+}
+
+/* Light theme */
+[data-theme="light"] .js-load-more-replies {
+  color: #64748b;
+  border-color: rgba(100, 116, 139, 0.3);
+}
+
+[data-theme="light"] .js-load-more-replies:hover {
+  background-color: rgba(100, 116, 139, 0.1);
+  border-color: #64748b;
+  color: #475569;
+}

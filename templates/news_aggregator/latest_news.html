@@ -112,6 +112,13 @@
                                                 <span class="dislike-count">{{ article.dislike_count }}</span>
                                             </button>
                                         </div>
+                                        <!-- Comment counter button -->
+                                        <a href="{% url 'news_aggregator:article_detail' article.id %}#comments-section"
+                                           class="btn btn-sm btn-outline-info me-2"
+                                           title="View comments">
+                                            <i class="far fa-comments"></i>
+                                            <span class="comment-count">{{ article.comment_count|default:0 }}</span>
+                                        </a>
                                         <!-- Save button -->
                                         {% if article.is_saved %}
                                             <a href="#" class="btn btn-sm btn-outline-danger save-article-btn" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
@@ -127,9 +134,14 @@
                                         <span class="text-muted me-2">
                                             <i class="far fa-thumbs-up"></i> {{ article.like_count }}
                                         </span>
-                                        <span class="text-muted">
+                                        <span class="text-muted me-2">
                                             <i class="far fa-thumbs-down"></i> {{ article.dislike_count }}
                                         </span>
+                                        <a href="{% url 'news_aggregator:article_detail' article.id %}#comments-section"
+                                           class="text-muted text-decoration-none"
+                                           title="View comments">
+                                            <i class="far fa-comments"></i> {{ article.comment_count|default:0 }}
+                                        </a>
                                     {% endif %}
                                 </div>
                             </div>

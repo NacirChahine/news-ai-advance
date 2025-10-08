@@ -199,3 +199,17 @@ document.addEventListener('DOMContentLoaded', function(){
     if (collapseEl.classList.contains('show')) { bsCollapse.hide(); } else { bsCollapse.show(); }
   });
 });
+
+// Smooth scroll to comments section
+document.addEventListener('DOMContentLoaded', function(){
+  const scrollToCommentLinks = document.querySelectorAll('.scroll-to-comments');
+  scrollToCommentLinks.forEach(function(link){
+    link.addEventListener('click', function(e){
+      e.preventDefault();
+      const commentsSection = document.getElementById('comments-section');
+      if(commentsSection){
+        commentsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+});

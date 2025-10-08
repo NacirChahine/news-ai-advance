@@ -74,6 +74,10 @@
                             <i class="{% if user_like_status == 'dislike' %}fas{% else %}far{% endif %} fa-thumbs-down"></i>
                             <span class="dislike-count">{{ dislike_count }}</span>
                         </button>
+                        <a href="#comments-section" class="btn btn-sm btn-outline-info ms-2 scroll-to-comments" title="Jump to comments">
+                            <i class="far fa-comments"></i>
+                            <span id="article-comment-count">{{ comment_count|default:0 }}</span>
+                        </a>
                     </div>
                     {% else %}
                     <div class="article-likes-container mb-3 d-flex align-items-center">
@@ -83,6 +87,9 @@
                         <span class="text-muted ms-3">
                             <i class="far fa-thumbs-down"></i> <span class="dislike-count">{{ dislike_count }}</span>
                         </span>
+                        <a href="#comments-section" class="text-muted text-decoration-none ms-3 scroll-to-comments" title="Jump to comments">
+                            <i class="far fa-comments"></i> <span id="article-comment-count">{{ comment_count|default:0 }}</span>
+                        </a>
                         <span class="text-muted ms-3 small">
                             <a href="{% url 'accounts:login' %}">Log in</a> to like or dislike
                         </span>

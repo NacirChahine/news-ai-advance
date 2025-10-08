@@ -73,9 +73,15 @@ def latest_news(request):
     like_counts_dict = {item['article_id']: item['count'] for item in like_counts}
     dislike_counts_dict = {item['article_id']: item['count'] for item in dislike_counts}
 
+    # Get comment counts for all articles in the page
+    from .models import Comment
+    comment_counts = Comment.objects.filter(article_id__in=article_ids, is_approved=True).values('article_id').annotate(count=Count('id'))
+    comment_counts_dict = {item['article_id']: item['count'] for item in comment_counts}
+
     for article in page_obj:
         article.like_count = like_counts_dict.get(article.id, 0)
         article.dislike_count = dislike_counts_dict.get(article.id, 0)
+        article.comment_count = comment_counts_dict.get(article.id, 0)
 
     context = {
         'page_obj': page_obj,
@@ -104,6 +110,10 @@ def article_detail(request, article_id):
     like_count = ArticleLike.objects.filter(article=article, is_like=True).count()
     dislike_count = ArticleLike.objects.filter(article=article, is_like=False).count()
 
+    # Get comment count
+    from .models import Comment
+    comment_count = Comment.objects.filter(article=article, is_approved=True).count()
+
     # Get related articles from the same source
     related_articles = NewsArticle.objects.filter(source=article.source)\
         .exclude(pk=article.pk).order_by('-published_date')[:5]
@@ -114,6 +124,7 @@ def article_detail(request, article_id):
         'user_like_status': user_like_status,
         'like_count': like_count,
         'dislike_count': dislike_count,
+        'comment_count': comment_count,
         'related_articles': related_articles,
     }
     return render(request, 'news_aggregator/article_detail.html', context)
@@ -331,11 +342,17 @@ def _serialize_comment(request, c: Comment):
             except Exception:
                 user_vote = 0
 
+    # Include parent username for flat reply display at max depth
+    parent_username = None
+    if c.parent_id:
+        parent_username = c.parent.user.username if hasattr(c, 'parent') and c.parent else None
+
     return {
         'id': c.id,
         'article_id': c.article_id,
         'user': {'id': c.user_id, 'username': c.user.username},
         'parent_id': c.parent_id,
+        'parent_username': parent_username,
         'content': content,
         'created_at': c.created_at.isoformat(),
         'updated_at': c.updated_at.isoformat(),
@@ -414,10 +431,14 @@ def comments_list_create(request, article_id):
                 data['replies'] = []
             return data
 
+        # Get total comment count for this article (all comments, not just top-level)
+        total_comments = Comment.objects.filter(article=article, is_approved=True).count()
+
         data = {
             'count': paginator.count,
             'num_pages': paginator.num_pages,
             'page': page_obj.number,
+            'total_comments': total_comments,
             'results': [serialize_with_children(c) for c in page_obj.object_list],
         }
         return JsonResponse(data)
@@ -472,9 +493,8 @@ def comment_reply(request, comment_id):
     if not _throttle(request.user, 'reply', 10):
         return JsonResponse({'error': 'Too many requests. Please slow down.'}, status=429)
 
-    # Enforce maximum nesting depth on the server as well
-    if parent.depth >= Comment.MAX_DEPTH:
-        return JsonResponse({'error': 'Maximum reply depth reached'}, status=400)
+    # Allow replies at MAX_DEPTH - they will be displayed flat on frontend
+    # No depth restriction here anymore - depth is capped in model save()
 
     content = (request.POST.get('content') or '').strip()
     if not content:

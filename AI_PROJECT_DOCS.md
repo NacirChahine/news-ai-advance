@@ -85,37 +85,58 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - CommentVote(comment, user, value in {-1, 1}, created_at, updated_at)
 - Indexes: (article, created_at), (parent, created_at), (cached_score)
 - Depth enforcement: computed on save, max depth (e.g., 5) to avoid infinite nesting
+  - **NEW**: Replies at MAX_DEPTH are now allowed and displayed in a flat list structure (no further indentation)
+  - **NEW**: Flat replies show a visual indicator with "↩️ Replying to @username" at the top
+  - **NEW**: Clicking @username in reply indicator scrolls to and highlights the parent comment
 - Soft deletion: user deletes => content replaced with "[deleted]"; moderator removes => hidden to non-staff
 - Preferences (accounts.models.UserPreferences):
   - show_comments: bool (controls visibility on article pages)
   - notify_on_comment_reply: bool (optional email notifications)
 - Views (news_aggregator.views):
   - comments_list_create(article_id): GET paginated top-level comments (+ eager replies), POST create
+    - **NEW**: Returns `total_comments` field with count of all comments (not just top-level)
   - comment_reply(comment_id): POST create child
+    - **NEW**: No longer rejects replies at MAX_DEPTH (allows unlimited depth, displayed flat)
+  - comment_replies(comment_id): GET paginated replies for a specific comment (10 per page)
   - comment_edit(comment_id): POST owner-only edit
   - comment_delete(comment_id): POST owner-only soft-delete
   - comment_moderate(comment_id): POST staff remove/restore
   - comment_flag(comment_id): POST user flag/report
   - comment_vote(comment_id): POST/PUT/DELETE create/update/remove user vote; returns { success, score, user_vote }
   - article_like_toggle(): POST like/dislike/remove article reaction; returns { success, like_count, dislike_count, user_action }
+  - **NEW**: latest_news and article_detail views now include comment_count in context
 - URLs (news_aggregator/urls.py): named routes under namespace `news_aggregator`
   - article-like-toggle/: POST endpoint for like/dislike actions
+  - comments/<comment_id>/replies/: GET endpoint for paginated replies
 - Rate limiting: cache-backed throttle per user+endpoint; voting limited to one action per 2 seconds. Excess attempts return HTTP 429 with JSON `{ "error": "Too many requests. Please slow down." }`.
-- Serialization: lightweight dicts (id, content, user, created_at ISO, flags, permissions, score, user_vote, replies[])
+- Serialization: lightweight dicts (id, content, user, created_at ISO, flags, permissions, score, user_vote, depth, replies[])
+  - **NEW**: Includes `parent_username` field for displaying reply indicators
 - Templates: `templates/news_aggregator/partials/comments.html` (included in `article_detail.html` when allowed)
+  - **NEW**: Comment section header shows total comment count: "Comments (N)"
+  - **NEW**: Article detail page shows clickable comment counter near like/dislike buttons
+  - **NEW**: Article listing cards show clickable comment counter next to like/dislike buttons
 - Frontend (static/js/comments.js + static/css/site.css):
   - Authentication-based controls: when `data-authenticated="false"`, no action buttons render. Logged-in users see actions below the comment text.
-    - Reply is a standalone button
+    - Reply button available at all depths (no longer hidden at MAX_DEPTH)
     - All other actions (Edit, Delete, Flag, Moderate when permitted) live in a dropdown across all screen sizes and depths
   - Voting UI: vertical up/down caret buttons with live score; active selection is colored (upvote green, downvote red); unauthenticated users see disabled icons with tooltips.
   - Threading UX: Reddit-style visual nesting with depth-specific left borders and indentation; capped indentation to avoid overflow; per-thread collapse/expand toggle.
+    - **NEW**: Flat reply structure at MAX_DEPTH with reply indicators showing parent username
+    - **NEW**: Reply indicators are clickable and trigger smooth scroll + highlight animation on parent comment
+    - **NEW**: Comment highlight animation uses WCAG AA compliant colors (blue theme)
+    - **NEW**: Load more replies functionality with pagination support (infrastructure in place)
   - Time display: relative "time ago" labels with a tooltip (`title`) containing the absolute timestamp.
   - Accessibility: interactive elements have aria-labels; dropdowns use Bootstrap JS; keyboard focus states preserved.
+  - **NEW**: Comment counters use WCAG AA compliant colors for both light and dark themes
+  - **NEW**: Smooth scroll behavior when clicking comment counters to navigate to comments section
 - Placement: comments section is included full-width below the article and sidebar in `article_detail.html`.
 - Backend serialization/loading:
   - `comments_list_create` recursively prefetches and serializes replies up to depth 6 and includes current-user vote mapping for all loaded comments.
   - Replies endpoint (`comment_replies`) includes user vote mapping for the page of replies returned.
-- Depth restriction: replies allowed up to MAX_DEPTH=5; UI hides Reply at depth 5 and server rejects replies when parent depth >= 5.
+- Depth handling:
+  - Backend allows replies at any depth (depth capped at MAX_DEPTH in model save)
+  - Frontend displays replies beyond MAX_DEPTH in flat list with visual reply indicators
+  - Reply indicators show parent username and are clickable for navigation
 
 - Profile integration: `accounts.views.comment_history` at `/accounts/comments/` with pagination and stats (total, last 30 days). Profile page shows total comment count and a "View My Comments" button.
 

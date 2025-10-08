@@ -81,11 +81,26 @@
     // Initialize tooltips for newly inserted elements
     initTooltips(listEl);
     renderPagination(data, page);
+
+    // Update comment count in header if total_comments is provided
+    if(typeof data.total_comments !== 'undefined'){
+      updateCommentCount(data.total_comments);
+    }
   }
 
-  function renderCommentItem(c, isReply=false){
+  function renderCommentItem(c, isReply=false, parentUsername=null){
     const isAuthed = section.dataset.authenticated === 'true';
-    const depthClass = `depth-${Math.min(c.depth || 0, 6)}`;
+    const MAX_DEPTH = 5;
+    const actualDepth = c.depth || 0;
+
+    // For display purposes, cap depth at MAX_DEPTH for indentation
+    const displayDepth = Math.min(actualDepth, MAX_DEPTH);
+    const depthClass = `depth-${displayDepth}`;
+
+    // Check if this is at or beyond max depth and should show reply indicator
+    const isAtMaxDepth = actualDepth >= MAX_DEPTH;
+    const showReplyIndicator = isAtMaxDepth && c.parent_username;
+
     const created = new Date(c.created_at);
     const rel = timeAgo(created);
     const abs = created.toLocaleString();
@@ -113,30 +128,60 @@
         </ul>
       </div>`;
 
-    const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}">
+    // Reply indicator for comments at max depth
+    const replyIndicator = showReplyIndicator ?
+      `<div class="reply-indicator mb-1">
+        <i class="fas fa-reply me-1"></i>
+        <span class="reply-to-text">Replying to </span>
+        <a href="#" class="reply-to-username js-highlight-parent" data-parent-id="${c.parent_id}">@${escapeHtml(c.parent_username)}</a>
+      </div>` : '';
+
+    const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}" data-parent-id="${c.parent_id || ''}" data-replies-page="1">
       <div class="thread-left-gutter" role="button" aria-label="Toggle thread" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="left" title="Click to collapse/expand thread"></div>
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         ${voteBlock}
         <div class="flex-grow-1 min-w-0">
+          ${replyIndicator}
           <strong class="text-truncate">${escapeHtml(c.user.username)}</strong>
           <small class="text-muted ms-2" title="${abs}">${rel}</small>
           ${c.is_edited ? '<small class="text-muted ms-1">(edited)</small>' : ''}
           <div class="mt-1 comment-content">${escapeHtml(c.content)}</div>
-          ${isAuthed ? `<div class="comment-actions mt-2">${(c.depth || 0) < 5 ? '<button class="btn btn-sm btn-outline-primary js-reply" aria-label="Reply to comment"><i class=\"fa-regular fa-comment-dots me-1\"></i>Reply</button>' : ''} ${actionsDropdown}</div>` : ''}
+          ${isAuthed ? `<div class="comment-actions mt-2"><button class="btn btn-sm btn-outline-primary js-reply" aria-label="Reply to comment"><i class=\"fa-regular fa-comment-dots me-1\"></i>Reply</button> ${actionsDropdown}</div>` : ''}
         </div>
       </div>
       <div class="replies mt-2"></div>
       ${c.replies && c.replies.length ? `<button class="btn btn-sm btn-link text-decoration-none px-0 js-toggle-replies" aria-expanded="true">Hide replies (${c.replies.length})</button>` : ''}
+      <div class="load-more-replies-container"></div>
     </div>`);
 
     // Render nested replies if included
+    // For replies at max depth, render them flat (no further nesting)
     if(c.replies && c.replies.length){
       const holder = item.querySelector('.replies');
-      c.replies.forEach(r => holder.appendChild(renderCommentItem(r, true)));
+      if(actualDepth >= MAX_DEPTH){
+        // Render flat - all replies at same level
+        c.replies.forEach(r => {
+          const flatReply = renderCommentItem(r, true, c.user.username);
+          holder.appendChild(flatReply);
+        });
+      } else {
+        // Normal nested rendering
+        c.replies.forEach(r => holder.appendChild(renderCommentItem(r, true)));
+      }
     }
 
     setupThreadControls(item);
     bindItemActions(item, c);
+
+    // Add click handler for reply indicator username
+    const highlightLink = item.querySelector('.js-highlight-parent');
+    if(highlightLink){
+      highlightLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        highlightParentComment(c.parent_id);
+      });
+    }
+
     return item;
   }
 
@@ -209,6 +254,49 @@
       pagerEl.appendChild(makePage(p, p, false, p===page));
     }
     pagerEl.appendChild(makePage(Math.min(data.num_pages, page+1), 'Next', page>=data.num_pages));
+  }
+
+  async function loadMoreReplies(commentId, item){
+    const currentPage = parseInt(item.dataset.repliesPage || '1');
+    const nextPage = currentPage + 1;
+    const loadMoreContainer = item.querySelector('.load-more-replies-container');
+    const repliesHolder = item.querySelector('.replies');
+
+    // Show loading indicator
+    loadMoreContainer.innerHTML = '<div class="text-center text-muted py-2"><small>Loading more replies...</small></div>';
+
+    try{
+      const res = await fetch(`/news/comments/${commentId}/replies/?page=${nextPage}`);
+      const data = await res.json();
+
+      if(res.ok && data.results && data.results.length > 0){
+        // Append new replies
+        data.results.forEach(reply => {
+          repliesHolder.appendChild(renderCommentItem(reply, true));
+        });
+
+        // Update page number
+        item.dataset.repliesPage = nextPage;
+
+        // Show/hide load more button based on whether there are more pages
+        if(nextPage < data.num_pages){
+          loadMoreContainer.innerHTML = `<button class="btn btn-sm btn-outline-secondary js-load-more-replies mt-2">
+            <i class="fas fa-plus me-1"></i>Load more replies
+          </button>`;
+          const loadMoreBtn = loadMoreContainer.querySelector('.js-load-more-replies');
+          loadMoreBtn.addEventListener('click', () => loadMoreReplies(commentId, item));
+        } else {
+          loadMoreContainer.innerHTML = '';
+        }
+
+        // Initialize tooltips for new elements
+        initTooltips(repliesHolder);
+      } else {
+        loadMoreContainer.innerHTML = '';
+      }
+    }catch(err){
+      loadMoreContainer.innerHTML = '<div class="text-danger py-2"><small>Failed to load replies</small></div>';
+    }
   }
 
   function showReplyForm(item, c){
@@ -346,6 +434,34 @@
       });
       if(res.ok){ alert('Flag submitted'); } else { alert('Failed to flag'); }
     }catch(err){ alert('Failed to flag'); }
+  }
+
+  function updateCommentCount(count){
+    // Update comment count in section header
+    const headerCountEl = document.getElementById('comment-count-header');
+    if(headerCountEl){
+      headerCountEl.textContent = count;
+    }
+    // Update comment count in article detail page (if exists)
+    const detailCountEl = document.getElementById('article-comment-count');
+    if(detailCountEl){
+      detailCountEl.textContent = count;
+    }
+  }
+
+  function highlightParentComment(parentId){
+    if(!parentId) return;
+    const parentEl = document.querySelector(`.comment-item[data-comment-id="${parentId}"]`);
+    if(!parentEl) return;
+
+    // Scroll to parent comment
+    parentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Add highlight animation
+    parentEl.classList.add('comment-highlight');
+    setTimeout(() => {
+      parentEl.classList.remove('comment-highlight');
+    }, 2000);
   }
 
   function escapeHtml(str){

@@ -349,20 +349,27 @@ This will create:
 - Placement/layout:
   - Full-width comments section positioned below the main article and sidebar (under the article content)
   - Responsive threading layout; uses available horizontal space on wide screens
+  - **NEW**: Comment counters displayed on article cards in listing view and in article detail view
+  - **NEW**: Clickable comment counters navigate directly to the comments section with smooth scrolling
 - Authentication-based UI:
   - Visitors (not logged in): see comment content and metadata only (author, time-ago, edited); no Reply/Flag/action buttons
   - Logged-in users: actions appear below the comment text
-    - Reply is a standalone button
+    - Reply is a standalone button (available at all depths)
     - All other actions (Edit, Delete, Flag, Moderate when permitted) are in a dropdown menu across all screen sizes
 - Actions (permissions-aware):
-  - Reply (nested threading)
+  - Reply (nested threading with unlimited depth)
   - Edit/Delete own comments
   - Flag/report (logged-in users)
   - Staff moderation remove/restore (staff only)
 - UI/UX enhancements:
   - Reddit-style threading: colored left borders and indentation per depth, capped indentation to prevent overflow, per-thread collapse/expand toggle
+  - **NEW**: Flat reply structure at maximum depth (depth 5+) with visual reply indicators
+  - **NEW**: Reply indicators show "↩️ Replying to @username" for context in deep threads
+  - **NEW**: Clickable @username in reply indicators scrolls to and highlights the parent comment
+  - **NEW**: Smooth highlight animation when navigating to parent comments (WCAG AA compliant colors)
+  - **NEW**: Load more replies functionality with pagination support for long threads
   - Relative timestamps (e.g., "2 hours ago") with tooltip showing absolute time
-  - Maximum depth: replies allowed up to depth 5; Reply button hidden at max depth (server also enforces this)
+  - Maximum depth handling: replies beyond depth 5 are displayed flat with reply indicators instead of further indentation
 
 - Rate limiting to prevent spam (per-user, short rolling window)
 - Preferences: Accounts → Preferences (auto-saves via AJAX)
@@ -370,6 +377,7 @@ This will create:
   - Email me on replies (notify_on_comment_reply) [optional]
 - Profile: My Comments at `/accounts/comments/` with pagination and quick stats (total, last 30 days)
 - Frontend: `templates/news_aggregator/partials/comments.html`, `static/js/comments.js`, and styles in `static/css/site.css`
+- Accessibility: All color choices maintain WCAG AA contrast compliance (4.5:1 for normal text, 3:1 for large text) across both light and dark themes
 
 
 ### Misinformation Alerts (Manual Management and Email Notifications)
