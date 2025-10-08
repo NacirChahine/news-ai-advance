@@ -110,6 +110,8 @@ def auto_save_preferences(request):
             preferences.show_comments = field_value
         elif field_name == 'notify_on_comment_reply':
             preferences.notify_on_comment_reply = field_value
+        elif field_name == 'public_profile':
+            preferences.public_profile = field_value
         elif field_name == 'political_filter':
             preferences.political_filter = field_value
         elif field_name == 'receive_misinformation_alerts':
@@ -463,3 +465,81 @@ def comment_history(request):
         'last_30_days': last_30,
     }
     return render(request, 'accounts/comment_history.html', context)
+
+
+def public_user_profile(request, username):
+    """Public user profile view"""
+    from django.core.paginator import Paginator
+    from news_aggregator.models import Comment, ArticleLike, NewsArticle
+    from datetime import timedelta
+    from django.utils import timezone
+
+    User = get_user_model()
+    profile_user = get_object_or_404(User, username=username)
+
+    # Check if profile is public
+    try:
+        preferences = profile_user.preferences
+        if not preferences.public_profile and request.user != profile_user:
+            return render(request, 'accounts/public_profile.html', {
+                'profile_user': profile_user,
+                'is_private': True,
+            })
+    except:
+        # If preferences don't exist, default to public
+        pass
+
+    # Get user profile
+    try:
+        user_profile = profile_user.profile
+    except:
+        user_profile = None
+
+    # Get statistics
+    total_comments = Comment.objects.filter(user=profile_user, is_approved=True).count()
+    thirty_days_ago = timezone.now() - timedelta(days=30)
+    recent_comments = Comment.objects.filter(
+        user=profile_user,
+        is_approved=True,
+        created_at__gte=thirty_days_ago
+    ).count()
+
+    # Get liked articles (paginated)
+    liked_article_ids = ArticleLike.objects.filter(
+        user=profile_user,
+        is_like=True
+    ).values_list('article_id', flat=True)
+
+    liked_articles = NewsArticle.objects.filter(
+        id__in=liked_article_ids
+    ).select_related('source').order_by('-published_at')
+
+    liked_paginator = Paginator(liked_articles, 10)
+    liked_page = request.GET.get('liked_page', 1)
+    liked_page_obj = liked_paginator.get_page(liked_page)
+
+    # Get user comments (paginated)
+    comments = Comment.objects.filter(
+        user=profile_user,
+        is_approved=True,
+        is_deleted_by_user=False,
+        is_removed_moderator=False
+    ).select_related('article', 'article__source').order_by('-created_at')
+
+    comments_paginator = Paginator(comments, 10)
+    comments_page = request.GET.get('comments_page', 1)
+    comments_page_obj = comments_paginator.get_page(comments_page)
+
+    context = {
+        'profile_user': profile_user,
+        'user_profile': user_profile,
+        'is_private': False,
+        'is_own_profile': request.user == profile_user,
+        'total_comments': total_comments,
+        'recent_comments': recent_comments,
+        'liked_page_obj': liked_page_obj,
+        'comments_page_obj': comments_page_obj,
+        'member_since': profile_user.date_joined,
+    }
+
+    return render(request, 'accounts/public_profile.html', context)

@@ -85,6 +85,12 @@
                                     <div class="form-text">Toggle visibility of the comments section on article pages</div>
                                 </div>
 
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="public_profile" name="public_profile" {% if preferences.public_profile %}checked{% endif %}>
+                                    <label class="form-check-label" for="public_profile">Public Profile</label>
+                                    <div class="form-text">Allow others to view your public profile with your comments and liked articles</div>
+                                </div>
+
                             </div>
                         </div>
 

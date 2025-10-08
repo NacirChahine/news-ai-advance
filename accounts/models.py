@@ -50,6 +50,9 @@ class UserPreferences(models.Model):
     show_comments = models.BooleanField(default=True)
     notify_on_comment_reply = models.BooleanField(default=False)
 
+    # Profile visibility preference
+    public_profile = models.BooleanField(default=True, help_text="Allow others to view your public profile")
+
     receive_misinformation_alerts = models.BooleanField(default=True)
     daily_digest_email = models.BooleanField(default=False)
 

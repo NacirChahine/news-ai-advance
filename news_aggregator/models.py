@@ -124,15 +124,17 @@ class Comment(models.Model):
         return f"Comment by {self.user.username} on {self.article.title[:15]}...: {self.content[:10]}..."
 
     def save(self, *args, **kwargs):
-        # Compute depth from parent
+        # Compute depth from parent - store TRUE depth, not capped
+        # MAX_DEPTH is used only for display purposes in the frontend
         if self.parent:
             self.depth = (self.parent.depth or 0) + 1
-            if self.depth > self.MAX_DEPTH:
-                # Cap depth to MAX_DEPTH (children beyond max will attach at max depth)
-                self.depth = self.MAX_DEPTH
         else:
             self.depth = 0
         super().save(*args, **kwargs)
+
+    def get_display_depth(self):
+        """Return depth capped at MAX_DEPTH for display purposes."""
+        return min(self.depth, self.MAX_DEPTH)
 
 
 class CommentFlag(models.Model):

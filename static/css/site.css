@@ -723,19 +723,27 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 .vote-block .js-downvote.active{ color:#dc3545; }
 
 
-/* === Reply Indicators (for flat replies at max depth) === */
+/* === Reply Indicators (for all replies depth >= 1) === */
 .reply-indicator {
   font-size: 0.875rem;
   display: flex;
   align-items: center;
+  gap: 0.25rem;
 }
 
 .reply-indicator i {
   opacity: 0.7;
 }
 
+.reply-icon-link {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  transition: all 0.2s ease;
+}
+
 .reply-to-text {
-  color: var(--na-text);
   opacity: 0.8;
 }
 
@@ -743,9 +751,18 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
   font-weight: 600;
   text-decoration: none;
   transition: all 0.2s ease;
+  margin-left: 0.25rem;
 }
 
 /* Dark theme reply indicator colors - WCAG AA compliant */
+[data-theme="dark"] .reply-icon-link {
+  color: #94a3b8; /* Muted gray for icon/text */
+}
+
+[data-theme="dark"] .reply-icon-link:hover {
+  color: #cbd5e1; /* Lighter gray on hover */
+}
+
 [data-theme="dark"] .reply-to-username {
   color: #60a5fa; /* Light blue with 4.5:1 contrast on dark bg */
 }
@@ -756,6 +773,14 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 }
 
 /* Light theme reply indicator colors - WCAG AA compliant */
+[data-theme="light"] .reply-icon-link {
+  color: #64748b; /* Muted gray for icon/text */
+}
+
+[data-theme="light"] .reply-icon-link:hover {
+  color: #475569; /* Darker gray on hover */
+}
+
 [data-theme="light"] .reply-to-username {
   color: #2563eb; /* Dark blue with 4.5:1 contrast on light bg */
 }

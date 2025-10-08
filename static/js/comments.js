@@ -44,6 +44,9 @@
   const listEl = document.getElementById('comments-list');
   const pagerEl = document.getElementById('comments-pagination');
 
+  // Get MAX_DEPTH from data attribute (centralized configuration)
+  const MAX_DEPTH = parseInt(section.dataset.maxDepth || '5');
+
   async function fetchComments(page=1){
     currentPage = page;
     listEl.innerHTML = '<div class="text-center text-muted py-3">Loading comments…</div>';
@@ -90,16 +93,14 @@
 
   function renderCommentItem(c, isReply=false, parentUsername=null){
     const isAuthed = section.dataset.authenticated === 'true';
-    const MAX_DEPTH = 5;
     const actualDepth = c.depth || 0;
 
     // For display purposes, cap depth at MAX_DEPTH for indentation
     const displayDepth = Math.min(actualDepth, MAX_DEPTH);
     const depthClass = `depth-${displayDepth}`;
 
-    // Check if this is at or beyond max depth and should show reply indicator
-    const isAtMaxDepth = actualDepth >= MAX_DEPTH;
-    const showReplyIndicator = isAtMaxDepth && c.parent_username;
+    // Show reply indicator for ALL replies (depth >= 1), not just at max depth
+    const showReplyIndicator = isReply && c.parent_username;
 
     const created = new Date(c.created_at);
     const rel = timeAgo(created);
@@ -128,12 +129,15 @@
         </ul>
       </div>`;
 
-    // Reply indicator for comments at max depth
+    // Reply indicator for all replies (depth >= 1)
+    // Icon/text highlights parent, username navigates to profile
     const replyIndicator = showReplyIndicator ?
       `<div class="reply-indicator mb-1">
-        <i class="fas fa-reply me-1"></i>
-        <span class="reply-to-text">Replying to </span>
-        <a href="#" class="reply-to-username js-highlight-parent" data-parent-id="${c.parent_id}">@${escapeHtml(c.parent_username)}</a>
+        <a href="#" class="reply-icon-link js-highlight-parent" data-parent-id="${c.parent_id}" title="Jump to parent comment">
+          <i class="fas fa-reply me-1"></i>
+          <span class="reply-to-text">Replying to</span>
+        </a>
+        <a href="/accounts/user/${escapeHtml(c.parent_username)}/" class="reply-to-username" title="View ${escapeHtml(c.parent_username)}'s profile">@${escapeHtml(c.parent_username)}</a>
       </div>` : '';
 
     const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}" data-parent-id="${c.parent_id || ''}" data-replies-page="1">

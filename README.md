@@ -363,12 +363,14 @@ This will create:
   - Staff moderation remove/restore (staff only)
 - UI/UX enhancements:
   - Reddit-style threading: colored left borders and indentation per depth, capped indentation to prevent overflow, per-thread collapse/expand toggle
-  - **NEW**: Flat reply structure at maximum depth (depth 5+) with visual reply indicators
-  - **NEW**: Reply indicators show "↩️ Replying to @username" for context in deep threads
-  - **NEW**: Clickable @username in reply indicators scrolls to and highlights the parent comment
+  - **UPDATED**: Reply indicators shown for ALL replies (depth >= 1), not just at maximum depth
+  - **UPDATED**: Reply indicators have two clickable parts:
+    - Icon + "Replying to" text: highlights immediate parent comment only
+    - @username link: navigates to user's public profile page
   - **NEW**: Smooth highlight animation when navigating to parent comments (WCAG AA compliant colors)
   - **NEW**: Load more replies functionality with pagination support for long threads
   - Relative timestamps (e.g., "2 hours ago") with tooltip showing absolute time
+  - **UPDATED**: Depth handling: true depth stored in database (unlimited), MAX_DEPTH=5 used only for display indentation
   - Maximum depth handling: replies beyond depth 5 are displayed flat with reply indicators instead of further indentation
 
 - Rate limiting to prevent spam (per-user, short rolling window)
@@ -376,8 +378,14 @@ This will create:
   - Show comments (show_comments) controls visibility on article pages
   - Email me on replies (notify_on_comment_reply) [optional]
 - Profile: My Comments at `/accounts/comments/` with pagination and quick stats (total, last 30 days)
+- **NEW**: Public user profiles at `/accounts/user/<username>/` with:
+  - Profile visibility preference (default: enabled)
+  - Account information, statistics, liked articles, and comments
+  - Privacy controls: private profiles show "This Profile is Private" message
+  - Integration with comment system via @username links
 - Frontend: `templates/news_aggregator/partials/comments.html`, `static/js/comments.js`, and styles in `static/css/site.css`
 - Accessibility: All color choices maintain WCAG AA contrast compliance (4.5:1 for normal text, 3:1 for large text) across both light and dark themes
+- **NEW**: MAX_DEPTH centralized via data attribute, single source of truth from backend
 
 
 ### Misinformation Alerts (Manual Management and Email Notifications)

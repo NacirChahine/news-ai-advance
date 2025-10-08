@@ -84,14 +84,19 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - CommentFlag(comment, user, reason, created_at)
   - CommentVote(comment, user, value in {-1, 1}, created_at, updated_at)
 - Indexes: (article, created_at), (parent, created_at), (cached_score)
-- Depth enforcement: computed on save, max depth (e.g., 5) to avoid infinite nesting
-  - **NEW**: Replies at MAX_DEPTH are now allowed and displayed in a flat list structure (no further indentation)
-  - **NEW**: Flat replies show a visual indicator with "↩️ Replying to @username" at the top
-  - **NEW**: Clicking @username in reply indicator scrolls to and highlights the parent comment
+- Depth enforcement: computed on save, true depth stored without capping
+  - **UPDATED**: Model now stores true depth (unlimited), MAX_DEPTH=5 used only for display indentation
+  - **UPDATED**: `get_display_depth()` method returns depth capped at MAX_DEPTH for UI rendering
+  - **NEW**: Replies beyond MAX_DEPTH are displayed in a flat list structure (no further indentation)
+  - **NEW**: ALL replies (depth >= 1) show a visual indicator with "↩️ Replying to @username"
+  - **NEW**: Reply indicator has two clickable parts:
+    - Icon/text: highlights immediate parent comment only
+    - @username: navigates to user's public profile page
 - Soft deletion: user deletes => content replaced with "[deleted]"; moderator removes => hidden to non-staff
 - Preferences (accounts.models.UserPreferences):
   - show_comments: bool (controls visibility on article pages)
   - notify_on_comment_reply: bool (optional email notifications)
+  - **NEW**: public_profile: bool (controls public profile visibility, default: True)
 - Views (news_aggregator.views):
   - comments_list_create(article_id): GET paginated top-level comments (+ eager replies), POST create
     - **NEW**: Returns `total_comments` field with count of all comments (not just top-level)
@@ -116,13 +121,16 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - **NEW**: Article detail page shows clickable comment counter near like/dislike buttons
   - **NEW**: Article listing cards show clickable comment counter next to like/dislike buttons
 - Frontend (static/js/comments.js + static/css/site.css):
+  - **NEW**: MAX_DEPTH centralized via data attribute (data-max-depth="5") on comments section
   - Authentication-based controls: when `data-authenticated="false"`, no action buttons render. Logged-in users see actions below the comment text.
     - Reply button available at all depths (no longer hidden at MAX_DEPTH)
     - All other actions (Edit, Delete, Flag, Moderate when permitted) live in a dropdown across all screen sizes and depths
   - Voting UI: vertical up/down caret buttons with live score; active selection is colored (upvote green, downvote red); unauthenticated users see disabled icons with tooltips.
   - Threading UX: Reddit-style visual nesting with depth-specific left borders and indentation; capped indentation to avoid overflow; per-thread collapse/expand toggle.
-    - **NEW**: Flat reply structure at MAX_DEPTH with reply indicators showing parent username
-    - **NEW**: Reply indicators are clickable and trigger smooth scroll + highlight animation on parent comment
+    - **UPDATED**: Reply indicators shown for ALL replies (depth >= 1), not just at max depth
+    - **UPDATED**: Reply indicator has two separate clickable elements:
+      - Icon + "Replying to" text: highlights immediate parent comment only (not all ancestors)
+      - @username link: navigates to user's public profile (/accounts/user/<username>/)
     - **NEW**: Comment highlight animation uses WCAG AA compliant colors (blue theme)
     - **NEW**: Load more replies functionality with pagination support (infrastructure in place)
   - Time display: relative "time ago" labels with a tooltip (`title`) containing the absolute timestamp.
@@ -134,9 +142,26 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - `comments_list_create` recursively prefetches and serializes replies up to depth 6 and includes current-user vote mapping for all loaded comments.
   - Replies endpoint (`comment_replies`) includes user vote mapping for the page of replies returned.
 - Depth handling:
-  - Backend allows replies at any depth (depth capped at MAX_DEPTH in model save)
+  - **UPDATED**: Backend stores true depth without capping (unlimited nesting)
+  - **UPDATED**: Model provides `get_display_depth()` method that caps at MAX_DEPTH for UI
   - Frontend displays replies beyond MAX_DEPTH in flat list with visual reply indicators
-  - Reply indicators show parent username and are clickable for navigation
+  - Reply indicators show parent username with two clickable parts (parent highlight vs profile navigation)
+
+### Public User Profiles
+- **NEW**: Public user profile system at `/accounts/user/<username>/`
+- Profile visibility controlled by `public_profile` preference (default: True)
+- Profile displays:
+  - Account information: username, full name, bio, profile picture/letter avatar, member since date
+  - Statistics: total comments, last 30 days comments, liked articles count
+  - Liked articles tab: paginated list of articles user has liked
+  - Comments tab: paginated list of user's public comments
+- Privacy:
+  - When `public_profile=False`, shows "This Profile is Private" message to others
+  - User can always view their own profile regardless of privacy setting
+  - Only approved, non-deleted, non-removed comments are shown
+- Integration:
+  - Reply indicators link to user profiles via @username
+  - Profile accessible from comment author names throughout the site
 
 - Profile integration: `accounts.views.comment_history` at `/accounts/comments/` with pagination and stats (total, last 30 days). Profile page shows total comment count and a "View My Comments" button.
 

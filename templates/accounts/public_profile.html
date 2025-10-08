@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.username }}'s Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  {% if is_private %}
+    <!-- Private Profile Message -->
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-body text-center py-5">
+            <i class="fas fa-lock fa-3x text-muted mb-3"></i>
+            <h3>This Profile is Private</h3>
+            <p class="text-muted">{{ profile_user.username }} has chosen to keep their profile private.</p>
+            <a href="{% url 'news_aggregator:latest_news' %}" class="btn btn-primary mt-3">
+              <i class="fas fa-arrow-left me-2"></i>Back to News
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <!-- Public Profile -->
+    <div class="row">
+      <div class="col-md-4 mb-4">
+        <!-- User Info Card -->
+        <div class="card">
+          <div class="card-body text-center">
+            {% if user_profile and user_profile.profile_picture %}
+              <img src="{{ user_profile.profile_picture.url }}" alt="{{ profile_user.username }}" class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
+            {% else %}
+              <!-- Letter Avatar -->
+              <div class="rounded-circle bg-primary text-white d-inline-flex align-items-center justify-content-center mb-3" style="width: 120px; height: 120px; font-size: 48px; font-weight: bold;">
+                {{ profile_user.username|slice:":1"|upper }}
+              </div>
+            {% endif %}
+            
+            <h3 class="mb-1">{{ profile_user.username }}</h3>
+            
+            {% if profile_user.get_full_name %}
+              <p class="text-muted mb-2">{{ profile_user.get_full_name }}</p>
+            {% endif %}
+            
+            <p class="text-muted small">
+              <i class="fas fa-calendar-alt me-1"></i>
+              Member since {{ member_since|date:"F Y" }}
+            </p>
+            
+            {% if user_profile and user_profile.bio %}
+              <hr>
+              <p class="text-start">{{ user_profile.bio }}</p>
+            {% endif %}
+            
+            {% if is_own_profile %}
+              <hr>
+              <a href="{% url 'accounts:edit_profile' %}" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-edit me-1"></i>Edit Profile
+              </a>
+            {% endif %}
+          </div>
+        </div>
+        
+        <!-- Statistics Card -->
+        <div class="card mt-3">
+          <div class="card-body">
+            <h5 class="card-title mb-3">
+              <i class="fas fa-chart-bar me-2"></i>Statistics
+            </h5>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Total Comments:</span>
+              <strong>{{ total_comments }}</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Last 30 Days:</span>
+              <strong>{{ recent_comments }}</strong>
+            </div>
+            <div class="d-flex justify-content-between">
+              <span>Liked Articles:</span>
+              <strong>{{ liked_page_obj.paginator.count }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="col-md-8">
+        <!-- Tabs for Liked Articles and Comments -->
+        <ul class="nav nav-tabs mb-3" id="profileTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="liked-tab" data-bs-toggle="tab" data-bs-target="#liked" type="button" role="tab" aria-controls="liked" aria-selected="true">
+              <i class="fas fa-heart me-2"></i>Liked Articles ({{ liked_page_obj.paginator.count }})
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false">
+              <i class="far fa-comments me-2"></i>Comments ({{ total_comments }})
+            </button>
+          </li>
+        </ul>
+        
+        <div class="tab-content" id="profileTabsContent">
+          <!-- Liked Articles Tab -->
+          <div class="tab-pane fade show active" id="liked" role="tabpanel" aria-labelledby="liked-tab">
+            {% if liked_page_obj %}
+              <div class="list-group">
+                {% for article in liked_page_obj %}
+                  <a href="{% url 'news_aggregator:article_detail' article.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h6 class="mb-1">{{ article.title }}</h6>
+                      <small class="text-muted">{{ article.published_at|date:"M d, Y" }}</small>
+                    </div>
+                    <p class="mb-1 text-muted small">{{ article.source.name }}</p>
+                  </a>
+                {% empty %}
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {% if is_own_profile %}
+                      You haven't liked any articles yet.
+                    {% else %}
+                      {{ profile_user.username }} hasn't liked any articles yet.
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+              
+              <!-- Pagination for Liked Articles -->
+              {% if liked_page_obj.has_other_pages %}
+                <nav aria-label="Liked articles pagination" class="mt-3">
+                  <ul class="pagination justify-content-center">
+                    {% if liked_page_obj.has_previous %}
+                      <li class="page-item">
+                        <a class="page-link" href="?liked_page={{ liked_page_obj.previous_page_number }}{% if request.GET.comments_page %}&comments_page={{ request.GET.comments_page }}{% endif %}#liked">Previous</a>
+                      </li>
+                    {% endif %}
+                    
+                    {% for num in liked_page_obj.paginator.page_range %}
+                      {% if liked_page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                      {% elif num > liked_page_obj.number|add:'-3' and num < liked_page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?liked_page={{ num }}{% if request.GET.comments_page %}&comments_page={{ request.GET.comments_page }}{% endif %}#liked">{{ num }}</a></li>
+                      {% endif %}
+                    {% endfor %}
+                    
+                    {% if liked_page_obj.has_next %}
+                      <li class="page-item">
+                        <a class="page-link" href="?liked_page={{ liked_page_obj.next_page_number }}{% if request.GET.comments_page %}&comments_page={{ request.GET.comments_page }}{% endif %}#liked">Next</a>
+                      </li>
+                    {% endif %}
+                  </ul>
+                </nav>
+              {% endif %}
+            {% endif %}
+          </div>
+          
+          <!-- Comments Tab -->
+          <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">
+            {% if comments_page_obj %}
+              <div class="list-group">
+                {% for comment in comments_page_obj %}
+                  <div class="list-group-item">
+                    <div class="d-flex w-100 justify-content-between mb-2">
+                      <h6 class="mb-0">
+                        <a href="{% url 'news_aggregator:article_detail' comment.article.id %}#comment-{{ comment.id }}">
+                          {{ comment.article.title|truncatewords:15 }}
+                        </a>
+                      </h6>
+                      <small class="text-muted">{{ comment.created_at|timesince }} ago</small>
+                    </div>
+                    <p class="mb-1">{{ comment.content|truncatewords:30 }}</p>
+                    <small class="text-muted">
+                      <i class="fas fa-thumbs-up me-1"></i>{{ comment.cached_score }} points
+                      {% if comment.replies.count %}
+                        <span class="ms-2"><i class="far fa-comments me-1"></i>{{ comment.replies.count }} replies</span>
+                      {% endif %}
+                    </small>
+                  </div>
+                {% empty %}
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {% if is_own_profile %}
+                      You haven't posted any comments yet.
+                    {% else %}
+                      {{ profile_user.username }} hasn't posted any comments yet.
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+              
+              <!-- Pagination for Comments -->
+              {% if comments_page_obj.has_other_pages %}
+                <nav aria-label="Comments pagination" class="mt-3">
+                  <ul class="pagination justify-content-center">
+                    {% if comments_page_obj.has_previous %}
+                      <li class="page-item">
+                        <a class="page-link" href="?comments_page={{ comments_page_obj.previous_page_number }}{% if request.GET.liked_page %}&liked_page={{ request.GET.liked_page }}{% endif %}#comments">Previous</a>
+                      </li>
+                    {% endif %}
+                    
+                    {% for num in comments_page_obj.paginator.page_range %}
+                      {% if comments_page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                      {% elif num > comments_page_obj.number|add:'-3' and num < comments_page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?comments_page={{ num }}{% if request.GET.liked_page %}&liked_page={{ request.GET.liked_page }}{% endif %}#comments">{{ num }}</a></li>
+                      {% endif %}
+                    {% endfor %}
+                    
+                    {% if comments_page_obj.has_next %}
+                      <li class="page-item">
+                        <a class="page-link" href="?comments_page={{ comments_page_obj.next_page_number }}{% if request.GET.liked_page %}&liked_page={{ request.GET.liked_page }}{% endif %}#comments">Next</a>
+                      </li>
+                    {% endif %}
+                  </ul>
+                </nav>
+              {% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<script>
+// Preserve active tab on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Check if there's a hash in the URL
+  const hash = window.location.hash;
+  if (hash === '#comments') {
+    const commentsTab = document.getElementById('comments-tab');
+    if (commentsTab) {
+      const tab = new bootstrap.Tab(commentsTab);
+      tab.show();
+    }
+  } else if (hash === '#liked') {
+    const likedTab = document.getElementById('liked-tab');
+    if (likedTab) {
+      const tab = new bootstrap.Tab(likedTab);
+      tab.show();
+    }
+  }
+});
+</script>
+{% endblock %}
+

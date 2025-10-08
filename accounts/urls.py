@@ -24,4 +24,7 @@ urlpatterns = [
 
     # Comments
     path('comments/', views.comment_history, name='comment_history'),
+
+    # Public user profile
+    path('user/<str:username>/', views.public_user_profile, name='public_profile'),
 ]

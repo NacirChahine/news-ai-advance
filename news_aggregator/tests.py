@@ -120,14 +120,53 @@ class CommentModelTests(TestCase):
         self.user = User.objects.create_user(username='u3', email='u3@example.com', password='x')
         self.staff = User.objects.create_user(username='staff', email='s@example.com', password='x', is_staff=True)
 
-    def test_threading_depth_limit(self):
+    def test_threading_depth_tracking(self):
+        """Test that true depth is stored beyond MAX_DEPTH"""
         from news_aggregator.models import Comment
         parent = Comment.objects.create(article=self.article, user=self.user, content='p')
+        self.assertEqual(parent.depth, 0)
+
         c1 = Comment.objects.create(article=self.article, user=self.user, parent=parent, content='r1')
+        self.assertEqual(c1.depth, 1)
+
         c2 = Comment.objects.create(article=self.article, user=self.user, parent=c1, content='r2')
+        self.assertEqual(c2.depth, 2)
+
         c3 = Comment.objects.create(article=self.article, user=self.user, parent=c2, content='r3')
+        self.assertEqual(c3.depth, 3)
+
         c4 = Comment.objects.create(article=self.article, user=self.user, parent=c3, content='r4')
-        self.assertLessEqual(c4.depth, Comment.MAX_DEPTH)
+        self.assertEqual(c4.depth, 4)
+
+        c5 = Comment.objects.create(article=self.article, user=self.user, parent=c4, content='r5')
+        self.assertEqual(c5.depth, 5)
+
+        # Beyond MAX_DEPTH - should still track true depth
+        c6 = Comment.objects.create(article=self.article, user=self.user, parent=c5, content='r6')
+        self.assertEqual(c6.depth, 6)
+
+        c7 = Comment.objects.create(article=self.article, user=self.user, parent=c6, content='r7')
+        self.assertEqual(c7.depth, 7)
+
+    def test_display_depth_capping(self):
+        """Test that get_display_depth() caps at MAX_DEPTH"""
+        from news_aggregator.models import Comment
+        parent = Comment.objects.create(article=self.article, user=self.user, content='p')
+
+        # Create deep nesting
+        current = parent
+        for i in range(10):
+            current = Comment.objects.create(
+                article=self.article,
+                user=self.user,
+                parent=current,
+                content=f'reply{i}'
+            )
+
+        # True depth should be 10
+        self.assertEqual(current.depth, 10)
+        # Display depth should be capped at MAX_DEPTH
+        self.assertEqual(current.get_display_depth(), Comment.MAX_DEPTH)
 
     def test_soft_delete(self):
         from news_aggregator.models import Comment
@@ -199,3 +238,178 @@ class CommentVotingTests(TestCase):
         self.assertEqual(r2.status_code, 200)
         self.comment.refresh_from_db()
         self.assertEqual(self.comment.cached_score, 1)
+
+
+class CommentSerializationTests(TestCase):
+    """Tests for comment serialization with parent_username"""
+    def setUp(self):
+        self.client = Client()
+        self.source = NewsSource.objects.create(name='S', url='https://s.example')
+        self.article = NewsArticle.objects.create(title='T', source=self.source, url='https://s.example/t', content='c')
+        self.user1 = User.objects.create_user(username='user1', email='u1@example.com', password='x')
+        self.user2 = User.objects.create_user(username='user2', email='u2@example.com', password='x')
+
+    def test_parent_username_in_serialization(self):
+        """Test that parent_username is included in comment serialization"""
+        from news_aggregator.models import Comment
+
+        # Create parent comment
+        parent = Comment.objects.create(article=self.article, user=self.user1, content='parent')
+
+        # Create reply
+        reply = Comment.objects.create(article=self.article, user=self.user2, parent=parent, content='reply')
+
+        # Login and fetch comments
+        self.client.login(username='user2', password='x')
+        url = reverse('news_aggregator:comments_list_create', args=[self.article.id])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+
+        # Find the parent comment in results
+        parent_data = next((c for c in data['results'] if c['id'] == parent.id), None)
+        self.assertIsNotNone(parent_data)
+
+        # Check that reply has parent_username
+        if parent_data and 'replies' in parent_data and len(parent_data['replies']) > 0:
+            reply_data = parent_data['replies'][0]
+            self.assertEqual(reply_data['parent_username'], 'user1')
+
+    def test_comment_count_in_response(self):
+        """Test that total_comments is included in API response"""
+        from news_aggregator.models import Comment
+
+        # Create multiple comments
+        Comment.objects.create(article=self.article, user=self.user1, content='c1')
+        Comment.objects.create(article=self.article, user=self.user1, content='c2')
+        Comment.objects.create(article=self.article, user=self.user2, content='c3')
+
+        self.client.login(username='user1', password='x')
+        url = reverse('news_aggregator:comments_list_create', args=[self.article.id])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn('total_comments', data)
+        self.assertEqual(data['total_comments'], 3)
+
+
+class CommentCounterTests(TestCase):
+    """Tests for comment counter functionality"""
+    def setUp(self):
+        self.client = Client()
+        self.source = NewsSource.objects.create(name='S', url='https://s.example')
+        self.article = NewsArticle.objects.create(title='T', source=self.source, url='https://s.example/t', content='c')
+        self.user = User.objects.create_user(username='u', email='u@example.com', password='x')
+
+    def test_comment_count_in_article_detail(self):
+        """Test that comment_count is in article detail context"""
+        from news_aggregator.models import Comment
+
+        # Create comments
+        Comment.objects.create(article=self.article, user=self.user, content='c1')
+        Comment.objects.create(article=self.article, user=self.user, content='c2')
+
+        url = reverse('news_aggregator:article_detail', args=[self.article.id])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('comment_count', resp.context)
+        self.assertEqual(resp.context['comment_count'], 2)
+
+    def test_comment_count_in_latest_news(self):
+        """Test that articles have comment_count in listing view"""
+        from news_aggregator.models import Comment
+
+        # Create comments
+        Comment.objects.create(article=self.article, user=self.user, content='c1')
+        Comment.objects.create(article=self.article, user=self.user, content='c2')
+
+        url = reverse('news_aggregator:latest_news')
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        # Check that articles in page_obj have comment_count attribute
+        articles = resp.context['page_obj']
+        if articles:
+            first_article = articles[0]
+            self.assertTrue(hasattr(first_article, 'comment_count'))
+
+
+class PublicProfileTests(TestCase):
+    """Tests for public user profile functionality"""
+    def setUp(self):
+        self.client = Client()
+        self.user1 = User.objects.create_user(username='user1', email='u1@example.com', password='x')
+        self.user2 = User.objects.create_user(username='user2', email='u2@example.com', password='x')
+        self.source = NewsSource.objects.create(name='S', url='https://s.example')
+        self.article = NewsArticle.objects.create(title='T', source=self.source, url='https://s.example/t', content='c')
+
+    def test_public_profile_accessible(self):
+        """Test that public profile is accessible when enabled"""
+        url = reverse('accounts:public_profile', args=['user1'])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('profile_user', resp.context)
+        self.assertEqual(resp.context['profile_user'].username, 'user1')
+        self.assertFalse(resp.context['is_private'])
+
+    def test_private_profile_blocked(self):
+        """Test that private profile shows privacy message"""
+        # Set profile to private
+        prefs = self.user1.preferences
+        prefs.public_profile = False
+        prefs.save()
+
+        # Try to access as different user
+        self.client.login(username='user2', password='x')
+        url = reverse('accounts:public_profile', args=['user1'])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.context['is_private'])
+
+    def test_own_private_profile_accessible(self):
+        """Test that user can view their own private profile"""
+        # Set profile to private
+        prefs = self.user1.preferences
+        prefs.public_profile = False
+        prefs.save()
+
+        # Access own profile
+        self.client.login(username='user1', password='x')
+        url = reverse('accounts:public_profile', args=['user1'])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(resp.context['is_private'])
+        self.assertTrue(resp.context['is_own_profile'])
+
+    def test_profile_shows_comments(self):
+        """Test that profile displays user's comments"""
+        from news_aggregator.models import Comment
+
+        # Create comments
+        Comment.objects.create(article=self.article, user=self.user1, content='comment1')
+        Comment.objects.create(article=self.article, user=self.user1, content='comment2')
+
+        url = reverse('accounts:public_profile', args=['user1'])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context['total_comments'], 2)
+
+    def test_profile_shows_liked_articles(self):
+        """Test that profile displays user's liked articles"""
+        from news_aggregator.models import ArticleLike
+
+        # Create likes
+        ArticleLike.objects.create(article=self.article, user=self.user1, is_like=True)
+
+        url = reverse('accounts:public_profile', args=['user1'])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.context['liked_page_obj'].paginator.count, 1)
