@@ -564,7 +564,7 @@ USE_ML_SUMMARIZATION = True
 - [AI_PROJECT_DOCS.md](AI_PROJECT_DOCS.md) - Detailed technical documentation for AI context
 - [OLLAMA_INTEGRATION.md](OLLAMA_INTEGRATION.md) - Complete guide for Ollama setup and usage
 - [ML_SUMMARIZATION.md](ML_SUMMARIZATION.md) - Documentation for the custom-trained summarization model
-- [COMMENT_SYSTEM_FIXES.md](COMMENT_SYSTEM_FIXES.md) - Recent fixes to comment system and public profiles
+- [UI_UX_IMPROVEMENTS.md](UI_UX_IMPROVEMENTS.md) - Recent UI/UX improvements and fixes
 
 ## Contributing
 

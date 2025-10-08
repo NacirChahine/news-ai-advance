@@ -468,11 +468,14 @@
     // Scroll to parent comment
     parentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Add highlight animation to ONLY this specific comment
-    parentEl.classList.add('comment-highlight');
-    setTimeout(() => {
-      parentEl.classList.remove('comment-highlight');
-    }, 2000);
+    // Add highlight animation to ONLY the comment content (not the entire comment div)
+    const contentEl = parentEl.querySelector('.comment-content');
+    if(contentEl) {
+      contentEl.classList.add('comment-highlight');
+      setTimeout(() => {
+        contentEl.classList.remove('comment-highlight');
+      }, 2000);
+    }
   }
 
   function escapeHtml(str){
@@ -509,6 +512,38 @@
     resizeTimer = setTimeout(()=>{ fetchComments(currentPage); }, 250);
   });
 
-  fetchComments(1);
+  // Handle comment deep linking from URL hash (e.g., #comment-40)
+  function handleCommentDeepLink() {
+    const hash = window.location.hash;
+    if (hash && hash.startsWith('#comment-')) {
+      const commentId = hash.replace('#comment-', '');
+
+      // Wait a bit for comments to load
+      setTimeout(() => {
+        const commentEl = document.querySelector(`.comment-item[data-comment-id="${commentId}"]`);
+        if (commentEl) {
+          // Scroll to the comment
+          commentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+          // Apply highlight animation to content only
+          const contentEl = commentEl.querySelector('.comment-content');
+          if (contentEl) {
+            contentEl.classList.add('comment-highlight');
+            setTimeout(() => {
+              contentEl.classList.remove('comment-highlight');
+            }, 2000);
+          }
+        }
+      }, 500); // Wait for initial comment load
+    }
+  }
+
+  fetchComments(1).then(() => {
+    // After comments are loaded, check for deep link
+    handleCommentDeepLink();
+  });
+
+  // Also handle hash changes (navigation within page)
+  window.addEventListener('hashchange', handleCommentDeepLink);
 })();
 

@@ -31,6 +31,7 @@ $(document).ready(function() {
     // Handle save/unsave article button clicks
     $(document).on('click', '.save-article-btn', function(e) {
         e.preventDefault();
+        e.stopPropagation(); // Prevent card click when clicking save button
         
         const btn = $(this);
         const articleId = btn.data('article-id');
@@ -46,14 +47,22 @@ $(document).ready(function() {
                 // Update button appearance based on saved status
                 if (data.saved) {
                     // Article was saved
-                    btn.removeClass('btn-outline-primary').addClass('btn-outline-danger');
+                    btn.removeClass('btn-outline-primary btn-outline-light').addClass('btn-danger');
                     btn.find('i').removeClass('far fa-bookmark').addClass('fas fa-bookmark');
-                    btn.find('span').text('Unsave');
+                    btn.attr('title', 'Unsave article');
+                    btn.attr('aria-label', 'Unsave article');
+                    if (btn.find('span').length) {
+                        btn.find('span').text('Unsave');
+                    }
                 } else {
                     // Article was unsaved
-                    btn.removeClass('btn-outline-danger').addClass('btn-outline-primary');
+                    btn.removeClass('btn-danger').addClass('btn-outline-light');
                     btn.find('i').removeClass('fas fa-bookmark').addClass('far fa-bookmark');
-                    btn.find('span').text('Save');
+                    btn.attr('title', 'Save article');
+                    btn.attr('aria-label', 'Save article');
+                    if (btn.find('span').length) {
+                        btn.find('span').text('Save');
+                    }
                 }
                 
                 // If we're on the saved articles page and unsaving, remove the row

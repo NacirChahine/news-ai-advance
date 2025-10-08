@@ -141,6 +141,11 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - Backend serialization/loading:
   - **UPDATED**: `comments_list_create` recursively prefetches and serializes replies up to depth 20 (reasonable limit) and includes current-user vote mapping for all loaded comments.
   - Replies endpoint (`comment_replies`) includes user vote mapping for the page of replies returned and parent user info.
+- **NEW**: Comment deep linking:
+  - URL anchors like `#comment-40` automatically scroll to and highlight the target comment
+  - Handled by `handleCommentDeepLink()` function in `static/js/comments.js`
+  - Works on page load and hash change events
+  - Highlights only comment content (not entire comment div) for subtle emphasis
 - Depth handling:
   - **UPDATED**: Backend stores true depth without capping (unlimited nesting)
   - **UPDATED**: Model provides `get_display_depth()` method that caps at MAX_DEPTH for UI
@@ -214,6 +219,11 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - Real-time count updates via AJAX (static/js/article_likes.js)
   - Active state styling for user's current reaction
   - Non-authenticated users see counts but cannot interact
+  - **NEW**: Article cards are fully clickable with hover effects (lift, shadow, image zoom)
+  - **NEW**: Save/unsave button positioned as floating overlay on article image
+  - **NEW**: Red styling (btn-danger) for "Unsave" action per user preference
+  - **NEW**: Placeholder image (SVG) for articles without images
+  - **NEW**: All interactive elements (like, comment, save) work independently via z-index layering
 
 - **Profile Integration**:
   - Profile stats show "Liked Articles" count (replaces "Topic Following")
