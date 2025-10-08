@@ -96,9 +96,11 @@
                     </div>
                     {% endif %}
 
-                    {% if article.image_url %}
-                        <img src="{{ article.image_url }}" class="img-fluid rounded mb-4" alt="{{ article.title }}">
-                    {% endif %}
+                    <img src="{{ article.image_url }}"
+                         class="img-fluid rounded mb-4"
+                         alt="{{ article.title }}"
+                         onerror="this.onerror=null; this.src='/static/images/article_placeholder.svg';"
+                         loading="lazy">
 
                     {% if article.is_summarized and article.summary %}
                         {% if not request.user.is_authenticated or request.user.preferences.enable_summary_display %}

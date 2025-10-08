@@ -465,8 +465,8 @@
     const parentEl = document.querySelector(`.comment-item[data-comment-id="${parentId}"]`);
     if(!parentEl) return;
 
-    // Scroll to parent comment
-    parentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Scroll to parent comment (align to top of viewport)
+    parentEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
     // Add highlight animation to ONLY the comment content (not the entire comment div)
     const contentEl = parentEl.querySelector('.comment-content');
@@ -522,8 +522,8 @@
       setTimeout(() => {
         const commentEl = document.querySelector(`.comment-item[data-comment-id="${commentId}"]`);
         if (commentEl) {
-          // Scroll to the comment
-          commentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          // Scroll to the comment (align to top of viewport)
+          commentEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
           // Apply highlight animation to content only
           const contentEl = commentEl.querySelector('.comment-content');
