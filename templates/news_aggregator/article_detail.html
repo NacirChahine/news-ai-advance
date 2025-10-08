@@ -450,30 +450,32 @@
             {% endif %}
 
             <!-- Source Information -->
-            <div class="card">
-                <div class="card-header bg-info text-white">
-                    <h5 class="mb-0"><i class="fas fa-newspaper me-2"></i>About the Source</h5>
+            {% if article.source %}
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0"><i class="fas fa-newspaper me-2"></i>About the Source</h5>
+                    </div>
+                    <div class="card-body">
+                        <h6>{{ article.source.name }}</h6>
+                        {% if article.source.logo %}
+                            <img src="{{ article.source.logo.url }}" alt="{{ article.source.name }}" class="img-fluid mb-2" style="max-height: 60px;">
+                        {% endif %}
+                        <p>{{ article.source.description }}</p>
+                        <p class="mb-0">
+                            <strong>Reliability Score:</strong>
+                            <span class="
+                                {% if article.source.reliability_score >= 75 %}text-success
+                                {% elif article.source.reliability_score >= 50 %}text-warning
+                                {% else %}text-danger{% endif %}">
+                                {{ article.source.reliability_score|floatformat:3 }}/100
+                            </span>
+                        </p>
+                        <a href="{% url 'news_aggregator:source_detail' article.source.id %}" class="btn btn-sm btn-outline-info mt-3">
+                            <i class="fas fa-newspaper me-1"></i> View All Articles from this Source
+                        </a>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <h6>{{ article.source.name }}</h6>
-                    {% if article.source.logo %}
-                        <img src="{{ article.source.logo.url }}" alt="{{ article.source.name }}" class="img-fluid mb-2" style="max-height: 60px;">
-                    {% endif %}
-                    <p>{{ article.source.description }}</p>
-                    <p class="mb-0">
-                        <strong>Reliability Score:</strong>
-                        <span class="
-                            {% if article.source.reliability_score >= 75 %}text-success
-                            {% elif article.source.reliability_score >= 50 %}text-warning
-                            {% else %}text-danger{% endif %}">
-                            {{ article.source.reliability_score|floatformat:3 }}/100
-                        </span>
-                    </p>
-                    <a href="{% url 'news_aggregator:source_detail' article.source.id %}" class="btn btn-sm btn-outline-info mt-3">
-                        <i class="fas fa-newspaper me-1"></i> View All Articles from this Source
-                    </a>
-                </div>
-            </div>
+            {% endif %}
 
         </div>
     </div>

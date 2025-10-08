@@ -84,14 +84,18 @@
                         <div class="card-body">
                             <h5 class="card-title">{{ article.title }}</h5>
                             <h6 class="card-subtitle mb-2 text-muted">
-                                <a href="{% url 'news_aggregator:source_detail' article.source.id %}"
-                                   class="position-relative"
-                                   style="z-index: 2;">
-                                    {% if article.is_from_preferred_source %}
-                                        <i class="fas fa-star text-warning me-1" title="Preferred Source"></i>
-                                    {% endif %}
-                                    {{ article.source.name }}
-                                </a>
+                                {% if article.source %}
+                                    <a href="{% url 'news_aggregator:source_detail' article.source.id %}"
+                                       class="position-relative"
+                                       style="z-index: 2;">
+                                        {% if article.is_from_preferred_source %}
+                                            <i class="fas fa-star text-warning me-1" title="Preferred Source"></i>
+                                        {% endif %}
+                                        {{ article.source.name }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Original Article</span>
+                                {% endif %}
                                 • {{ article.published_date|date:"M d, Y" }}
                             </h6>
 

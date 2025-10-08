@@ -11,17 +11,7 @@
                 <div class="card-body p-4">
                     <h4 class="mb-4 text-center">Verify OTP</h4>
                     <p class="text-center mb-4">Enter the 6-digit OTP sent to your email address.</p>
-                    
-                    {% if messages %}
-                    <div class="mb-4">
-                        {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }}">
-                            {{ message }}
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                    
+
                     <form method="post">
                         {% csrf_token %}
                         

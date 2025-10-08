@@ -1,0 +1,269 @@
+/* Toast Notification System */
+
+/* Toast Container - Bottom Left */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column-reverse; /* Stack from bottom up */
+    gap: 10px;
+    max-width: 400px;
+    pointer-events: none; /* Allow clicks through container */
+}
+
+/* Individual Toast */
+.toast-notification {
+    pointer-events: auto; /* Enable clicks on toasts */
+    min-width: 300px;
+    max-width: 400px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    animation: slideInLeft 0.3s ease-out;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Glassmorphism effect for light mode */
+[data-bs-theme="light"] .toast-notification {
+    background: rgba(255, 255, 255, 0.85);
+    color: #212529;
+}
+
+/* Glassmorphism effect for dark mode */
+[data-bs-theme="dark"] .toast-notification {
+    background: rgba(33, 37, 41, 0.85);
+    color: #f8f9fa;
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Toast Content */
+.toast-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.toast-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.toast-message {
+    flex: 1;
+    font-size: 14px;
+    line-height: 1.5;
+    word-wrap: break-word;
+}
+
+/* Close Button */
+.toast-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+.toast-close:hover {
+    opacity: 1;
+}
+
+[data-bs-theme="light"] .toast-close {
+    color: #212529;
+}
+
+[data-bs-theme="dark"] .toast-close {
+    color: #f8f9fa;
+}
+
+[data-bs-theme="light"] .toast-close:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+[data-bs-theme="dark"] .toast-close:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Toast Types - Light Mode */
+[data-bs-theme="light"] .toast-success {
+    border-left: 4px solid #198754;
+}
+
+[data-bs-theme="light"] .toast-success .toast-icon {
+    color: #198754;
+}
+
+[data-bs-theme="light"] .toast-error {
+    border-left: 4px solid #dc3545;
+}
+
+[data-bs-theme="light"] .toast-error .toast-icon {
+    color: #dc3545;
+}
+
+[data-bs-theme="light"] .toast-warning {
+    border-left: 4px solid #ffc107;
+}
+
+[data-bs-theme="light"] .toast-warning .toast-icon {
+    color: #ffc107;
+}
+
+[data-bs-theme="light"] .toast-info {
+    border-left: 4px solid #0dcaf0;
+}
+
+[data-bs-theme="light"] .toast-info .toast-icon {
+    color: #0dcaf0;
+}
+
+/* Toast Types - Dark Mode */
+[data-bs-theme="dark"] .toast-success {
+    border-left: 4px solid #198754;
+}
+
+[data-bs-theme="dark"] .toast-success .toast-icon {
+    color: #198754;
+}
+
+[data-bs-theme="dark"] .toast-error {
+    border-left: 4px solid #dc3545;
+}
+
+[data-bs-theme="dark"] .toast-error .toast-icon {
+    color: #dc3545;
+}
+
+[data-bs-theme="dark"] .toast-warning {
+    border-left: 4px solid #ffc107;
+}
+
+[data-bs-theme="dark"] .toast-warning .toast-icon {
+    color: #ffc107;
+}
+
+[data-bs-theme="dark"] .toast-info {
+    border-left: 4px solid #0dcaf0;
+}
+
+[data-bs-theme="dark"] .toast-info .toast-icon {
+    color: #0dcaf0;
+}
+
+/* Animations */
+@keyframes slideInLeft {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOutLeft {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+}
+
+.toast-notification.removing {
+    animation: slideOutLeft 0.3s ease-in forwards;
+}
+
+/* Responsive Design */
+@media (max-width: 576px) {
+    .toast-container {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        max-width: none;
+    }
+    
+    .toast-notification {
+        min-width: auto;
+        max-width: none;
+        width: 100%;
+    }
+}
+
+/* Accessibility - High Contrast Mode */
+@media (prefers-contrast: high) {
+    .toast-notification {
+        border-width: 2px;
+        border-style: solid;
+    }
+    
+    [data-bs-theme="light"] .toast-notification {
+        background: #ffffff;
+    }
+    
+    [data-bs-theme="dark"] .toast-notification {
+        background: #000000;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .toast-notification {
+        animation: none;
+        transition: none;
+    }
+    
+    .toast-notification.removing {
+        animation: none;
+        opacity: 0;
+    }
+}
+
+/* Focus Styles for Accessibility */
+.toast-close:focus {
+    outline: 2px solid currentColor;
+    outline-offset: 2px;
+}
+
+/* Progress Bar (Optional - for auto-dismiss visual feedback) */
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background-color: currentColor;
+    opacity: 0.3;
+    animation: progressBar 5s linear forwards;
+}
+
+@keyframes progressBar {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+

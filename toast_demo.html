@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toast Notification System Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="static/css/toast.css">
+    <style>
+        body {
+            padding: 40px;
+            min-height: 100vh;
+        }
+        .demo-section {
+            margin-bottom: 30px;
+        }
+        .btn-group-demo {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">
+            <i class="fas fa-bell me-2"></i>
+            Toast Notification System Demo
+        </h1>
+        
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Click the buttons below to test different toast notifications. Toasts will appear in the bottom-left corner.
+        </div>
+
+        <!-- Theme Toggle -->
+        <div class="demo-section">
+            <h3>Theme</h3>
+            <div class="btn-group-demo">
+                <button class="btn btn-outline-primary" onclick="setTheme('light')">
+                    <i class="fas fa-sun me-2"></i>Light Mode
+                </button>
+                <button class="btn btn-outline-primary" onclick="setTheme('dark')">
+                    <i class="fas fa-moon me-2"></i>Dark Mode
+                </button>
+            </div>
+        </div>
+
+        <!-- Basic Toast Types -->
+        <div class="demo-section">
+            <h3>Basic Toast Types</h3>
+            <div class="btn-group-demo">
+                <button class="btn btn-success" onclick="toast.success('Operation completed successfully!')">
+                    <i class="fas fa-check-circle me-2"></i>Success Toast
+                </button>
+                <button class="btn btn-danger" onclick="toast.error('An error occurred. Please try again.')">
+                    <i class="fas fa-exclamation-circle me-2"></i>Error Toast
+                </button>
+                <button class="btn btn-warning" onclick="toast.warning('Warning: This action cannot be undone.')">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Warning Toast
+                </button>
+                <button class="btn btn-info" onclick="toast.info('New features are now available!')">
+                    <i class="fas fa-info-circle me-2"></i>Info Toast
+                </button>
+            </div>
+        </div>
+
+        <!-- Custom Durations -->
+        <div class="demo-section">
+            <h3>Custom Durations</h3>
+            <div class="btn-group-demo">
+                <button class="btn btn-outline-success" onclick="toast.show('Quick message (2s)', 'success', 2000)">
+                    <i class="fas fa-bolt me-2"></i>2 Second Toast
+                </button>
+                <button class="btn btn-outline-info" onclick="toast.show('Standard message (5s)', 'info', 5000)">
+                    <i class="fas fa-clock me-2"></i>5 Second Toast
+                </button>
+                <button class="btn btn-outline-warning" onclick="toast.show('Long message (10s)', 'warning', 10000)">
+                    <i class="fas fa-hourglass-half me-2"></i>10 Second Toast
+                </button>
+                <button class="btn btn-outline-danger" onclick="toast.show('Persistent message (no auto-dismiss)', 'error', 0)">
+                    <i class="fas fa-infinity me-2"></i>No Auto-Dismiss
+                </button>
+            </div>
+        </div>
+
+        <!-- Multiple Toasts -->
+        <div class="demo-section">
+            <h3>Multiple Toasts</h3>
+            <div class="btn-group-demo">
+                <button class="btn btn-primary" onclick="showMultipleToasts()">
+                    <i class="fas fa-layer-group me-2"></i>Show 3 Toasts
+                </button>
+                <button class="btn btn-secondary" onclick="showSequentialToasts()">
+                    <i class="fas fa-stream me-2"></i>Show Sequential Toasts
+                </button>
+                <button class="btn btn-outline-danger" onclick="toast.dismissAll()">
+                    <i class="fas fa-times-circle me-2"></i>Dismiss All
+                </button>
+            </div>
+        </div>
+
+        <!-- Real-World Examples -->
+        <div class="demo-section">
+            <h3>Real-World Examples</h3>
+            <div class="btn-group-demo">
+                <button class="btn btn-outline-success" onclick="toast.success('Profile updated successfully!')">
+                    <i class="fas fa-user-check me-2"></i>Profile Updated
+                </button>
+                <button class="btn btn-outline-success" onclick="toast.success('Article created successfully!')">
+                    <i class="fas fa-file-alt me-2"></i>Article Created
+                </button>
+                <button class="btn btn-outline-danger" onclick="toast.error('Failed to save changes. Please try again.')">
+                    <i class="fas fa-save me-2"></i>Save Failed
+                </button>
+                <button class="btn btn-outline-warning" onclick="toast.warning('Your session will expire in 5 minutes.')">
+                    <i class="fas fa-clock me-2"></i>Session Warning
+                </button>
+                <button class="btn btn-outline-info" onclick="toast.info('You have 3 new notifications.')">
+                    <i class="fas fa-bell me-2"></i>New Notifications
+                </button>
+            </div>
+        </div>
+
+        <!-- Long Messages -->
+        <div class="demo-section">
+            <h3>Long Messages</h3>
+            <div class="btn-group-demo">
+                <button class="btn btn-outline-primary" onclick="toast.info('This is a longer message that demonstrates how the toast system handles text wrapping. The toast will expand to accommodate the content while maintaining readability.')">
+                    <i class="fas fa-align-left me-2"></i>Long Message
+                </button>
+            </div>
+        </div>
+
+        <!-- Code Examples -->
+        <div class="demo-section">
+            <h3>Code Examples</h3>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">JavaScript Usage</h5>
+                    <pre><code>// Basic usage
+toast.success('Success message');
+toast.error('Error message');
+toast.warning('Warning message');
+toast.info('Info message');
+
+// Custom duration
+toast.show('Custom message', 'success', 3000);
+
+// No auto-dismiss
+toast.show('Important message', 'error', 0);
+
+// Dismiss all
+toast.dismissAll();</code></pre>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Django Usage</h5>
+                    <pre><code>from django.contrib import messages
+
+# In your view
+messages.success(request, 'Profile updated successfully!')
+messages.error(request, 'An error occurred.')
+messages.warning(request, 'Warning message.')
+messages.info(request, 'Info message.')</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="static/js/toast.js"></script>
+    <script>
+        // Theme toggle
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            toast.info(`Switched to ${theme} mode`);
+        }
+
+        // Show multiple toasts at once
+        function showMultipleToasts() {
+            toast.success('First toast message');
+            setTimeout(() => toast.warning('Second toast message'), 200);
+            setTimeout(() => toast.info('Third toast message'), 400);
+        }
+
+        // Show sequential toasts
+        function showSequentialToasts() {
+            toast.info('Starting process...');
+            setTimeout(() => toast.warning('Processing...'), 2000);
+            setTimeout(() => toast.success('Process complete!'), 4000);
+        }
+
+        // Show welcome toast on load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                toast.success('Welcome to the Toast Notification System Demo!');
+            }, 500);
+        });
+    </script>
+</body>
+</html>
+

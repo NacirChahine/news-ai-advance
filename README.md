@@ -607,8 +607,6 @@ Control who can view your public profile:
 - [AI_PROJECT_DOCS.md](AI_PROJECT_DOCS.md) - Detailed technical documentation for AI context
 - [OLLAMA_INTEGRATION.md](OLLAMA_INTEGRATION.md) - Complete guide for Ollama setup and usage
 - [ML_SUMMARIZATION.md](ML_SUMMARIZATION.md) - Documentation for the custom-trained summarization model
-- [RECENT_UI_FIXES.md](RECENT_UI_FIXES.md) - Latest UI/UX fixes and improvements
-- [THREE_FEATURES_IMPLEMENTATION.md](THREE_FEATURES_IMPLEMENTATION.md) - Complete implementation guide for preferred sources, profile pictures, and privacy features
 
 ## Contributing
 
