@@ -165,7 +165,9 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - **NEW**: Reporter/author system for user-generated content
 - User Profile Enhancement:
   - `is_reporter` boolean field in UserProfile determines if user can create/manage articles
-  - Set via Django admin interface
+  - **Self-Service Toggle**: Users can enable/disable reporter status via profile edit page
+  - Toggle located at `/accounts/edit-profile/` with clear labeling and help text
+  - Also settable via Django admin interface
 - Article Model Updates:
   - `posted_by`: User who submitted/posted the article (always required)
   - `author_user`: Reference to user profile if author is a registered reporter (nullable)
@@ -179,8 +181,10 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - Authorization: Users can only edit/delete articles where they are the `author_user`
 - User Profile Integration:
   - "My Articles" button appears on profile page for reporters
+  - Reporter badge (blue with newspaper icon) displayed next to username
   - Public profiles show "Authored Articles" tab for reporters
   - Tab displays all articles where `author_user` references the profile user
+  - Profile edit page includes reporter toggle with help text
 - Article Display:
   - Author name displayed with clickable link if `author_user` exists
   - Plain text display if only `author_name` is populated

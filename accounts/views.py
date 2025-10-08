@@ -363,6 +363,7 @@ def edit_profile(request):
         last_name = request.POST.get('last_name', '')
         email = request.POST.get('email', '')
         bio = request.POST.get('bio', '')
+        is_reporter = request.POST.get('is_reporter') == 'on'  # Checkbox value
 
         # Update user information
         user.first_name = first_name
@@ -372,6 +373,7 @@ def edit_profile(request):
 
         # Update profile information
         user_profile.bio = bio
+        user_profile.is_reporter = is_reporter
 
         # Handle profile picture upload
         if request.FILES.get('avatar'):

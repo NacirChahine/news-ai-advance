@@ -266,12 +266,13 @@ This will create:
 
 ### Reporter/Author System
 - **User-Generated Content**: Registered users can be designated as reporters to create and manage their own articles
+- **Self-Service Toggle**: Users can enable reporter status themselves via the profile edit page
 - **Article Management**: Reporters have access to a dedicated "My Articles" page with full CRUD operations
 - **Author Attribution**: Articles display author information with clickable links to reporter profiles
 - **Flexible Authorship**: Support for both registered reporter authors and external author names
-- **Public Profiles**: Reporter profiles showcase their authored articles in a dedicated tab
+- **Public Profiles**: Reporter profiles showcase their authored articles in a dedicated tab with reporter badge
 - **Access Control**: Reporters can only edit/delete their own articles
-- **Admin Management**: Admins can designate users as reporters via the Django admin interface
+- **Admin Management**: Admins can also designate users as reporters via the Django admin interface
 
 
 ### Sources Overview
