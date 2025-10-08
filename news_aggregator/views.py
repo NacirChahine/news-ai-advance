@@ -38,10 +38,30 @@ def latest_news(request):
             articles = articles.order_by('?')  # Random order for diversity
         # 'all' and 'balanced' don't need special filtering
 
-    # Default ordering for non-diverse views
-    if not (request.user.is_authenticated and hasattr(request.user, 'preferences') and
-            request.user.preferences.political_filter == 'diverse'):
-        articles = articles.order_by('-published_date')
+    # Prioritize preferred sources if user is authenticated
+    if request.user.is_authenticated:
+        try:
+            preferred_source_ids = list(request.user.profile.preferred_sources.values_list('id', flat=True))
+            if preferred_source_ids:
+                # Add ordering priority: preferred sources first, then by date
+                articles = articles.annotate(
+                    is_preferred=Case(
+                        When(source_id__in=preferred_source_ids, then=1),
+                        default=0,
+                        output_field=IntegerField()
+                    )
+                ).order_by('-is_preferred', '-published_date')
+            else:
+                # No preferred sources, just order by date
+                articles = articles.order_by('-published_date')
+        except:
+            # If profile doesn't exist or error, just order by date
+            articles = articles.order_by('-published_date')
+    else:
+        # Default ordering for non-diverse views
+        if not (request.user.is_authenticated and hasattr(request.user, 'preferences') and
+                request.user.preferences.political_filter == 'diverse'):
+            articles = articles.order_by('-published_date')
 
     # Get all sources for the filter dropdown
     sources = NewsSource.objects.all()
@@ -60,10 +80,17 @@ def latest_news(request):
         user_likes = ArticleLike.objects.filter(user=request.user, article_id__in=article_ids)
         user_likes_dict = {like.article_id: ('like' if like.is_like else 'dislike') for like in user_likes}
 
-        # Add a saved flag and like status to each article
+        # Get preferred source IDs
+        try:
+            preferred_source_ids = set(request.user.profile.preferred_sources.values_list('id', flat=True))
+        except:
+            preferred_source_ids = set()
+
+        # Add a saved flag, like status, and preferred indicator to each article
         for article in page_obj:
             article.is_saved = article.id in saved_article_ids
             article.user_like_status = user_likes_dict.get(article.id, None)
+            article.is_from_preferred_source = article.source_id in preferred_source_ids
 
     # Get like/dislike counts for all articles in the page
     article_ids = [article.id for article in page_obj]
@@ -156,15 +183,20 @@ def source_detail(request, source_id):
     page_obj = paginator.get_page(page_number)
 
     # Mark saved state for each article to persist across refresh
+    is_preferred = False
     if request.user.is_authenticated:
         # Create a set of saved article IDs for efficient lookup
         saved_article_ids = set(request.user.saved_articles.values_list('article_id', flat=True))
         for a in page_obj:
             a.is_saved = a.id in saved_article_ids
 
+        # Check if this source is in user's preferred sources
+        is_preferred = source in request.user.profile.preferred_sources.all()
+
     context = {
         'source': source,
         'page_obj': page_obj,
+        'is_preferred': is_preferred,
     }
     return render(request, 'news_aggregator/source_detail.html', context)
 
@@ -347,10 +379,24 @@ def _serialize_comment(request, c: Comment):
     if c.parent_id:
         parent_username = c.parent.user.username if hasattr(c, 'parent') and c.parent else None
 
+    # Get avatar data
+    avatar_url = None
+    username_initial = c.user.username[0].upper() if c.user.username else '?'
+    try:
+        if hasattr(c.user, 'profile') and c.user.profile.profile_picture:
+            avatar_url = c.user.profile.profile_picture.url
+    except:
+        pass
+
     return {
         'id': c.id,
         'article_id': c.article_id,
-        'user': {'id': c.user_id, 'username': c.user.username},
+        'user': {
+            'id': c.user_id,
+            'username': c.user.username,
+            'avatar_url': avatar_url,
+            'username_initial': username_initial
+        },
         'parent_id': c.parent_id,
         'parent_username': parent_username,
         'content': content,

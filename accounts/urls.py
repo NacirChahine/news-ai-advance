@@ -27,4 +27,11 @@ urlpatterns = [
 
     # Public user profile
     path('user/<str:username>/', views.public_user_profile, name='public_profile'),
+
+    # Preferred sources
+    path('toggle-preferred-source/', views.toggle_preferred_source, name='toggle_preferred_source'),
+
+    # Profile picture
+    path('upload-profile-picture/', views.upload_profile_picture, name='upload_profile_picture'),
+    path('remove-profile-picture/', views.remove_profile_picture, name='remove_profile_picture'),
 ]

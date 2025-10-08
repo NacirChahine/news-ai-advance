@@ -86,7 +86,12 @@
                             <h6 class="card-subtitle mb-2 text-muted">
                                 <a href="{% url 'news_aggregator:source_detail' article.source.id %}"
                                    class="position-relative"
-                                   style="z-index: 2;">{{ article.source.name }}</a>
+                                   style="z-index: 2;">
+                                    {% if article.is_from_preferred_source %}
+                                        <i class="fas fa-star text-warning me-1" title="Preferred Source"></i>
+                                    {% endif %}
+                                    {{ article.source.name }}
+                                </a>
                                 • {{ article.published_date|date:"M d, Y" }}
                             </h6>
 

@@ -140,10 +140,19 @@
         <a href="/accounts/user/${escapeHtml(c.parent_username)}/" class="reply-to-username" title="View ${escapeHtml(c.parent_username)}'s profile">@${escapeHtml(c.parent_username)}</a>
       </div>` : '';
 
+    // Generate avatar HTML
+    const avatarHtml = c.user.avatar_url
+      ? `<img src="${escapeHtml(c.user.avatar_url)}" alt="${escapeHtml(c.user.username)}" class="comment-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+         <div class="comment-avatar-letter" style="display: none;">${escapeHtml(c.user.username_initial)}</div>`
+      : `<div class="comment-avatar-letter">${escapeHtml(c.user.username_initial)}</div>`;
+
     const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}" data-parent-id="${c.parent_id || ''}" data-replies-page="1">
       <div class="thread-left-gutter" role="button" aria-label="Toggle thread" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="left" title="Click to collapse/expand thread"></div>
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         ${voteBlock}
+        <div class="comment-avatar-container me-2">
+          ${avatarHtml}
+        </div>
         <div class="flex-grow-1 min-w-0">
           ${replyIndicator}
           <strong class="text-truncate">${escapeHtml(c.user.username)}</strong>

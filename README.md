@@ -10,8 +10,10 @@ News Advance is a web application that aggregates news articles and applies AI-d
 - **Bias & Sentiment Analysis** – Detects political and emotional bias in news articles
 - **AI-Powered Summarization & Fact-Checking** – Generates concise summaries and verifies key claims
 - **Real-Time Misinformation Tracker** – Flags potentially misleading trending news
-
 - **Logical Fallacy Reference & Detection** – Catalog of logical fallacies with admin management and per-article detections with AI integration
+- **Preferred News Sources** – Mark sources as preferred and get prioritized content in your feed
+- **Profile Pictures & Avatars** – Upload profile pictures that display in comments with letter avatar fallbacks
+- **Public Profile Privacy** – Control who can view your public profile with comments and liked articles
 
 ## Tech Stack
 
@@ -259,6 +261,7 @@ This will create:
 - Source credibility ratings and filtering
 - Personalized news feed based on topics of interest
 - Save articles to your personal collection with notes
+- **Preferred sources** - Mark sources as preferred and get prioritized content in your feed with visual indicators
 
 
 ### Sources Overview
@@ -335,6 +338,9 @@ This will create:
   - Personalized news preferences
   - Saved articles with notes
   - Article likes/dislikes with dedicated liked articles page
+  - **Profile pictures** - Upload profile pictures (JPG, PNG, GIF up to 2MB) with letter avatar fallbacks
+  - **Public profiles** - View other users' profiles with comments, liked articles, and preferred sources
+  - **Privacy controls** - Toggle public profile visibility in preferences
 
 ### Misinformation Tracking
   - **Models & Infrastructure**: Complete database models for alerts and fact-checking
@@ -386,6 +392,7 @@ This will create:
 - Frontend: `templates/news_aggregator/partials/comments.html`, `static/js/comments.js`, and styles in `static/css/site.css`
 - Accessibility: All color choices maintain WCAG AA contrast compliance (4.5:1 for normal text, 3:1 for large text) across both light and dark themes
 - **NEW**: MAX_DEPTH centralized via data attribute, single source of truth from backend
+- **NEW**: Profile pictures/avatars displayed next to each comment with letter avatar fallbacks (colored circles with initials)
 
 
 ### Misinformation Alerts (Manual Management and Email Notifications)
@@ -559,12 +566,38 @@ SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'
 USE_ML_SUMMARIZATION = True
 ```
 
+## Recent Feature Additions
+
+### Preferred News Sources
+Mark news sources as "preferred" to prioritize their content in your feed:
+- **Toggle Button**: On source detail pages, click "Add to Preferred" / "Remove from Preferred"
+- **Profile Display**: View your preferred sources in both private and public profile pages
+- **Feed Prioritization**: Articles from preferred sources appear first in the news feed
+- **Visual Indicators**: Star icon (⭐) appears next to source names on article cards from preferred sources
+- **AJAX Updates**: All changes happen instantly without page reload
+
+### Profile Pictures & Avatars
+Upload profile pictures that display throughout the application:
+- **Upload**: Go to Preferences → Profile Picture to upload JPG, PNG, or GIF (max 2MB)
+- **Letter Avatars**: Automatic fallback to colored circles with initials for users without pictures
+- **Comment Display**: Avatars appear next to all comments (36x36px circular)
+- **Color Variety**: 10 different gradient color schemes for letter avatars
+- **Error Handling**: Graceful fallback if image fails to load
+
+### Public Profile Privacy
+Control who can view your public profile:
+- **Privacy Toggle**: Go to Preferences → Privacy → Public Profile
+- **Private Mode**: When disabled, other users see "This Profile is Private" message
+- **Own Profile**: You can always view your own profile regardless of privacy setting
+- **Profile Content**: Public profiles show comments, liked articles, and preferred sources
+
 ## Documentation
 
 - [AI_PROJECT_DOCS.md](AI_PROJECT_DOCS.md) - Detailed technical documentation for AI context
 - [OLLAMA_INTEGRATION.md](OLLAMA_INTEGRATION.md) - Complete guide for Ollama setup and usage
 - [ML_SUMMARIZATION.md](ML_SUMMARIZATION.md) - Documentation for the custom-trained summarization model
 - [RECENT_UI_FIXES.md](RECENT_UI_FIXES.md) - Latest UI/UX fixes and improvements
+- [THREE_FEATURES_IMPLEMENTATION.md](THREE_FEATURES_IMPLEMENTATION.md) - Complete implementation guide for preferred sources, profile pictures, and privacy features
 
 ## Contributing
 

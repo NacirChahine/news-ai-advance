@@ -723,6 +723,42 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 .vote-block .js-downvote.active{ color:#dc3545; }
 
 
+/* === Comment Avatars === */
+.comment-avatar-container {
+  flex-shrink: 0;
+}
+
+.comment-avatar,
+.comment-avatar-letter {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.comment-avatar-letter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: #fff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Generate different colors based on first letter */
+.comment-avatar-letter:nth-of-type(1) { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+.comment-avatar-letter:nth-of-type(2) { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+.comment-avatar-letter:nth-of-type(3) { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+.comment-avatar-letter:nth-of-type(4) { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+.comment-avatar-letter:nth-of-type(5) { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+.comment-avatar-letter:nth-of-type(6) { background: linear-gradient(135deg, #30cfd0 0%, #330867 100%); }
+.comment-avatar-letter:nth-of-type(7) { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); }
+.comment-avatar-letter:nth-of-type(8) { background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); }
+.comment-avatar-letter:nth-of-type(9) { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); }
+.comment-avatar-letter:nth-of-type(10) { background: linear-gradient(135deg, #ff6e7f 0%, #bfe9ff 100%); }
+
+
 /* === Reply Indicators (for all replies depth >= 1) === */
 .reply-indicator {
   font-size: 0.875rem;

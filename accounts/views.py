@@ -12,7 +12,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 import json
-from .models import PasswordResetOTP
+from .models import PasswordResetOTP, UserPreferences
 
 def signup(request):
     """User registration view"""
@@ -39,11 +39,15 @@ def profile(request):
     # Liked articles count
     liked_articles_count = ArticleLike.objects.filter(user=user, is_like=True).count()
 
+    # Preferred sources
+    preferred_sources = profile.preferred_sources.all()
+
     context = {
         'user': user,
         'profile': profile,
         'comment_count': comment_count,
         'liked_articles_count': liked_articles_count,
+        'preferred_sources': preferred_sources,
     }
     return render(request, 'accounts/profile.html', context)
 
@@ -477,17 +481,20 @@ def public_user_profile(request, username):
     User = get_user_model()
     profile_user = get_object_or_404(User, username=username)
 
-    # Check if profile is public
-    try:
-        preferences = profile_user.preferences
-        if not preferences.public_profile and request.user != profile_user:
-            return render(request, 'accounts/public_profile.html', {
-                'profile_user': profile_user,
-                'is_private': True,
-            })
-    except:
-        # If preferences don't exist, default to public
-        pass
+    # Check if profile is public - MUST happen before loading any profile data
+    # Allow user to view their own profile regardless of privacy setting
+    if request.user != profile_user:
+        try:
+            preferences = profile_user.preferences
+            # Explicitly check if public_profile is False
+            if preferences.public_profile is False:
+                return render(request, 'accounts/public_profile.html', {
+                    'profile_user': profile_user,
+                    'is_private': True,
+                })
+        except UserPreferences.DoesNotExist:
+            # If preferences don't exist, default to public
+            pass
 
     # Get user profile
     try:
@@ -530,6 +537,9 @@ def public_user_profile(request, username):
     comments_page = request.GET.get('comments_page', 1)
     comments_page_obj = comments_paginator.get_page(comments_page)
 
+    # Get preferred sources
+    preferred_sources = user_profile.preferred_sources.all() if user_profile else []
+
     context = {
         'profile_user': profile_user,
         'user_profile': user_profile,
@@ -540,6 +550,96 @@ def public_user_profile(request, username):
         'liked_page_obj': liked_page_obj,
         'comments_page_obj': comments_page_obj,
         'member_since': profile_user.date_joined,
+        'preferred_sources': preferred_sources,
     }
 
     return render(request, 'accounts/public_profile.html', context)
+
+
+@login_required
+@require_POST
+def toggle_preferred_source(request):
+    """Toggle a news source as preferred/not preferred for the current user"""
+    try:
+        data = json.loads(request.body)
+        source_id = data.get('source_id')
+
+        if not source_id:
+            return JsonResponse({'success': False, 'error': 'Source ID is required'}, status=400)
+
+        from news_aggregator.models import NewsSource
+        source = get_object_or_404(NewsSource, pk=source_id)
+        user_profile = request.user.profile
+
+        # Toggle the preference
+        if source in user_profile.preferred_sources.all():
+            user_profile.preferred_sources.remove(source)
+            is_preferred = False
+            message = f'{source.name} removed from preferred sources'
+        else:
+            user_profile.preferred_sources.add(source)
+            is_preferred = True
+            message = f'{source.name} added to preferred sources'
+
+        return JsonResponse({
+            'success': True,
+            'is_preferred': is_preferred,
+            'message': message
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def upload_profile_picture(request):
+    """Upload a profile picture for the current user"""
+    try:
+        if 'profile_picture' not in request.FILES:
+            return JsonResponse({'success': False, 'error': 'No file provided'}, status=400)
+
+        file = request.FILES['profile_picture']
+
+        # Validate file type
+        valid_types = ['image/jpeg', 'image/png', 'image/gif']
+        if file.content_type not in valid_types:
+            return JsonResponse({'success': False, 'error': 'Invalid file type'}, status=400)
+
+        # Validate file size (2MB max)
+        if file.size > 2 * 1024 * 1024:
+            return JsonResponse({'success': False, 'error': 'File size must be less than 2MB'}, status=400)
+
+        # Delete old profile picture if exists
+        profile = request.user.profile
+        if profile.profile_picture:
+            profile.profile_picture.delete(save=False)
+
+        # Save new profile picture
+        profile.profile_picture = file
+        profile.save()
+
+        return JsonResponse({
+            'success': True,
+            'avatar_url': profile.profile_picture.url,
+            'message': 'Profile picture updated successfully'
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def remove_profile_picture(request):
+    """Remove the profile picture for the current user"""
+    try:
+        profile = request.user.profile
+        if profile.profile_picture:
+            profile.profile_picture.delete(save=True)
+            return JsonResponse({
+                'success': True,
+                'message': 'Profile picture removed successfully'
+            })
+        else:
+            return JsonResponse({'success': False, 'error': 'No profile picture to remove'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)

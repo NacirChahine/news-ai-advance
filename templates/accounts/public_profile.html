@@ -85,7 +85,7 @@
       </div>
       
       <div class="col-md-8">
-        <!-- Tabs for Liked Articles and Comments -->
+        <!-- Tabs for Liked Articles, Comments, and Preferred Sources -->
         <ul class="nav nav-tabs mb-3" id="profileTabs" role="tablist">
           <li class="nav-item" role="presentation">
             <button class="nav-link active" id="liked-tab" data-bs-toggle="tab" data-bs-target="#liked" type="button" role="tab" aria-controls="liked" aria-selected="true">
@@ -95,6 +95,11 @@
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false">
               <i class="far fa-comments me-2"></i>Comments ({{ total_comments }})
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="sources-tab" data-bs-toggle="tab" data-bs-target="#sources" type="button" role="tab" aria-controls="sources" aria-selected="false">
+              <i class="fas fa-star me-2"></i>Preferred Sources ({{ preferred_sources|length }})
             </button>
           </li>
         </ul>
@@ -215,6 +220,36 @@
               {% endif %}
             {% endif %}
           </div>
+
+          <!-- Preferred Sources Tab -->
+          <div class="tab-pane fade" id="sources" role="tabpanel" aria-labelledby="sources-tab">
+            {% if preferred_sources %}
+              <div class="list-group">
+                {% for source in preferred_sources %}
+                  <a href="{% url 'news_aggregator:source_detail' source.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-star text-warning me-3"></i>
+                      <div>
+                        <h6 class="mb-1">{{ source.name }}</h6>
+                        {% if source.description %}
+                          <p class="mb-0 text-muted small">{{ source.description|truncatewords:20 }}</p>
+                        {% endif %}
+                      </div>
+                    </div>
+                  </a>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                {% if is_own_profile %}
+                  You haven't marked any sources as preferred yet. Visit a source page and click "Add to Preferred" to get started!
+                {% else %}
+                  {{ profile_user.username }} hasn't marked any sources as preferred yet.
+                {% endif %}
+              </div>
+            {% endif %}
+          </div>
         </div>
       </div>
     </div>
@@ -236,6 +271,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const likedTab = document.getElementById('liked-tab');
     if (likedTab) {
       const tab = new bootstrap.Tab(likedTab);
+      tab.show();
+    }
+  } else if (hash === '#sources') {
+    const sourcesTab = document.getElementById('sources-tab');
+    if (sourcesTab) {
+      const tab = new bootstrap.Tab(sourcesTab);
       tab.show();
     }
   }
