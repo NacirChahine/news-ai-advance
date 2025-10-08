@@ -567,6 +567,76 @@ python manage.py reverify_fact_checks --older-than-days 14 --limit 50
 - Model caching for ML inference
 - GPU acceleration support for ML models
 
+## Static Files Configuration
+
+### Overview
+The project uses Django's static files system to serve CSS, JavaScript, and images. Static files are organized in the `static/` directory at the project root.
+
+### Directory Structure
+```
+static/
+├── css/
+│   ├── site.css           # Global styles (navbar, footer, buttons, etc.)
+│   └── article_detail.css # Article-specific styles
+├── js/
+│   ├── theme.js           # Dark/light theme toggling
+│   ├── article_actions.js # Save/unsave article functionality
+│   ├── article_detail.js  # Article page interactions
+│   ├── article_likes.js   # Like/dislike functionality
+│   ├── comments.js        # Comment system
+│   └── preferences.js     # User preferences auto-save
+└── images/
+    └── favicon.ico
+```
+
+### Settings Configuration
+In `news_advance/settings.py`:
+```python
+STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # For collectstatic in production
+STATICFILES_DIRS = [BASE_DIR / 'static']  # Development static files
+```
+
+### URL Configuration
+In `news_advance/urls.py`:
+- Static files are served via `staticfiles_urlpatterns()` for development
+- Media files are served via `static()` helper when `DEBUG=True`
+- In production, use nginx/Apache to serve static files from `STATIC_ROOT`
+
+### Development Setup
+**IMPORTANT**: For local development, ensure `DJANGO_DEBUG=True` is set in your `.env` file:
+```env
+DJANGO_DEBUG=True
+```
+
+This enables:
+- Django's development server to serve static files
+- Debug toolbar and error pages
+- Automatic template reloading
+
+### Troubleshooting Static Files
+
+**Problem**: CSS/JS files return 404 or wrong MIME type ('text/html' instead of 'text/css')
+
+**Common Causes**:
+1. `DJANGO_DEBUG=False` in `.env` file (should be `True` for development)
+2. Missing `staticfiles_urlpatterns()` in `urls.py`
+3. Static files not in correct directory structure
+4. Browser caching old responses
+
+**Solutions**:
+1. Check `.env` file has `DJANGO_DEBUG=True`
+2. Clear browser cache (Ctrl+Shift+Delete or Cmd+Shift+Delete)
+3. Verify files exist in `static/css/` and `static/js/` directories
+4. Restart Django development server
+5. Check browser console for specific error messages
+
+**Production Deployment**:
+1. Run `python manage.py collectstatic` to gather all static files
+2. Configure web server (nginx/Apache) to serve from `STATIC_ROOT`
+3. Set `DJANGO_DEBUG=False` in production `.env`
+4. Never use Django to serve static files in production
+
 ## Future Development Plans
 
 1. **Advanced NLP Models**:

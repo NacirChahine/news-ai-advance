@@ -506,7 +506,9 @@ The project includes a pre-configured `.env` file with working email settings. F
 ```env
 # Django Configuration
 SECRET_KEY=your-secret-key-here
-DEBUG=True
+# IMPORTANT: Set DJANGO_DEBUG=True for local development
+# This enables proper static file serving and debug features
+DJANGO_DEBUG=True
 
 # Email Configuration
 EMAIL_HOST=smtp.gmail.com
@@ -524,6 +526,8 @@ USE_ML_SUMMARIZATION=True
 ```
 
 **Security Note**: The `.env` file is excluded from version control to protect sensitive credentials. Use `.env.example` as a template for new setups.
+
+**Important**: For local development, ensure `DJANGO_DEBUG=True` is set in your `.env` file. This enables Django's development server to properly serve static files (CSS, JavaScript, images). In production, use a proper web server like nginx or Apache to serve static files.
 
 ### Django Settings
 

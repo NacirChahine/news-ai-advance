@@ -33,6 +33,15 @@ urlpatterns = [
     path('accounts/', include(('accounts.urls', 'accounts'), namespace='accounts')),
 ]
 
-# Serve media files in development
+# Serve static and media files in development
+# Note: In production, use a proper web server (nginx, Apache) to serve static files
 if settings.DEBUG:
+    # Serve media files (user uploads)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    # Serve static files (CSS, JS, images)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+# Add staticfiles serving for development server even when DEBUG=False
+# This is useful for local testing with DEBUG=False
+# Remove this in production or when using a proper web server
+urlpatterns += staticfiles_urlpatterns()
