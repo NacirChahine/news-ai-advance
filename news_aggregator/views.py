@@ -478,23 +478,18 @@ def comments_list_create(request, article_id):
         else:
             request._comment_user_votes = {}
 
-        def serialize_with_children(node, initial_load=True):
+        def serialize_with_children(node):
             """
-            Serialize comment with nested replies.
-            For initial load, limit replies to first 5 per comment to enable pagination.
+            Serialize comment with direct replies only (flat structure).
+            Only include first 5 direct replies to enable pagination.
             """
             data = _serialize_comment(request, node)
             children = children_by_parent.get(node.id, [])
 
             if children:
-                # For initial load, only include first 5 replies
-                # For subsequent loads (via comment_replies endpoint), all are included
-                if initial_load:
-                    data['replies'] = [serialize_with_children(ch, initial_load=True) for ch in children[:5]]
-                    data['reply_count'] = len(children)
-                else:
-                    data['replies'] = [serialize_with_children(ch, initial_load=False) for ch in children]
-                    data['reply_count'] = len(children)
+                # Only include first 5 direct replies (flat structure)
+                data['replies'] = [_serialize_comment(request, ch) for ch in children[:5]]
+                data['reply_count'] = len(children)
             else:
                 data['replies'] = []
                 data['reply_count'] = 0
@@ -509,7 +504,7 @@ def comments_list_create(request, article_id):
             'num_pages': paginator.num_pages,
             'page': page_obj.number,
             'total_comments': total_comments,
-            'results': [serialize_with_children(c, initial_load=True) for c in page_obj.object_list],
+            'results': [serialize_with_children(c) for c in page_obj.object_list],
         }
         return JsonResponse(data)
 
@@ -533,8 +528,8 @@ def comments_list_create(request, article_id):
 @require_http_methods(["GET"])
 def comment_replies(request, comment_id):
     """
-    Get paginated replies for a specific comment.
-    Returns replies with their nested children (recursively loaded).
+    Get paginated direct replies for a specific comment (flat structure).
+    Returns only direct replies without nested children.
     """
     parent = get_object_or_404(Comment, pk=comment_id)
     page_number = request.GET.get('page')
@@ -544,53 +539,19 @@ def comment_replies(request, comment_id):
     paginator = Paginator(qs, 5)  # Load 5 replies at a time
     page_obj = paginator.get_page(page_number)
 
-    # Recursively prefetch nested replies for these direct replies
-    reply_ids = [c.id for c in page_obj.object_list]
-    children_by_parent = {}
-    current_ids = reply_ids[:]
-
-    # Load up to 20 depths to handle very deep threads
-    for _ in range(20):
-        if not current_ids:
-            break
-        nested_qs = (Comment.objects
-                     .filter(parent_id__in=current_ids, is_approved=True)
-                     .select_related('user', 'parent__user')
-                     .order_by('-cached_score', '-created_at', '-id'))
-        next_ids = []
-        for r in nested_qs:
-            children_by_parent.setdefault(r.parent_id, []).append(r)
-            next_ids.append(r.id)
-        current_ids = next_ids
-
-    # Build user vote map for all comments (including nested)
+    # Build user vote map for direct replies only
     if request.user.is_authenticated:
-        all_ids = set(reply_ids)
-        for lst in children_by_parent.values():
-            for obj in lst:
-                all_ids.add(obj.id)
-        user_votes = CommentVote.objects.filter(user=request.user, comment_id__in=list(all_ids))
+        reply_ids = [c.id for c in page_obj.object_list]
+        user_votes = CommentVote.objects.filter(user=request.user, comment_id__in=reply_ids)
         request._comment_user_votes = {v.comment_id: v.value for v in user_votes}
     else:
         request._comment_user_votes = {}
-
-    def serialize_reply_with_children(node):
-        """Serialize reply with all nested children (no pagination for nested)."""
-        data = _serialize_comment(request, node)
-        children = children_by_parent.get(node.id, [])
-        if children:
-            data['replies'] = [serialize_reply_with_children(ch) for ch in children]
-            data['reply_count'] = len(children)
-        else:
-            data['replies'] = []
-            data['reply_count'] = 0
-        return data
 
     data = {
         'count': paginator.count,
         'num_pages': paginator.num_pages,
         'page': page_obj.number,
-        'results': [serialize_reply_with_children(c) for c in page_obj.object_list],
+        'results': [_serialize_comment(request, c) for c in page_obj.object_list],
     }
     return JsonResponse(data)
 

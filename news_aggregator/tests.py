@@ -294,24 +294,31 @@ class CommentSerializationTests(TestCase):
         self.assertIn('total_comments', data)
         self.assertEqual(data['total_comments'], 3)
 
-    def test_deep_comment_loading(self):
-        """Test that comments beyond depth 5 are loaded and serialized"""
+    def test_flat_comment_structure(self):
+        """Test that comments are returned in flat structure (only direct replies)"""
         from news_aggregator.models import Comment
 
-        # Create a deep comment thread (depth 0-7)
+        # Create a deep comment thread (depth 0-3)
         parent = Comment.objects.create(article=self.article, user=self.user1, content='depth0')
-        current = parent
-        for i in range(1, 8):
-            current = Comment.objects.create(
-                article=self.article,
-                user=self.user1,
-                parent=current,
-                content=f'depth{i}'
-            )
-
-        # Verify depths are stored correctly
-        self.assertEqual(parent.depth, 0)
-        self.assertEqual(current.depth, 7)
+        reply1 = Comment.objects.create(
+            article=self.article,
+            user=self.user1,
+            parent=parent,
+            content='depth1_reply1'
+        )
+        reply2 = Comment.objects.create(
+            article=self.article,
+            user=self.user1,
+            parent=parent,
+            content='depth1_reply2'
+        )
+        # Nested reply to reply1 (should not be included in parent's replies)
+        nested = Comment.objects.create(
+            article=self.article,
+            user=self.user1,
+            parent=reply1,
+            content='depth2_nested'
+        )
 
         # Fetch comments via API
         self.client.login(username='user1', password='x')
@@ -321,20 +328,15 @@ class CommentSerializationTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
 
-        # Navigate through nested replies to find depth 7 comment
-        def find_deepest(comment_data, current_depth=0):
-            if not comment_data.get('replies'):
-                return current_depth
-            max_depth = current_depth
-            for reply in comment_data['replies']:
-                depth = find_deepest(reply, current_depth + 1)
-                max_depth = max(max_depth, depth)
-            return max_depth
-
-        # Check that all depths are present in the response
+        # Check flat structure - parent should only have direct replies
         if data['results']:
-            deepest = find_deepest(data['results'][0])
-            self.assertEqual(deepest, 7, "All comment depths should be loaded")
+            parent_data = data['results'][0]
+            self.assertEqual(len(parent_data['replies']), 2, "Should have 2 direct replies")
+            # Nested reply should NOT be in parent's replies (flat structure)
+            reply_contents = [r['content'] for r in parent_data['replies']]
+            self.assertIn('depth1_reply1', reply_contents)
+            self.assertIn('depth1_reply2', reply_contents)
+            self.assertNotIn('depth2_nested', reply_contents)
 
     def test_reply_pagination(self):
         """Test that reply_count is included and pagination works for replies"""

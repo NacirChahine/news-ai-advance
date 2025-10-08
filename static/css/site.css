@@ -584,19 +584,8 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 }
 
 
-/* === Comments threading and responsiveness === */
-/* Indentation mapping per depth (limit max-left to avoid overflow on small screens) */
-#comments-list .comment-item.depth-1 { margin-left: 0; }
-#comments-list .comment-item.depth-2 { margin-left: 1rem; }
-#comments-list .comment-item.depth-3 { margin-left: 1.25rem; }
-#comments-list .comment-item.depth-4 { margin-left: 1.75rem; }
-#comments-list .comment-item.depth-5 { margin-left: 2.25rem; }
-/* Cap indentation at depth 5 - all deeper comments use same margin as depth-5 */
-#comments-list .comment-item.depth-6,
-#comments-list .comment-item.depth-7,
-#comments-list .comment-item.depth-8,
-#comments-list .comment-item.depth-9,
-#comments-list .comment-item.depth-10 { margin-left: 2.25rem; }
+/* === Comments threading - flat structure === */
+/* All comments displayed with same left alignment (no depth-based indentation) */
 
 /* Cleaner visual: remove top/right borders on each comment item, keep subtle bottom */
 #comments-list .list-group-item {
@@ -604,23 +593,18 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
   border-right: 0 !important;
   border-bottom: 0 !important;
 }
+
 /* Comment actions layout below content */
 #comments-list .comment-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 #comments-list .comment-actions .btn { flex: 0 0 auto; }
 
-#comments-list .comment-item { border-left: 3px solid rgba(148,163,184,.35); padding-left: .75rem; }
+/* Flat comment structure - all comments have same border and padding */
+#comments-list .comment-item {
+  border-left: 3px solid rgba(148,163,184,.35);
+  padding-left: .75rem;
+  margin-left: 0; /* No indentation - flat structure */
+}
 #comments-list .comment-item .comment-content { overflow-wrap: anywhere; word-break: break-word; }
-#comments-list .comment-item.depth-1 { border-color: #60a5fa; }
-#comments-list .comment-item.depth-2 { border-color: #34d399; }
-#comments-list .comment-item.depth-3 { border-color: #f59e0b; }
-#comments-list .comment-item.depth-4 { border-color: #f472b6; }
-/* All depths 5+ use same color and indentation */
-#comments-list .comment-item.depth-5,
-#comments-list .comment-item.depth-6,
-#comments-list .comment-item.depth-7,
-#comments-list .comment-item.depth-8,
-#comments-list .comment-item.depth-9,
-#comments-list .comment-item.depth-10 { border-color: #a78bfa; }
 
 /* Thread collapse controls: left gutter clickable + +/- indicator that curves into border */
 #comments-list .comment-item { position: relative; }

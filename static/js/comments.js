@@ -93,13 +93,11 @@
 
   function renderCommentItem(c, isReply=false, parentUsername=null){
     const isAuthed = section.dataset.authenticated === 'true';
-    const actualDepth = c.depth || 0;
 
-    // For display purposes, cap depth at MAX_DEPTH for indentation
-    const displayDepth = Math.min(actualDepth, MAX_DEPTH);
-    const depthClass = `depth-${displayDepth}`;
+    // Flat structure - no depth classes needed
+    // All comments displayed with same alignment
 
-    // Show reply indicator for ALL replies (depth >= 1), not just at max depth
+    // Show reply indicator for ALL replies to maintain context
     const showReplyIndicator = isReply && c.parent_username;
 
     const created = new Date(c.created_at);
@@ -146,7 +144,7 @@
          <div class="comment-avatar-letter" style="display: none;">${escapeHtml(c.user.username_initial)}</div>`
       : `<div class="comment-avatar-letter">${escapeHtml(c.user.username_initial)}</div>`;
 
-    const item = el(`<div class="list-group-item comment-item ${depthClass}" data-comment-id="${c.id}" data-parent-id="${c.parent_id || ''}" data-replies-page="1">
+    const item = el(`<div class="list-group-item comment-item" data-comment-id="${c.id}" data-parent-id="${c.parent_id || ''}" data-replies-page="1">
       <div class="thread-left-gutter" role="button" aria-label="Toggle thread" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="left" title="Click to collapse/expand thread"></div>
       <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
         ${voteBlock}
@@ -169,20 +167,15 @@
       <div class="load-more-replies-container"></div>
     </div>`);
 
-    // Render nested replies if included
-    // For replies at max depth, render them flat (no further nesting)
+    // Render replies in flat structure
+    // All replies displayed at same level with reply indicators
     if(c.replies && c.replies.length){
       const holder = item.querySelector('.replies');
-      if(actualDepth >= MAX_DEPTH){
-        // Render flat - all replies at same level
-        c.replies.forEach(r => {
-          const flatReply = renderCommentItem(r, true, c.user.username);
-          holder.appendChild(flatReply);
-        });
-      } else {
-        // Normal nested rendering
-        c.replies.forEach(r => holder.appendChild(renderCommentItem(r, true)));
-      }
+      // Render all replies flat - each shows "Replying to @username"
+      c.replies.forEach(r => {
+        const flatReply = renderCommentItem(r, true);
+        holder.appendChild(flatReply);
+      });
     }
 
     // Add "Load More Replies" button if comment has more replies to load
@@ -259,27 +252,9 @@
     const shouldCollapse = (typeof collapse === 'boolean') ? collapse : !item.classList.contains('collapsed');
     item.classList.toggle('collapsed', shouldCollapse);
 
-    // Recursively hide/show all nested replies
+    // Simple flat structure - just hide/show direct replies
     if(holder){
       holder.style.display = shouldCollapse ? 'none' : '';
-
-      // If collapsing, hide all descendant replies recursively
-      if(shouldCollapse){
-        const allNestedReplies = holder.querySelectorAll('.replies');
-        allNestedReplies.forEach(nestedHolder => {
-          nestedHolder.style.display = 'none';
-        });
-      } else {
-        // When expanding, only show immediate children's replies
-        // Don't auto-expand collapsed nested threads
-        const immediateChildren = holder.querySelectorAll(':scope > .comment-item');
-        immediateChildren.forEach(child => {
-          const childReplies = child.querySelector(':scope > .replies');
-          if(childReplies && !child.classList.contains('collapsed')){
-            childReplies.style.display = '';
-          }
-        });
-      }
     }
 
     const indicator = item.querySelector('.thread-collapse-indicator');
@@ -508,15 +483,10 @@
       const data = await res.json();
 
       if(res.ok && data.results && data.results.length > 0){
-        // Get comment depth and username for proper rendering
-        const commentDepth = parseInt(item.className.match(/depth-(\d+)/)?.[1] || '0');
-        const parentUsername = item.querySelector('.comment-username-link')?.textContent || null;
-
-        // Render new replies - pass parent username if at max depth
+        // Render new replies in flat structure
+        // All replies show reply indicators automatically
         data.results.forEach(reply => {
-          const replyItem = commentDepth >= MAX_DEPTH
-            ? renderCommentItem(reply, true, parentUsername)
-            : renderCommentItem(reply, true);
+          const replyItem = renderCommentItem(reply, true);
           repliesHolder.appendChild(replyItem);
         });
 

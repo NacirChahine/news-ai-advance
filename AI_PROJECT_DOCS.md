@@ -93,12 +93,11 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - CommentFlag(comment, user, reason, created_at)
   - CommentVote(comment, user, value in {-1, 1}, created_at, updated_at)
 - Indexes: (article, created_at), (parent, created_at), (cached_score)
-- Depth enforcement: computed on save, true depth stored without capping
-  - **UPDATED**: Model now stores true depth (unlimited), MAX_DEPTH=5 used only for display indentation
-  - **UPDATED**: `get_display_depth()` method returns depth capped at MAX_DEPTH for UI rendering
-  - **NEW**: Replies beyond MAX_DEPTH are displayed in a flat list structure (no further indentation)
-  - **NEW**: ALL replies (depth >= 1) show a visual indicator with "↩️ Replying to @username"
-  - **NEW**: Reply indicator has two clickable parts:
+- Depth enforcement: computed on save, true depth stored for data integrity
+  - **UPDATED**: Flat comment structure - all comments displayed with same left alignment
+  - **UPDATED**: No depth-based indentation or colored borders
+  - **UPDATED**: ALL replies show a visual indicator with "↩️ Replying to @username" for context
+  - **UPDATED**: Reply indicator has two clickable parts:
     - Icon/text: highlights immediate parent comment only
     - @username: navigates to user's public profile page
 - Soft deletion: user deletes => content replaced with "[deleted]"; moderator removes => hidden to non-staff
@@ -107,11 +106,14 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - notify_on_comment_reply: bool (optional email notifications)
   - **NEW**: public_profile: bool (controls public profile visibility, default: True)
 - Views (news_aggregator.views):
-  - comments_list_create(article_id): GET paginated top-level comments (+ eager replies), POST create
-    - **NEW**: Returns `total_comments` field with count of all comments (not just top-level)
+  - comments_list_create(article_id): GET paginated top-level comments (+ direct replies only), POST create
+    - **UPDATED**: Returns only direct replies (flat structure) with first 5 replies per comment
+    - **UPDATED**: Returns `total_comments` field with count of all comments (not just top-level)
+    - **UPDATED**: Includes `reply_count` for each comment to enable pagination
   - comment_reply(comment_id): POST create child
-    - **NEW**: No longer rejects replies at MAX_DEPTH (allows unlimited depth, displayed flat)
-  - comment_replies(comment_id): GET paginated replies for a specific comment (10 per page)
+    - **UPDATED**: Allows unlimited depth, all displayed flat with reply indicators
+  - comment_replies(comment_id): GET paginated direct replies for a specific comment (5 per page)
+    - **UPDATED**: Returns only direct replies without nested children (flat structure)
   - comment_edit(comment_id): POST owner-only edit
   - comment_delete(comment_id): POST owner-only soft-delete
   - comment_moderate(comment_id): POST staff remove/restore
@@ -135,27 +137,26 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
     - Reply button available at all depths (no longer hidden at MAX_DEPTH)
     - All other actions (Edit, Delete, Flag, Moderate when permitted) live in a dropdown across all screen sizes and depths
   - Voting UI: vertical up/down caret buttons with live score; active selection is colored (upvote green, downvote red); unauthenticated users see disabled icons with tooltips.
-  - Threading UX: Reddit-style visual nesting with depth-specific left borders and indentation; capped indentation to avoid overflow; per-thread collapse/expand toggle.
-    - **UPDATED**: Reply indicators shown for ALL replies (depth >= 1), not just at max depth
+  - Threading UX: Flat, linear comment structure similar to Twitter/X replies
+    - **UPDATED**: All comments displayed with same left alignment (no depth-based indentation)
+    - **UPDATED**: No depth classes or progressive margin-left applied
+    - **UPDATED**: Single consistent border color for all comments (no depth-specific colors)
+    - **UPDATED**: Reply indicators shown for ALL replies to maintain parent-child context
     - **UPDATED**: Reply indicator has two separate clickable elements:
       - Icon + "Replying to" text: highlights immediate parent comment only (not all ancestors)
       - @username link: navigates to user's public profile (/accounts/user/<username>/)
     - **NEW**: Comment highlight animation uses WCAG AA compliant colors (blue theme)
-    - **UPDATED**: Load more replies functionality with full pagination support
-      - Backend limits initial replies to 5 per comment with reply_count field
-      - "Load More Replies (X)" button appears when more replies exist
-      - AJAX loading of additional replies (5 at a time) without page refresh
-      - Loaded replies include their full nested children recursively
+    - **UPDATED**: Load more replies functionality with flat pagination
+      - Backend limits initial replies to 5 direct replies per comment with reply_count field
+      - "Load More Replies (X)" button appears when more than 5 direct replies exist
+      - AJAX loading of additional direct replies (5 at a time) without page refresh
+      - All loaded replies displayed flat with reply indicators
       - Loading indicator during fetch
       - Button updates with remaining count or removes when all loaded
       - Toast notification on successful load
-      - Collapse behavior recursively hides ALL nested replies in deep threads
-    - **UPDATED**: Capped indentation at depth 5
-      - CSS: depth-1 through depth-5 have progressive margin-left
-      - CSS: depth-6+ all use same margin-left as depth-5 (2.25rem)
-      - Prevents excessive left margin on deeply nested threads
-      - Visual indicators (colored borders) also capped at depth 5
-      - Comments beyond depth 5 display at same indentation level (flat appearance)
+    - **UPDATED**: Collapse/expand functionality simplified for flat structure
+      - Clicking left border hides/shows all direct replies under a comment
+      - No recursive nesting to manage
     - **UPDATED**: All comment actions use toast notifications
       - Post comment: "Comment posted successfully!"
       - Edit comment: "Comment updated successfully!"
@@ -170,18 +171,20 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - **NEW**: Smooth scroll behavior when clicking comment counters to navigate to comments section
 - Placement: comments section is included full-width below the article and sidebar in `article_detail.html`.
 - Backend serialization/loading:
-  - **UPDATED**: `comments_list_create` recursively prefetches and serializes replies up to depth 20 (reasonable limit) and includes current-user vote mapping for all loaded comments.
-  - Replies endpoint (`comment_replies`) includes user vote mapping for the page of replies returned and parent user info.
+  - **UPDATED**: `comments_list_create` loads only direct replies (flat structure) with first 5 per comment
+  - **UPDATED**: Includes `reply_count` field for pagination support
+  - **UPDATED**: Replies endpoint (`comment_replies`) returns only direct replies without nested children
+  - **UPDATED**: All endpoints include user vote mapping for returned comments
 - **NEW**: Comment deep linking:
   - URL anchors like `#comment-40` automatically scroll to and highlight the target comment
   - Handled by `handleCommentDeepLink()` function in `static/js/comments.js`
   - Works on page load and hash change events
   - Highlights only comment content (not entire comment div) for subtle emphasis
 - Depth handling:
-  - **UPDATED**: Backend stores true depth without capping (unlimited nesting)
-  - **UPDATED**: Model provides `get_display_depth()` method that caps at MAX_DEPTH for UI
-  - Frontend displays replies beyond MAX_DEPTH in flat list with visual reply indicators
-  - Reply indicators show parent username with two clickable parts (parent highlight vs profile navigation)
+  - **UPDATED**: Backend stores true depth for data integrity (parent-child relationships maintained)
+  - **UPDATED**: Frontend displays all comments in flat structure regardless of depth
+  - **UPDATED**: Reply indicators provide context by showing parent username
+  - **UPDATED**: No depth-based styling or indentation applied in UI
 
 ### Reporter/Author System
 - **NEW**: Reporter/author system for user-generated content
