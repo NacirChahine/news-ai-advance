@@ -92,7 +92,16 @@
 }
 
 [data-bs-theme="dark"] .toast-close {
-    color: #f8f9fa;
+    color: #ffffff; /* White for better visibility in dark mode */
+}
+
+/* Also support data-theme attribute for consistency */
+[data-theme="light"] .toast-close {
+    color: #212529;
+}
+
+[data-theme="dark"] .toast-close {
+    color: #ffffff; /* White for better visibility in dark mode */
 }
 
 [data-bs-theme="light"] .toast-close:hover {

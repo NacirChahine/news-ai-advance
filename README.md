@@ -15,6 +15,8 @@ News Advance is a web application that aggregates news articles and applies AI-d
 - **Preferred News Sources** – Mark sources as preferred and get prioritized content in your feed
 - **Profile Pictures & Avatars** – Upload profile pictures that display in comments with letter avatar fallbacks
 - **Public Profile Privacy** – Control who can view your public profile with comments and liked articles
+- **Enhanced Theme Switcher** – Beautiful animated theme toggle with system preference detection and localStorage persistence
+- **Toast Notifications** – Unified glassmorphism toast system for all user feedback with WCAG AA compliance
 
 ## Tech Stack
 
@@ -601,6 +603,37 @@ Control who can view your public profile:
 - **Private Mode**: When disabled, other users see "This Profile is Private" message
 - **Own Profile**: You can always view your own profile regardless of privacy setting
 - **Profile Content**: Public profiles show comments, liked articles, and preferred sources
+
+### Enhanced Theme Switcher
+Beautiful animated theme toggle based on web.dev best practices:
+- **Animated Icon**: Sun/moon icon with smooth transitions and elastic animations
+- **System Preference Detection**: Automatically detects and follows system dark/light mode preference
+- **localStorage Persistence**: Theme preference saved and persists across sessions
+- **Smooth Transitions**: Elegant color transitions when switching themes
+- **Accessibility**: Full ARIA support and reduced motion support for accessibility
+- **Implementation**: `static/js/theme-switcher.js` and `static/css/site.css`
+
+### Toast Notification System
+Unified toast notification system for all user feedback:
+- **Glassmorphism Design**: Semi-transparent backgrounds with backdrop blur effects
+- **Message Types**: Success (green), Error (red), Warning (yellow), Info (blue)
+- **Auto-dismiss**: Configurable duration with smooth fade-out animations
+- **Stacking**: Multiple toasts stack vertically in bottom-left corner
+- **WCAG AA Compliance**: All colors meet 4.5:1 contrast ratio for normal text
+- **Theme Support**: Optimized for both light and dark themes
+- **Accessibility**: ARIA live regions, keyboard dismissible, screen reader friendly
+- **XSS Protection**: HTML escaping for all user-generated content
+- **Implementation**: `static/js/toast.js` and `static/css/toast.css`
+- **Usage**: Replaces all inline alerts and Django messages throughout the application
+
+### Comment System Enhancements
+Advanced comment threading with depth management:
+- **Capped Indentation**: Comments indent progressively up to depth 5, then remain flat
+- **Load More Replies**: Paginated reply loading for deeply nested threads
+- **Visual Indicators**: Colored left borders and reply indicators for context
+- **Toast Notifications**: All comment actions (post, edit, delete, flag, vote) use toast notifications
+- **Smooth Animations**: Highlight animations when navigating to parent comments
+- **Responsive Design**: Optimized for mobile and desktop viewing
 
 ## Documentation
 

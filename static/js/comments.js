@@ -185,6 +185,26 @@
       }
     }
 
+    // Add "Load More Replies" button if comment has more replies to load
+    // This is determined by checking if the comment has a reply_count > current replies length
+    if(c.reply_count && c.replies && c.reply_count > c.replies.length){
+      const loadMoreContainer = item.querySelector('.load-more-replies-container');
+      const remainingCount = c.reply_count - c.replies.length;
+      const loadMoreBtn = el(`
+        <button class="btn btn-sm btn-outline-secondary js-load-more-replies mt-2" data-comment-id="${c.id}">
+          <i class="fas fa-plus-circle me-1"></i>
+          Load More Replies (${remainingCount})
+        </button>
+      `);
+      loadMoreContainer.appendChild(loadMoreBtn);
+
+      // Bind click handler for load more button
+      loadMoreBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        await loadMoreReplies(c.id, item);
+      });
+    }
+
     setupThreadControls(item);
     bindItemActions(item, c);
 
@@ -336,8 +356,13 @@
         if(res.ok){
           holder.prepend(renderCommentItem(data.comment, true));
           form.remove();
-        }else{ alert(data.error || 'Failed to reply'); }
-      }catch(err){ alert('Failed to reply'); }
+          if(window.toast) window.toast.success('Reply posted successfully!');
+        }else{
+          if(window.toast) window.toast.error(data.error || 'Failed to reply');
+        }
+      }catch(err){
+        if(window.toast) window.toast.error('Failed to reply');
+      }
     });
     holder.prepend(form);
   }
@@ -359,9 +384,18 @@
           body: new URLSearchParams({ content })
         });
         const data = await res.json();
-        if(res.ok){ contentDiv.textContent = data.comment.content; }
-        else{ alert(data.error || 'Failed to edit'); contentDiv.textContent = original; }
-      }catch(err){ alert('Failed to edit'); contentDiv.textContent = original; }
+        if(res.ok){
+          contentDiv.textContent = data.comment.content;
+          if(window.toast) window.toast.success('Comment updated successfully!');
+        }
+        else{
+          if(window.toast) window.toast.error(data.error || 'Failed to edit');
+          contentDiv.textContent = original;
+        }
+      }catch(err){
+        if(window.toast) window.toast.error('Failed to edit');
+        contentDiv.textContent = original;
+      }
     });
     cancelBtn.addEventListener('click', (e)=>{ e.preventDefault(); contentDiv.textContent = original; });
     contentDiv.appendChild(form);
@@ -375,13 +409,21 @@
       if(res.ok){
         const item = listEl.querySelector(`[data-comment-id="${id}"]`);
         if(item){ item.querySelector('.mt-1').textContent = data.comment.content; }
-      } else { alert(data.error || 'Failed to delete'); }
-    }catch(err){ alert('Failed to delete'); }
+        if(window.toast) window.toast.success('Comment deleted successfully!');
+      } else {
+        if(window.toast) window.toast.error(data.error || 'Failed to delete');
+      }
+    }catch(err){
+      if(window.toast) window.toast.error('Failed to delete');
+    }
   }
 
   async function handleVote(commentId, value, item){
     const isAuthed = section.dataset.authenticated === 'true';
-    if(!isAuthed){ alert('Please log in to vote.'); return; }
+    if(!isAuthed){
+      if(window.toast) window.toast.warning('Please log in to vote.');
+      return;
+    }
     const upBtn = item.querySelector('.js-upvote');
     const downBtn = item.querySelector('.js-downvote');
     const scoreEl = item.querySelector('.comment-score');
@@ -424,7 +466,7 @@
       if(downBtn){ downBtn.classList.toggle('active', data.user_vote === -1); }
       // Do not re-initialize tooltips to avoid flicker
     }catch(err){
-      alert(err.message || 'Vote failed');
+      if(window.toast) window.toast.error(err.message || 'Vote failed');
     }
   }
 
@@ -435,9 +477,16 @@
         body: new URLSearchParams({ remove })
       });
       const data = await res.json();
-      if(res.ok){ fetchComments(1); }
-      else { alert(data.error || 'Moderation failed'); }
-    }catch(err){ alert('Moderation failed'); }
+      if(res.ok){
+        fetchComments(1);
+        if(window.toast) window.toast.success('Comment moderated successfully!');
+      }
+      else {
+        if(window.toast) window.toast.error(data.error || 'Moderation failed');
+      }
+    }catch(err){
+      if(window.toast) window.toast.error('Moderation failed');
+    }
   }
 
   async function flagComment(id){
@@ -447,8 +496,76 @@
         method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', ...csrfHeader() },
         body: new URLSearchParams({ reason })
       });
-      if(res.ok){ alert('Flag submitted'); } else { alert('Failed to flag'); }
-    }catch(err){ alert('Failed to flag'); }
+      if(res.ok){
+        if(window.toast) window.toast.success('Comment flagged successfully!');
+      } else {
+        if(window.toast) window.toast.error('Failed to flag comment');
+      }
+    }catch(err){
+      if(window.toast) window.toast.error('Failed to flag comment');
+    }
+  }
+
+  async function loadMoreReplies(commentId, item){
+    const loadMoreBtn = item.querySelector('.js-load-more-replies');
+    const repliesHolder = item.querySelector('.replies');
+
+    if(!loadMoreBtn || !repliesHolder) return;
+
+    // Get current page from data attribute
+    let currentPage = parseInt(item.dataset.repliesPage || '1');
+    const nextPage = currentPage + 1;
+
+    // Show loading state
+    const originalText = loadMoreBtn.innerHTML;
+    loadMoreBtn.disabled = true;
+    loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
+
+    try{
+      const res = await fetch(`/news/comments/${commentId}/replies/?page=${nextPage}`);
+      const data = await res.json();
+
+      if(res.ok && data.results && data.results.length > 0){
+        // Get comment depth for proper rendering
+        const commentDepth = parseInt(item.className.match(/depth-(\d+)/)?.[1] || '0');
+
+        // Render new replies
+        data.results.forEach(reply => {
+          const replyItem = renderCommentItem(reply, true);
+          repliesHolder.appendChild(replyItem);
+        });
+
+        // Initialize tooltips for new replies
+        initTooltips(repliesHolder);
+
+        // Update page number
+        item.dataset.repliesPage = nextPage.toString();
+
+        // Calculate remaining replies
+        const currentRepliesCount = repliesHolder.children.length;
+        const totalReplies = data.count || currentRepliesCount;
+        const remainingCount = totalReplies - currentRepliesCount;
+
+        // Update or remove button
+        if(remainingCount > 0 && data.page < data.num_pages){
+          loadMoreBtn.disabled = false;
+          loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle me-1"></i>Load More Replies (${remainingCount})`;
+        } else {
+          // All replies loaded, remove button
+          loadMoreBtn.remove();
+        }
+
+        if(window.toast) window.toast.success(`Loaded ${data.results.length} more replies`);
+      } else {
+        // No more replies
+        loadMoreBtn.remove();
+      }
+    }catch(err){
+      // Restore button on error
+      loadMoreBtn.disabled = false;
+      loadMoreBtn.innerHTML = originalText;
+      if(window.toast) window.toast.error('Failed to load more replies');
+    }
   }
 
   function updateCommentCount(count){
@@ -512,8 +629,13 @@
           document.getElementById('comment-content').value='';
           listEl.prepend(renderCommentItem(data.comment));
           initTooltips(listEl);
-        } else { alert(data.error || 'Failed to post'); }
-      }catch(err){ alert('Failed to post'); }
+          if(window.toast) window.toast.success('Comment posted successfully!');
+        } else {
+          if(window.toast) window.toast.error(data.error || 'Failed to post comment');
+        }
+      }catch(err){
+        if(window.toast) window.toast.error('Failed to post comment');
+      }
     });
   }
 

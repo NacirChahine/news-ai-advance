@@ -20,13 +20,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const saveUrl = statusDiv ? (statusDiv.getAttribute('data-save-url') || '') : '';
 
   function showSaveStatus(success, message) {
-    if (!statusDiv) return;
-    statusDiv.className = success ? 'alert alert-success' : 'alert alert-danger';
-    statusDiv.innerHTML = success ?
-      '<i class="fas fa-check-circle me-2"></i>Preferences saved automatically!' :
-      '<i class="fas fa-exclamation-triangle me-2"></i>Error saving preferences: ' + (message || '');
-    statusDiv.classList.remove('d-none');
-    setTimeout(() => statusDiv.classList.add('d-none'), 3000);
+    // Use toast notifications instead of inline alerts
+    if (success) {
+      if (window.toast) {
+        window.toast.success('Preferences saved automatically!');
+      }
+    } else {
+      if (window.toast) {
+        window.toast.error('Error saving preferences: ' + (message || 'Unknown error'));
+      }
+    }
   }
 
   function autoSavePreference(fieldName, fieldValue) {
@@ -75,16 +78,16 @@ document.addEventListener('DOMContentLoaded', function() {
   const profilePictureInput = document.getElementById('profilePictureInput');
   const removePictureBtn = document.getElementById('removePictureBtn');
   const avatarPreview = document.getElementById('avatarPreview');
-  const uploadStatus = document.getElementById('uploadStatus');
 
   function showUploadStatus(success, message) {
-    if (!uploadStatus) return;
-    uploadStatus.className = success ? 'alert alert-success' : 'alert alert-danger';
-    uploadStatus.innerHTML = success ?
-      '<i class="fas fa-check-circle me-2"></i>' + message :
-      '<i class="fas fa-exclamation-triangle me-2"></i>' + message;
-    uploadStatus.style.display = 'block';
-    setTimeout(() => uploadStatus.style.display = 'none', 5000);
+    // Use toast notifications instead of inline alerts
+    if (window.toast) {
+      if (success) {
+        window.toast.success(message);
+      } else {
+        window.toast.error(message);
+      }
+    }
   }
 
   if (profilePictureInput) {

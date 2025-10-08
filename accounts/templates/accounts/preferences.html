@@ -179,9 +179,8 @@
                         </div>
 
                         <div class="d-grid gap-2">
-                            <div id="save-status" class="alert alert-success d-none" role="alert" data-save-url="{% url 'accounts:auto_save_preferences' %}">
-                                <i class="fas fa-check-circle me-2"></i>Preferences saved automatically!
-                            </div>
+                            <!-- Hidden element to store save URL for JavaScript -->
+                            <div id="save-status" class="d-none" data-save-url="{% url 'accounts:auto_save_preferences' %}"></div>
                             <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-2"></i>Return to Profile
                             </a>

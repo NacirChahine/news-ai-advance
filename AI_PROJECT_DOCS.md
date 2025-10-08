@@ -141,7 +141,25 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
       - Icon + "Replying to" text: highlights immediate parent comment only (not all ancestors)
       - @username link: navigates to user's public profile (/accounts/user/<username>/)
     - **NEW**: Comment highlight animation uses WCAG AA compliant colors (blue theme)
-    - **NEW**: Load more replies functionality with pagination support (infrastructure in place)
+    - **UPDATED**: Load more replies functionality with full pagination support
+      - Comments at max depth show "Load More Replies (X)" button
+      - AJAX loading of additional replies without page refresh
+      - Loading indicator during fetch
+      - Button updates with remaining count or removes when all loaded
+      - Toast notification on successful load
+    - **UPDATED**: Capped indentation at depth 5
+      - CSS: depth-1 through depth-5 have progressive margin-left
+      - CSS: depth-6+ all use same margin-left as depth-5 (2.5rem)
+      - Prevents excessive left margin on deeply nested threads
+      - Visual indicators (colored borders) also capped at depth 5
+    - **UPDATED**: All comment actions use toast notifications
+      - Post comment: "Comment posted successfully!"
+      - Edit comment: "Comment updated successfully!"
+      - Delete comment: "Comment deleted successfully!"
+      - Flag comment: "Comment flagged successfully!"
+      - Vote: Warning toast if not logged in
+      - Moderation: "Comment moderated successfully!"
+      - Reply: "Reply posted successfully!"
   - Time display: relative "time ago" labels with a tooltip (`title`) containing the absolute timestamp.
   - Accessibility: interactive elements have aria-labels; dropdowns use Bootstrap JS; keyboard focus states preserved.
   - **NEW**: Comment counters use WCAG AA compliant colors for both light and dark themes
@@ -495,12 +513,57 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 - **Responsive Design**: Works across all screen sizes and browsers
 
 ### Theme System
-- **Dark/Light Theme Toggle**: Persistent theme preference stored in localStorage
+- **Enhanced Theme Switcher**: Based on web.dev best practices (https://web.dev/patterns/theming/theme-switch)
+  - **Animated Icon**: Sun/moon SVG icon with smooth elastic transitions
+  - **System Preference Detection**: Automatically detects `prefers-color-scheme` media query
+  - **localStorage Persistence**: Theme preference saved as 'theme-preference' key
+  - **Smooth Transitions**: CSS transitions for background-color and color properties
+  - **Accessibility**: Full ARIA support (aria-label, aria-live) and reduced motion support
+  - **Implementation**: `static/js/theme-switcher.js` (replaces old theme.js)
+  - **CSS Animations**: Defined in `static/css/site.css` with cubic-bezier easing functions
 - **Glassmorphism Design**: Semi-transparent surfaces with backdrop-filter blur
 - **WCAG AA Compliance**: 4.5:1 contrast ratio for normal text, 3:1 for large text
 - **Reduced Transparency**: Dropdown menus use higher opacity for better readability
 - **Destructive Actions**: Red styling (btn-danger/outline-danger) for Remove/Unsave buttons
 - **CSS Variables**: Theme-specific colors defined in :root and [data-theme="light"]
+
+### Toast Notification System
+- **Unified Feedback System**: Replaces all inline alerts and Django messages
+- **Implementation Files**:
+  - `static/js/toast.js`: ToastManager class with public API (success, error, warning, info)
+  - `static/css/toast.css`: Complete styling for all toast types and themes
+  - `templates/base.html`: Auto-converts Django messages to toasts via hidden data attributes
+- **Design Features**:
+  - **Glassmorphism**: Semi-transparent backgrounds with backdrop-filter blur
+  - **Message Types**: Success (green), Error (red), Warning (yellow), Info (blue)
+  - **Positioning**: Bottom-left corner with vertical stacking (column-reverse)
+  - **Animations**: Slide-in from left, fade-out on dismiss
+  - **Auto-dismiss**: Configurable duration (default: 5s success, 7s error)
+  - **Manual Dismiss**: Close button (X) with hover effects
+- **Accessibility**:
+  - **WCAG AA Compliance**: All colors meet 4.5:1 contrast ratio
+  - **ARIA Support**: role="alert", aria-live="assertive", aria-atomic="true"
+  - **Keyboard Navigation**: Focusable close buttons, Escape key to dismiss
+  - **Screen Readers**: Proper announcement of messages
+  - **Reduced Motion**: Respects prefers-reduced-motion media query
+- **Theme Support**:
+  - Light theme: Higher opacity backgrounds, darker text
+  - Dark theme: Lower opacity backgrounds, white text for close button
+  - Both themes use [data-theme] and [data-bs-theme] attributes
+- **XSS Protection**: HTML escaping via escapeHtml() function
+- **Usage Examples**:
+  ```javascript
+  toast.success('Profile updated successfully!');
+  toast.error('Failed to save changes');
+  toast.warning('Please log in to continue');
+  toast.info('New features available');
+  ```
+- **Integration Points**:
+  - Django messages framework (automatic conversion)
+  - Preferences page (auto-save feedback)
+  - Comment system (post, edit, delete, flag, vote actions)
+  - Article actions (save, like, create, edit, delete)
+  - Authentication (login, logout, password change)
 
 - **profile.html**: User profile with activity summary and preferences
 
@@ -702,12 +765,13 @@ static/
 │   ├── site.css           # Global styles (navbar, footer, buttons, etc.)
 │   └── article_detail.css # Article-specific styles
 ├── js/
-│   ├── theme.js           # Dark/light theme toggling
+│   ├── theme-switcher.js  # Enhanced theme toggling (web.dev best practices)
+│   ├── toast.js           # Toast notification system
 │   ├── article_actions.js # Save/unsave article functionality
 │   ├── article_detail.js  # Article page interactions
 │   ├── article_likes.js   # Like/dislike functionality
-│   ├── comments.js        # Comment system
-│   └── preferences.js     # User preferences auto-save
+│   ├── comments.js        # Comment system with toast notifications
+│   └── preferences.js     # User preferences auto-save with toast feedback
 └── images/
     └── favicon.ico
 ```
