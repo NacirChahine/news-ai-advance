@@ -58,6 +58,10 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   line-height: 1.6;
+  /* Flexbox layout to push footer to bottom */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 .navbar-brand {
   font-weight: bold;

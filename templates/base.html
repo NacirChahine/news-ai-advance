@@ -54,8 +54,19 @@
                 <div class="navbar-nav">
                     {% if user.is_authenticated %}
                         <div class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
-                                {{ user.username }}
+                            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                {% if user.profile.profile_picture %}
+                                    <img src="{{ user.profile.profile_picture.url }}"
+                                         alt="{{ user.username }}"
+                                         class="comment-avatar me-2"
+                                         style="width: 32px; height: 32px;">
+                                {% else %}
+                                    <div class="comment-avatar-letter me-2"
+                                         style="width: 32px; height: 32px; font-size: 14px;">
+                                        {{ user.username|first|upper }}
+                                    </div>
+                                {% endif %}
+                                <span>{{ user.username }}</span>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end">
                                 <a class="dropdown-item" href="{% url 'accounts:profile' %}">Profile</a>
@@ -79,7 +90,7 @@
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container" style="flex: 1;">
         {% if messages %}
             {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">

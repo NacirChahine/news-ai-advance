@@ -4,120 +4,110 @@
 
 {% block content %}
 <div class="container">
-    <div class="row">
-        <div class="col-md-10 offset-md-1">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h4 class="mb-0"><i class="fas fa-bookmark me-2"></i>Your Saved Articles</h4>
-                        <a href="{% url 'accounts:profile' %}" class="btn btn-sm btn-light">
-                            <i class="fas fa-arrow-left me-1"></i>Back to Profile
-                        </a>
-                    </div>
-                </div>
-                <div class="card-body">
-                    {% if saved_articles %}
-                        <!-- Hidden empty state that will be shown when all articles are removed via AJAX -->
-                        <div class="alert alert-info saved-articles-empty d-none">
-                            <i class="fas fa-info-circle me-2"></i>
-                            You haven't saved any articles yet. When you find interesting articles, click the "Save" button to collect them here.
-                        </div>
-                        <div class="text-center mt-4 saved-articles-empty d-none">
-                            <a href="{% url 'news_aggregator:latest' %}" class="btn btn-primary">
-                                <i class="fas fa-newspaper me-2"></i>Browse Latest News
-                            </a>
-                        </div>
+    <!-- Breadcrumb navigation -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'accounts:profile' %}">Account</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Saved Articles</li>
+        </ol>
+    </nav>
 
-                        <div class="table-responsive">
-                            <table class="table table-hover saved-articles-table">
-                                <colgroup>
-                                    <col style="width: 50%;"> <!-- Title & badges -->
-                                    <col style="width: 20%;"> <!-- Source -->
-                                    <col style="width: 15%;"> <!-- Date -->
-                                    <col style="width: 15%;"> <!-- Actions -->
-                                </colgroup>
-                                <thead>
-                                    <tr>
-                                        <th>Article</th>
-                                        <th>Source</th>
-                                        <th>Saved On</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for saved in saved_articles %}
-                                        <tr class="saved-article-row">
-                                            <td>
-                                                <a href="{% url 'news_aggregator:article_detail' saved.article.id %}">
-                                                    {{ saved.article.title }}
-                                                </a>
-                                                {% if saved.article.is_analyzed %}
-                                                    <div class="mt-1">
-                                                        {% if saved.article.bias_analysis %}
-                                                            <span class="badge 
-                                                                {% if saved.article.bias_analysis.political_leaning == 'left' %}bg-primary
-                                                                {% elif saved.article.bias_analysis.political_leaning == 'center-left' %}bg-info
-                                                                {% elif saved.article.bias_analysis.political_leaning == 'center' %}bg-success
-                                                                {% elif saved.article.bias_analysis.political_leaning == 'center-right' %}bg-warning text-dark
-                                                                {% elif saved.article.bias_analysis.political_leaning == 'right' %}bg-danger
-                                                                {% else %}bg-secondary{% endif %} me-1">
-                                                                {{ saved.article.bias_analysis.get_political_leaning_display }}
-                                                            </span>
-                                                        {% endif %}
-
-                                                        {% if saved.article.sentiment_analysis %}
-                                                            <span class="badge 
-                                                                {% if saved.article.sentiment_analysis.sentiment_score > 0.3 %}bg-success
-                                                                {% elif saved.article.sentiment_analysis.sentiment_score < -0.3 %}bg-danger
-                                                                {% else %}bg-secondary{% endif %} me-1">
-                                                                {% if saved.article.sentiment_analysis.sentiment_score > 0.3 %}Positive
-                                                                {% elif saved.article.sentiment_analysis.sentiment_score < -0.3 %}Negative
-                                                                {% else %}Neutral{% endif %}
-                                                            </span>
-                                                        {% endif %}
-                                                    </div>
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                <a href="{% url 'news_aggregator:source_detail' saved.article.source.id %}">
-                                                    {{ saved.article.source.name }}
-                                                </a>
-                                            </td>
-                                            <td>{{ saved.saved_at|date:"M d, Y" }}</td>
-                                            <td>
-                                                <a href="{% url 'news_aggregator:article_detail' saved.article.id %}" class="btn btn-sm ms-1 btn-outline-primary">
-                                                    <i class="fas fa-book-reader"></i> Read
-                                                </a>
-                                                <a href="#" class="btn btn-sm btn-outline-danger ms-1 mt-2 save-article-btn remove-saved-btn" data-article-id="{{ saved.article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
-                                                    <i class="fas fa-trash"></i> <span>Remove</span>
-                                                </a>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    {% else %}
-                        <div class="alert alert-info saved-articles-empty">
-                            <i class="fas fa-info-circle me-2"></i>
-                            You haven't saved any articles yet. When you find interesting articles, click the "Save" button to collect them here.
-                        </div>
-                        <div class="text-center mt-4 saved-articles-empty">
-                            <a href="{% url 'news_aggregator:latest' %}" class="btn btn-primary">
-                                <i class="fas fa-newspaper me-2"></i>Browse Latest News
-                            </a>
-                        </div>
-                    {% endif %}
-                </div>
-                {% if saved_articles %}
-                    <div class="card-footer">
-                        <div class="text-muted">
-                            <small class="saved-count">You have {{ saved_articles.count }} saved article{{ saved_articles.count|pluralize }}</small>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-bookmark me-2"></i>Your Saved Articles</h1>
+        <a href="{% url 'accounts:profile' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Back to Profile
+        </a>
     </div>
+    <!-- Articles grid -->
+    {% if page_obj %}
+        <div class="row">
+            {% for article in page_obj %}
+                {% include 'news_aggregator/partials/article_card.html' with article=article show_remove_button=True %}
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+            <nav aria-label="Page navigation" class="my-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if date_filter != 'all' %}&date_filter={{ date_filter }}{% endif %}{% if source_filter != 'all' %}&source_filter={{ source_filter }}{% endif %}{% if sort_by != 'saved_newest' %}&sort_by={{ sort_by }}{% endif %}{% if search_query %}&search_query={{ search_query }}{% endif %}" aria-label="First">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if date_filter != 'all' %}&date_filter={{ date_filter }}{% endif %}{% if source_filter != 'all' %}&source_filter={{ source_filter }}{% endif %}{% if sort_by != 'saved_newest' %}&sort_by={{ sort_by }}{% endif %}{% if search_query %}&search_query={{ search_query }}{% endif %}" aria-label="Previous">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if date_filter != 'all' %}&date_filter={{ date_filter }}{% endif %}{% if source_filter != 'all' %}&source_filter={{ source_filter }}{% endif %}{% if sort_by != 'saved_newest' %}&sort_by={{ sort_by }}{% endif %}{% if search_query %}&search_query={{ search_query }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if date_filter != 'all' %}&date_filter={{ date_filter }}{% endif %}{% if source_filter != 'all' %}&source_filter={{ source_filter }}{% endif %}{% if sort_by != 'saved_newest' %}&sort_by={{ sort_by }}{% endif %}{% if search_query %}&search_query={{ search_query }}{% endif %}" aria-label="Next">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if date_filter != 'all' %}&date_filter={{ date_filter }}{% endif %}{% if source_filter != 'all' %}&source_filter={{ source_filter }}{% endif %}{% if sort_by != 'saved_newest' %}&sort_by={{ sort_by }}{% endif %}{% if search_query %}&search_query={{ search_query }}{% endif %}" aria-label="Last">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+        <!-- Summary footer -->
+        {% if total_count %}
+            <div class="text-center text-muted mb-4">
+                <small class="saved-count">You have {{ total_count }} saved article{{ total_count|pluralize }}</small>
+            </div>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            You haven't saved any articles yet. When you find interesting articles, click the "Save" button to collect them here.
+        </div>
+        <div class="text-center mt-4">
+            <a href="{% url 'news_aggregator:latest' %}" class="btn btn-primary">
+                <i class="fas fa-newspaper me-2"></i>Browse Latest News
+            </a>
+        </div>
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% load static %}
+<script src="{% static 'js/article_likes.js' %}"></script>
 {% endblock %}

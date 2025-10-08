@@ -211,7 +211,8 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 
 - **Views**:
   - article_detail and latest_news: Include like/dislike counts and user's current reaction status
-  - accounts.views.liked_articles: Displays all articles the user has liked with pagination
+  - accounts.views.liked_articles: Displays all articles the user has liked with pagination (12 per page, 3x4 grid)
+  - accounts.views.saved_articles: Displays all saved articles with pagination (12 per page, 3x4 grid)
   - accounts.views.profile: Shows liked articles count in stats section
 
 - **Frontend**:
@@ -219,16 +220,20 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - Real-time count updates via AJAX (static/js/article_likes.js)
   - Active state styling for user's current reaction
   - Non-authenticated users see counts but cannot interact
-  - **NEW**: Article cards are fully clickable with hover effects (lift, shadow, image zoom)
-  - **NEW**: Save/unsave button positioned as floating overlay on article image
-  - **NEW**: Red styling (btn-danger) for "Unsave" action per user preference
-  - **NEW**: Placeholder image (SVG) for articles without images
-  - **NEW**: All interactive elements (like, comment, save) work independently via z-index layering
+  - **Article Cards**: Fully clickable with hover effects (lift, shadow, image zoom)
+  - **Save/Unsave Button**: Positioned as floating overlay on article image
+  - **Red Styling**: btn-danger for "Unsave" action per user preference
+  - **Placeholder Image**: SVG fallback for articles without images
+  - **Z-Index Layering**: All interactive elements (like, comment, save) work independently
+  - **Reusable Component**: templates/news_aggregator/partials/article_card.html for consistent card design
+  - **Breadcrumb Navigation**: Added to liked and saved articles pages (Home > Account > Page)
+  - **Responsive Grid**: 3 columns on large screens, 2 on medium, 1 on small devices
 
 - **Profile Integration**:
   - Profile stats show "Liked Articles" count (replaces "Topic Following")
   - "View Liked Articles" button navigates to `/accounts/liked-articles/`
-  - Liked articles page displays articles in table format with pagination
+  - Liked articles page displays articles in card grid format with pagination
+  - Saved articles page displays articles in card grid format with remove functionality
 
 ## Processing Pipelines
 
@@ -433,7 +438,24 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
   - Logical Fallacies Catalog (`news_analysis:fallacies`) and detail pages (`news_analysis:fallacy_detail`)
   - Sources Overview (`news_aggregator:source_list`)
 - Active state highlighting applied based on `request.resolver_match` (url_name/namespace) for clear context.
+- **User Avatar in Navbar**: 32x32px circular avatar next to username in dropdown toggle
+  - Shows profile picture if uploaded (user.profile.profile_picture)
+  - Falls back to letter avatar with first letter of username (colored gradient)
+  - Uses .comment-avatar and .comment-avatar-letter CSS classes
 
+### Layout & Footer
+- **Flexbox Layout**: Body uses flexbox (min-height: 100vh, flex-direction: column)
+- **Main Content Flex**: Container has flex: 1 to fill available space
+- **Footer Positioning**: Automatically pushed to bottom of viewport on short pages
+- **Responsive Design**: Works across all screen sizes and browsers
+
+### Theme System
+- **Dark/Light Theme Toggle**: Persistent theme preference stored in localStorage
+- **Glassmorphism Design**: Semi-transparent surfaces with backdrop-filter blur
+- **WCAG AA Compliance**: 4.5:1 contrast ratio for normal text, 3:1 for large text
+- **Reduced Transparency**: Dropdown menus use higher opacity for better readability
+- **Destructive Actions**: Red styling (btn-danger/outline-danger) for Remove/Unsave buttons
+- **CSS Variables**: Theme-specific colors defined in :root and [data-theme="light"]
 
 - **profile.html**: User profile with activity summary and preferences
 

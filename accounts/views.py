@@ -135,20 +135,47 @@ def auto_save_preferences(request):
 def liked_articles(request):
     """View for user's liked articles"""
     user = request.user
-    from news_aggregator.models import ArticleLike
+    from news_aggregator.models import ArticleLike, Comment
     from django.core.paginator import Paginator
 
     # Get all articles the user has liked
-    liked_article_objs = ArticleLike.objects.filter(user=user, is_like=True).select_related('article', 'article__source').order_by('-created_at')
+    liked_article_objs = ArticleLike.objects.filter(
+        user=user, is_like=True
+    ).select_related(
+        'article', 'article__source', 'article__bias_analysis', 'article__sentiment_analysis'
+    ).order_by('-created_at')
+
+    # Extract articles and annotate with necessary data
+    articles = []
+    saved_article_ids = set(user.saved_articles.values_list('article_id', flat=True))
+
+    # Get preferred source IDs
+    try:
+        preferred_source_ids = set(user.profile.preferred_sources.values_list('id', flat=True))
+    except:
+        preferred_source_ids = set()
+
+    for liked_obj in liked_article_objs:
+        article = liked_obj.article
+
+        # Annotate article with additional data
+        article.is_saved = article.id in saved_article_ids
+        article.user_like_status = 'like'  # We know they liked it
+        article.like_count = ArticleLike.objects.filter(article=article, is_like=True).count()
+        article.dislike_count = ArticleLike.objects.filter(article=article, is_like=False).count()
+        article.comment_count = Comment.objects.filter(article=article, is_approved=True).count()
+        article.is_from_preferred_source = article.source.id in preferred_source_ids
+
+        articles.append(article)
 
     # Paginate the results
-    paginator = Paginator(liked_article_objs, 20)  # Show 20 articles per page
+    paginator = Paginator(articles, 12)  # Show 12 articles per page (3x4 grid)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     context = {
-        'liked_articles': page_obj,
-        'total_count': liked_article_objs.count(),
+        'page_obj': page_obj,
+        'total_count': len(articles),
     }
     return render(request, 'accounts/liked_articles.html', context)
 
@@ -211,25 +238,56 @@ def saved_articles(request):
     elif sort_by == 'alphabetical':
         saved_articles = saved_articles.order_by('article__title')
 
+    # Select related fields for efficiency
+    saved_articles = saved_articles.select_related(
+        'article', 'article__source', 'article__bias_analysis', 'article__sentiment_analysis'
+    )
+
     # Get sources for filter dropdown
-    from news_aggregator.models import NewsSource
+    from news_aggregator.models import NewsSource, ArticleLike, Comment
     sources = NewsSource.objects.all()
+
+    # Get preferred source IDs
+    try:
+        preferred_source_ids = set(user.profile.preferred_sources.values_list('id', flat=True))
+    except:
+        preferred_source_ids = set()
+
+    # Get user's likes/dislikes
+    article_ids = [saved.article.id for saved in saved_articles]
+    user_likes = ArticleLike.objects.filter(user=user, article_id__in=article_ids)
+    user_likes_dict = {like.article_id: ('like' if like.is_like else 'dislike') for like in user_likes}
+
+    # Annotate articles with additional data
+    articles = []
+    for saved_obj in saved_articles:
+        article = saved_obj.article
+
+        # Annotate article with additional data
+        article.is_saved = True  # We know it's saved
+        article.user_like_status = user_likes_dict.get(article.id, None)
+        article.like_count = ArticleLike.objects.filter(article=article, is_like=True).count()
+        article.dislike_count = ArticleLike.objects.filter(article=article, is_like=False).count()
+        article.comment_count = Comment.objects.filter(article=article, is_approved=True).count()
+        article.is_from_preferred_source = article.source.id in preferred_source_ids
+
+        articles.append(article)
 
     # Paginate results
     from django.core.paginator import Paginator
-    paginator = Paginator(saved_articles, 10)  # Show 10 saved articles per page
+    paginator = Paginator(articles, 12)  # Show 12 saved articles per page (3x4 grid)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
     context = {
-        'saved_articles': page_obj,
+        'page_obj': page_obj,
         'sources': sources,
         'date_filter': date_filter,
         'source_filter': source_filter,
         'sort_by': sort_by,
         'search_query': search_query,
         'is_paginated': paginator.num_pages > 1,
-        'page_obj': page_obj,
+        'total_count': len(articles),
     }
     return render(request, 'accounts/saved_articles.html', context)
 
