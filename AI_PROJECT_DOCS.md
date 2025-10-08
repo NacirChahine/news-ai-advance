@@ -142,16 +142,20 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
       - @username link: navigates to user's public profile (/accounts/user/<username>/)
     - **NEW**: Comment highlight animation uses WCAG AA compliant colors (blue theme)
     - **UPDATED**: Load more replies functionality with full pagination support
-      - Comments at max depth show "Load More Replies (X)" button
-      - AJAX loading of additional replies without page refresh
+      - Backend limits initial replies to 5 per comment with reply_count field
+      - "Load More Replies (X)" button appears when more replies exist
+      - AJAX loading of additional replies (5 at a time) without page refresh
+      - Loaded replies include their full nested children recursively
       - Loading indicator during fetch
       - Button updates with remaining count or removes when all loaded
       - Toast notification on successful load
+      - Collapse behavior recursively hides ALL nested replies in deep threads
     - **UPDATED**: Capped indentation at depth 5
       - CSS: depth-1 through depth-5 have progressive margin-left
-      - CSS: depth-6+ all use same margin-left as depth-5 (2.5rem)
+      - CSS: depth-6+ all use same margin-left as depth-5 (2.25rem)
       - Prevents excessive left margin on deeply nested threads
       - Visual indicators (colored borders) also capped at depth 5
+      - Comments beyond depth 5 display at same indentation level (flat appearance)
     - **UPDATED**: All comment actions use toast notifications
       - Post comment: "Comment posted successfully!"
       - Edit comment: "Comment updated successfully!"

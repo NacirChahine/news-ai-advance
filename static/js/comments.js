@@ -258,7 +258,30 @@
     const holder = item.querySelector('.replies');
     const shouldCollapse = (typeof collapse === 'boolean') ? collapse : !item.classList.contains('collapsed');
     item.classList.toggle('collapsed', shouldCollapse);
-    if(holder){ holder.style.display = shouldCollapse ? 'none' : ''; }
+
+    // Recursively hide/show all nested replies
+    if(holder){
+      holder.style.display = shouldCollapse ? 'none' : '';
+
+      // If collapsing, hide all descendant replies recursively
+      if(shouldCollapse){
+        const allNestedReplies = holder.querySelectorAll('.replies');
+        allNestedReplies.forEach(nestedHolder => {
+          nestedHolder.style.display = 'none';
+        });
+      } else {
+        // When expanding, only show immediate children's replies
+        // Don't auto-expand collapsed nested threads
+        const immediateChildren = holder.querySelectorAll(':scope > .comment-item');
+        immediateChildren.forEach(child => {
+          const childReplies = child.querySelector(':scope > .replies');
+          if(childReplies && !child.classList.contains('collapsed')){
+            childReplies.style.display = '';
+          }
+        });
+      }
+    }
+
     const indicator = item.querySelector('.thread-collapse-indicator');
     if(indicator){
       indicator.textContent = shouldCollapse ? '+' : '\u2212';
@@ -291,48 +314,7 @@
     pagerEl.appendChild(makePage(Math.min(data.num_pages, page+1), 'Next', page>=data.num_pages));
   }
 
-  async function loadMoreReplies(commentId, item){
-    const currentPage = parseInt(item.dataset.repliesPage || '1');
-    const nextPage = currentPage + 1;
-    const loadMoreContainer = item.querySelector('.load-more-replies-container');
-    const repliesHolder = item.querySelector('.replies');
 
-    // Show loading indicator
-    loadMoreContainer.innerHTML = '<div class="text-center text-muted py-2"><small>Loading more replies...</small></div>';
-
-    try{
-      const res = await fetch(`/news/comments/${commentId}/replies/?page=${nextPage}`);
-      const data = await res.json();
-
-      if(res.ok && data.results && data.results.length > 0){
-        // Append new replies
-        data.results.forEach(reply => {
-          repliesHolder.appendChild(renderCommentItem(reply, true));
-        });
-
-        // Update page number
-        item.dataset.repliesPage = nextPage;
-
-        // Show/hide load more button based on whether there are more pages
-        if(nextPage < data.num_pages){
-          loadMoreContainer.innerHTML = `<button class="btn btn-sm btn-outline-secondary js-load-more-replies mt-2">
-            <i class="fas fa-plus me-1"></i>Load more replies
-          </button>`;
-          const loadMoreBtn = loadMoreContainer.querySelector('.js-load-more-replies');
-          loadMoreBtn.addEventListener('click', () => loadMoreReplies(commentId, item));
-        } else {
-          loadMoreContainer.innerHTML = '';
-        }
-
-        // Initialize tooltips for new elements
-        initTooltips(repliesHolder);
-      } else {
-        loadMoreContainer.innerHTML = '';
-      }
-    }catch(err){
-      loadMoreContainer.innerHTML = '<div class="text-danger py-2"><small>Failed to load replies</small></div>';
-    }
-  }
 
   function showReplyForm(item, c){
     const holder = item.querySelector('.replies');
@@ -526,12 +508,15 @@
       const data = await res.json();
 
       if(res.ok && data.results && data.results.length > 0){
-        // Get comment depth for proper rendering
+        // Get comment depth and username for proper rendering
         const commentDepth = parseInt(item.className.match(/depth-(\d+)/)?.[1] || '0');
+        const parentUsername = item.querySelector('.comment-username-link')?.textContent || null;
 
-        // Render new replies
+        // Render new replies - pass parent username if at max depth
         data.results.forEach(reply => {
-          const replyItem = renderCommentItem(reply, true);
+          const replyItem = commentDepth >= MAX_DEPTH
+            ? renderCommentItem(reply, true, parentUsername)
+            : renderCommentItem(reply, true);
           repliesHolder.appendChild(replyItem);
         });
 

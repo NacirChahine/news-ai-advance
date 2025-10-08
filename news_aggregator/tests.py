@@ -336,6 +336,47 @@ class CommentSerializationTests(TestCase):
             deepest = find_deepest(data['results'][0])
             self.assertEqual(deepest, 7, "All comment depths should be loaded")
 
+    def test_reply_pagination(self):
+        """Test that reply_count is included and pagination works for replies"""
+        from news_aggregator.models import Comment
+
+        # Create a parent comment with 8 replies (more than the 5 initial limit)
+        parent = Comment.objects.create(article=self.article, user=self.user1, content='parent')
+        for i in range(8):
+            Comment.objects.create(
+                article=self.article,
+                user=self.user2,
+                parent=parent,
+                content=f'reply{i}'
+            )
+
+        # Fetch comments via API
+        self.client.login(username='user1', password='x')
+        url = reverse('news_aggregator:comments_list_create', args=[self.article.id])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+
+        # Check that parent comment has reply_count
+        if data['results']:
+            parent_data = data['results'][0]
+            self.assertIn('reply_count', parent_data)
+            self.assertEqual(parent_data['reply_count'], 8)
+            # Only first 5 replies should be loaded initially
+            self.assertEqual(len(parent_data['replies']), 5)
+
+        # Test loading more replies via comment_replies endpoint
+        replies_url = reverse('news_aggregator:comment_replies', args=[parent.id])
+        resp2 = self.client.get(replies_url + '?page=2')
+        self.assertEqual(resp2.status_code, 200)
+        data2 = resp2.json()
+
+        # Should have 3 more replies (8 total - 5 on first page)
+        self.assertEqual(len(data2['results']), 3)
+        self.assertEqual(data2['count'], 8)
+        self.assertEqual(data2['num_pages'], 2)
+
 
 class CommentCounterTests(TestCase):
     """Tests for comment counter functionality"""

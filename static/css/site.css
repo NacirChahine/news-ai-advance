@@ -591,12 +591,12 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 #comments-list .comment-item.depth-3 { margin-left: 1.25rem; }
 #comments-list .comment-item.depth-4 { margin-left: 1.75rem; }
 #comments-list .comment-item.depth-5 { margin-left: 2.25rem; }
-/* Cap indentation at depth 5 - all deeper comments use same margin */
+/* Cap indentation at depth 5 - all deeper comments use same margin as depth-5 */
 #comments-list .comment-item.depth-6,
 #comments-list .comment-item.depth-7,
 #comments-list .comment-item.depth-8,
 #comments-list .comment-item.depth-9,
-#comments-list .comment-item.depth-10 { margin-left: 2.5rem; }
+#comments-list .comment-item.depth-10 { margin-left: 2.25rem; }
 
 /* Cleaner visual: remove top/right borders on each comment item, keep subtle bottom */
 #comments-list .list-group-item {
@@ -614,7 +614,7 @@ a.btn.btn-primary:has(.fa-book-reader):focus { transition: none !important; tran
 #comments-list .comment-item.depth-2 { border-color: #34d399; }
 #comments-list .comment-item.depth-3 { border-color: #f59e0b; }
 #comments-list .comment-item.depth-4 { border-color: #f472b6; }
-/* All depths 5+ use same color */
+/* All depths 5+ use same color and indentation */
 #comments-list .comment-item.depth-5,
 #comments-list .comment-item.depth-6,
 #comments-list .comment-item.depth-7,
