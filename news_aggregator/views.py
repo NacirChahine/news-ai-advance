@@ -733,3 +733,110 @@ def comment_vote(request, comment_id):
         Comment.objects.filter(pk=comment.id).update(cached_score=F('cached_score') + delta)
     comment.refresh_from_db(fields=['cached_score'])
     return JsonResponse({'success': True, 'score': comment.cached_score, 'user_vote': 0})
+
+
+# --- Reporter Article Management Views ---
+
+from .forms import ArticleForm
+from django.contrib.auth.decorators import user_passes_test
+
+
+def is_reporter(user):
+    """Check if user is a reporter"""
+    return user.is_authenticated and hasattr(user, 'profile') and user.profile.is_reporter
+
+
+@login_required
+@user_passes_test(is_reporter, login_url='/accounts/profile/')
+def my_articles(request):
+    """View for reporters to see their authored articles"""
+    articles = NewsArticle.objects.filter(author_user=request.user).order_by('-published_date')
+
+    # Paginate the results
+    paginator = Paginator(articles, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    context = {
+        'page_obj': page_obj,
+        'is_reporter': True,
+    }
+    return render(request, 'news_aggregator/my_articles.html', context)
+
+
+@login_required
+@user_passes_test(is_reporter, login_url='/accounts/profile/')
+def create_article(request):
+    """View for reporters to create a new article"""
+    if request.method == 'POST':
+        form = ArticleForm(request.POST)
+        if form.is_valid():
+            article = form.save(commit=False)
+            # Set the author and poster to the current user
+            article.author_user = request.user
+            article.posted_by = request.user
+            # Generate a unique URL for the article
+            import uuid
+            article.url = f"https://newsadvance.local/article/{uuid.uuid4()}"
+            article.save()
+            messages.success(request, 'Article created successfully!')
+            return redirect('news_aggregator:my_articles')
+    else:
+        form = ArticleForm()
+
+    context = {
+        'form': form,
+        'action': 'Create',
+    }
+    return render(request, 'news_aggregator/article_form.html', context)
+
+
+@login_required
+@user_passes_test(is_reporter, login_url='/accounts/profile/')
+def edit_article(request, article_id):
+    """View for reporters to edit their own articles"""
+    article = get_object_or_404(NewsArticle, pk=article_id)
+
+    # Check if the user is the author
+    if article.author_user != request.user:
+        messages.error(request, 'You can only edit your own articles.')
+        return redirect('news_aggregator:my_articles')
+
+    if request.method == 'POST':
+        form = ArticleForm(request.POST, instance=article)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Article updated successfully!')
+            return redirect('news_aggregator:my_articles')
+    else:
+        form = ArticleForm(instance=article)
+
+    context = {
+        'form': form,
+        'article': article,
+        'action': 'Edit',
+    }
+    return render(request, 'news_aggregator/article_form.html', context)
+
+
+@login_required
+@user_passes_test(is_reporter, login_url='/accounts/profile/')
+def delete_article(request, article_id):
+    """View for reporters to delete their own articles"""
+    article = get_object_or_404(NewsArticle, pk=article_id)
+
+    # Check if the user is the author
+    if article.author_user != request.user:
+        messages.error(request, 'You can only delete your own articles.')
+        return redirect('news_aggregator:my_articles')
+
+    if request.method == 'POST':
+        article_title = article.title
+        article.delete()
+        messages.success(request, f'Article "{article_title}" deleted successfully!')
+        return redirect('news_aggregator:my_articles')
+
+    context = {
+        'article': article,
+    }
+    return render(request, 'news_aggregator/article_confirm_delete.html', context)

@@ -5,14 +5,35 @@ from .models import NewsSource, NewsArticle, UserSavedArticle
 class NewsSourceAdmin(admin.ModelAdmin):
     list_display = ('name', 'url', 'reliability_score', 'created_at')
     list_filter = ('reliability_score',)
-    search_fields = ('name', 'url', 'description')
+    search_fields = ('name', 'url', 'description')  # Required for autocomplete
 
 @admin.register(NewsArticle)
 class NewsArticleAdmin(admin.ModelAdmin):
-    list_display = ('title', 'source', 'published_date', 'is_analyzed', 'is_summarized')
-    list_filter = ('source', 'published_date', 'is_analyzed', 'is_summarized')
-    search_fields = ('title', 'content', 'author')
+    list_display = ('title', 'get_author_display', 'source', 'posted_by', 'published_date', 'is_analyzed', 'is_summarized')
+    list_filter = ('source', 'published_date', 'is_analyzed', 'is_summarized', 'author_user')
+    search_fields = ('title', 'content', 'author_name', 'author_user__username', 'author_user__first_name', 'author_user__last_name')
     date_hierarchy = 'published_date'
+    autocomplete_fields = ('author_user', 'posted_by', 'source')
+
+    fieldsets = (
+        ('Article Information', {
+            'fields': ('title', 'content', 'summary', 'image_url', 'url')
+        }),
+        ('Author & Source', {
+            'fields': ('posted_by', 'author_user', 'author_name', 'source')
+        }),
+        ('Publishing', {
+            'fields': ('published_date',)
+        }),
+        ('Analysis Status', {
+            'fields': ('is_analyzed', 'is_summarized', 'political_bias')
+        }),
+    )
+
+    def get_author_display(self, obj):
+        """Display the author name"""
+        return obj.get_author_display()
+    get_author_display.short_description = 'Author'
 
 @admin.register(UserSavedArticle)
 class UserSavedArticleAdmin(admin.ModelAdmin):

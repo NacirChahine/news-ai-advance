@@ -13,6 +13,7 @@ class UserProfile(models.Model):
     bio = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to='profile_pics/', blank=True, null=True)
     preferred_sources = models.ManyToManyField('news_aggregator.NewsSource', blank=True, related_name='preferred_by')
+    is_reporter = models.BooleanField(default=False, help_text='Can this user create and manage their own articles?')
 
     def __str__(self):
         return f"{self.user.username}'s profile"

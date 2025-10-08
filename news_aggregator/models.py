@@ -22,9 +22,21 @@ class NewsSource(models.Model):
 class NewsArticle(models.Model):
     """Model for news articles collected from various sources"""
     title = models.CharField(max_length=255)
-    source = models.ForeignKey(NewsSource, on_delete=models.CASCADE, related_name='articles')
+    source = models.ForeignKey(NewsSource, on_delete=models.CASCADE, related_name='articles', null=True, blank=True)
     url = models.URLField(unique=True)
-    author = models.CharField(max_length=200, blank=True)
+
+    # Author/Reporter fields
+    # postedBy: User who submitted/posted the article (always required)
+    posted_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='posted_articles',
+                                   help_text='User who posted/submitted this article')
+    # authorUser: Reference to user profile if author is a registered reporter
+    author_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
+                                     related_name='authored_articles',
+                                     help_text='User profile if the author is a registered reporter')
+    # authorName: String field for author name when author is not a registered user
+    author_name = models.CharField(max_length=200, blank=True,
+                                    help_text='Author name when author is not a registered user')
+
     published_date = models.DateTimeField(default=timezone.now)
     content = models.TextField()
     summary = models.TextField(blank=True)
@@ -48,6 +60,12 @@ class NewsArticle(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_author_display(self):
+        """Return the author name to display"""
+        if self.author_user:
+            return self.author_user.get_full_name() or self.author_user.username
+        return self.author_name or 'Unknown'
 
 class UserSavedArticle(models.Model):
     """Model for articles saved by users"""

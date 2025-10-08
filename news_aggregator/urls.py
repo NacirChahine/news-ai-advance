@@ -20,4 +20,10 @@ urlpatterns = [
     path('comments/<int:comment_id>/', views.comment_delete, name='comment_delete'),
     path('comments/<int:comment_id>/vote/', views.comment_vote, name='comment_vote'),
 
+    # Reporter article management
+    path('my-articles/', views.my_articles, name='my_articles'),
+    path('article/create/', views.create_article, name='create_article'),
+    path('article/<int:article_id>/edit/', views.edit_article, name='edit_article'),
+    path('article/<int:article_id>/delete/', views.delete_article, name='delete_article'),
+
 ]

@@ -598,6 +598,20 @@ def public_user_profile(request, username):
     # Get preferred sources
     preferred_sources = user_profile.preferred_sources.all() if user_profile else []
 
+    # Get authored articles if user is a reporter (paginated)
+    authored_articles = None
+    authored_page_obj = None
+    is_reporter = user_profile and user_profile.is_reporter
+
+    if is_reporter:
+        authored_articles = NewsArticle.objects.filter(
+            author_user=profile_user
+        ).select_related('source').order_by('-published_date')
+
+        authored_paginator = Paginator(authored_articles, 10)
+        authored_page = request.GET.get('authored_page', 1)
+        authored_page_obj = authored_paginator.get_page(authored_page)
+
     context = {
         'profile_user': profile_user,
         'user_profile': user_profile,
@@ -609,6 +623,8 @@ def public_user_profile(request, username):
         'comments_page_obj': comments_page_obj,
         'member_since': profile_user.date_joined,
         'preferred_sources': preferred_sources,
+        'is_reporter': is_reporter,
+        'authored_page_obj': authored_page_obj,
     }
 
     return render(request, 'accounts/public_profile.html', context)

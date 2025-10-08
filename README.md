@@ -11,6 +11,7 @@ News Advance is a web application that aggregates news articles and applies AI-d
 - **AI-Powered Summarization & Fact-Checking** – Generates concise summaries and verifies key claims
 - **Real-Time Misinformation Tracker** – Flags potentially misleading trending news
 - **Logical Fallacy Reference & Detection** – Catalog of logical fallacies with admin management and per-article detections with AI integration
+- **Reporter/Author System** – Registered reporters can create, edit, and manage their own articles
 - **Preferred News Sources** – Mark sources as preferred and get prioritized content in your feed
 - **Profile Pictures & Avatars** – Upload profile pictures that display in comments with letter avatar fallbacks
 - **Public Profile Privacy** – Control who can view your public profile with comments and liked articles
@@ -262,6 +263,15 @@ This will create:
 - Personalized news feed based on topics of interest
 - Save articles to your personal collection with notes
 - **Preferred sources** - Mark sources as preferred and get prioritized content in your feed with visual indicators
+
+### Reporter/Author System
+- **User-Generated Content**: Registered users can be designated as reporters to create and manage their own articles
+- **Article Management**: Reporters have access to a dedicated "My Articles" page with full CRUD operations
+- **Author Attribution**: Articles display author information with clickable links to reporter profiles
+- **Flexible Authorship**: Support for both registered reporter authors and external author names
+- **Public Profiles**: Reporter profiles showcase their authored articles in a dedicated tab
+- **Access Control**: Reporters can only edit/delete their own articles
+- **Admin Management**: Admins can designate users as reporters via the Django admin interface
 
 
 ### Sources Overview

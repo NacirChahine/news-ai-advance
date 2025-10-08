@@ -92,6 +92,13 @@
               <i class="fas fa-heart me-2"></i>Liked Articles ({{ liked_page_obj.paginator.count }})
             </button>
           </li>
+          {% if is_reporter %}
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="authored-tab" data-bs-toggle="tab" data-bs-target="#authored" type="button" role="tab" aria-controls="authored" aria-selected="false">
+              <i class="fas fa-newspaper me-2"></i>Authored Articles ({{ authored_page_obj.paginator.count }})
+            </button>
+          </li>
+          {% endif %}
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false">
               <i class="far fa-comments me-2"></i>Comments ({{ total_comments }})
@@ -157,7 +164,68 @@
               {% endif %}
             {% endif %}
           </div>
-          
+
+          <!-- Authored Articles Tab -->
+          {% if is_reporter %}
+          <div class="tab-pane fade" id="authored" role="tabpanel" aria-labelledby="authored-tab">
+            {% if authored_page_obj %}
+              <div class="list-group">
+                {% for article in authored_page_obj %}
+                  <a href="{% url 'news_aggregator:article_detail' article.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h6 class="mb-1">{{ article.title }}</h6>
+                      <small class="text-muted">{{ article.published_date|date:"M d, Y" }}</small>
+                    </div>
+                    <p class="mb-1 text-muted small">
+                      {% if article.source %}
+                        {{ article.source.name }}
+                      {% else %}
+                        Original Article
+                      {% endif %}
+                    </p>
+                  </a>
+                {% empty %}
+                  <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    {% if is_own_profile %}
+                      You haven't authored any articles yet.
+                    {% else %}
+                      {{ profile_user.username }} hasn't authored any articles yet.
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+
+              <!-- Pagination for Authored Articles -->
+              {% if authored_page_obj.has_other_pages %}
+                <nav aria-label="Authored articles pagination" class="mt-3">
+                  <ul class="pagination justify-content-center">
+                    {% if authored_page_obj.has_previous %}
+                      <li class="page-item">
+                        <a class="page-link" href="?authored_page={{ authored_page_obj.previous_page_number }}#authored">Previous</a>
+                      </li>
+                    {% endif %}
+
+                    {% for num in authored_page_obj.paginator.page_range %}
+                      {% if authored_page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                      {% elif num > authored_page_obj.number|add:'-3' and num < authored_page_obj.number|add:'3' %}
+                        <li class="page-item"><a class="page-link" href="?authored_page={{ num }}#authored">{{ num }}</a></li>
+                      {% endif %}
+                    {% endfor %}
+
+                    {% if authored_page_obj.has_next %}
+                      <li class="page-item">
+                        <a class="page-link" href="?authored_page={{ authored_page_obj.next_page_number }}#authored">Next</a>
+                      </li>
+                    {% endif %}
+                  </ul>
+                </nav>
+              {% endif %}
+            {% endif %}
+          </div>
+          {% endif %}
+
           <!-- Comments Tab -->
           <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">
             {% if comments_page_obj %}

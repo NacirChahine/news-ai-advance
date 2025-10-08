@@ -20,7 +20,9 @@
                         <ol class="breadcrumb">
                             <li class="breadcrumb-item"><a href="{% url 'home' %}">Home</a></li>
                             <li class="breadcrumb-item"><a href="{% url 'news_aggregator:latest' %}">Latest News</a></li>
-                            <li class="breadcrumb-item"><a href="{% url 'news_aggregator:source_detail' article.source.id %}">{{ article.source.name }}</a></li>
+                            {% if article.source %}
+                                <li class="breadcrumb-item"><a href="{% url 'news_aggregator:source_detail' article.source.id %}">{{ article.source.name }}</a></li>
+                            {% endif %}
                             <li class="breadcrumb-item active" aria-current="page">{{ article.title|truncatechars:30 }}</li>
                         </ol>
                     </nav>
@@ -29,14 +31,32 @@
 
                     <div class="d-flex justify-content-between mb-3">
                         <div>
+                            <!-- Author Display -->
                             <span class="text-muted">
-                                <i class="fas fa-newspaper me-1"></i> {{ article.source.name }}
+                                <i class="fas fa-user me-1"></i>
+                                By
+                                {% if article.author_user %}
+                                    <a href="{% url 'accounts:public_profile' article.author_user.username %}" class="text-decoration-none">
+                                        {{ article.author_user.get_full_name|default:article.author_user.username }}
+                                    </a>
+                                {% elif article.author_name %}
+                                    {{ article.author_name }}
+                                {% else %}
+                                    Unknown
+                                {% endif %}
                             </span>
-                            {% if article.author %}
+
+                            <!-- Source Display -->
+                            {% if article.source %}
                                 <span class="text-muted ms-3">
-                                    <i class="fas fa-user me-1"></i> {{ article.author }}
+                                    <i class="fas fa-newspaper me-1"></i>
+                                    Source:
+                                    <a href="{% url 'news_aggregator:source_detail' article.source.id %}" class="text-decoration-none">
+                                        {{ article.source.name }}
+                                    </a>
                                 </span>
                             {% endif %}
+
                             <span class="text-muted ms-3">
                                 <i class="far fa-calendar-alt me-1"></i> {{ article.published_date|date:"F d, Y" }}
                             </span>

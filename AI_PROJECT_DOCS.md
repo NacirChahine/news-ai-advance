@@ -22,8 +22,16 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - Relationships: one-to-many with NewsArticle
 
 - **NewsArticle**: Core content model for news articles
-  - Fields: title, content, author, published_date, url, summary, image_url, is_analyzed, is_summarized
-  - Relationships: many-to-one with NewsSource, one-to-one with analysis models
+  - Fields: title, content, published_date, url, summary, image_url, is_analyzed, is_summarized
+  - Author/Reporter fields:
+    - `posted_by`: User who submitted/posted the article (FK to User, nullable)
+    - `author_user`: Reference to user profile if author is a registered reporter (FK to User, nullable)
+    - `author_name`: String field for author name when author is not a registered user (CharField, nullable)
+  - Relationships: many-to-one with NewsSource (nullable), one-to-one with analysis models
+  - Field population logic:
+    - User posts their own article: `posted_by` = user, `author_user` = user, `author_name` = null
+    - User posts external article: `posted_by` = user, `author_user` = null, `author_name` = "External Author"
+    - Admin posts staff article: `posted_by` = admin, `author_user` = null, `author_name` = "Staff Writer"
 
 - **UserSavedArticle**: Tracks user-saved articles with notes
   - Fields: user, article, saved_at, notes
@@ -69,7 +77,8 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 ### Accounts Models
 
 - **UserProfile**: Extended user information
-  - Fields: user, bio, avatar, preferred_sources
+  - Fields: user, bio, profile_picture, preferred_sources, is_reporter (boolean)
+  - `is_reporter`: Determines whether a user can create and manage their own articles
   - Relationships: one-to-one with User, many-to-many with NewsSource
 
 - **UserPreferences**: User-specific settings for content filtering and analysis visibility
@@ -152,6 +161,36 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - Frontend displays replies beyond MAX_DEPTH in flat list with visual reply indicators
   - Reply indicators show parent username with two clickable parts (parent highlight vs profile navigation)
 
+### Reporter/Author System
+- **NEW**: Reporter/author system for user-generated content
+- User Profile Enhancement:
+  - `is_reporter` boolean field in UserProfile determines if user can create/manage articles
+  - Set via Django admin interface
+- Article Model Updates:
+  - `posted_by`: User who submitted/posted the article (always required)
+  - `author_user`: Reference to user profile if author is a registered reporter (nullable)
+  - `author_name`: String field for author name when not a registered user (nullable)
+  - `source`: NewsSource reference (now nullable for original reporter articles)
+- Article Management:
+  - Reporters access "My Articles" page at `/news/my-articles/`
+  - Create new articles at `/news/article/create/`
+  - Edit articles at `/news/article/<id>/edit/`
+  - Delete articles at `/news/article/<id>/delete/`
+  - Authorization: Users can only edit/delete articles where they are the `author_user`
+- User Profile Integration:
+  - "My Articles" button appears on profile page for reporters
+  - Public profiles show "Authored Articles" tab for reporters
+  - Tab displays all articles where `author_user` references the profile user
+- Article Display:
+  - Author name displayed with clickable link if `author_user` exists
+  - Plain text display if only `author_name` is populated
+  - Source name displayed as clickable link if `source` exists
+  - Format: "By [Author Name] | Source: [Source Name]"
+- Forms & Validation:
+  - ArticleForm handles article creation/editing
+  - Auto-generates unique URL for reporter articles
+  - Source field optional for original content
+
 ### Public User Profiles
 - **NEW**: Public user profile system at `/accounts/user/<username>/`
 - Profile visibility controlled by `public_profile` preference (default: True)
@@ -159,6 +198,7 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - Account information: username, full name, bio, profile picture/letter avatar, member since date
   - Statistics: total comments, last 30 days comments, liked articles count
   - Liked articles tab: paginated list of articles user has liked
+  - Authored articles tab: paginated list of articles authored by reporters (if `is_reporter=True`)
   - Comments tab: paginated list of user's public comments
 - Privacy:
   - When `public_profile=False`, shows "This Profile is Private" message to others
@@ -167,6 +207,7 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
 - Integration:
   - Reply indicators link to user profiles via @username
   - Profile accessible from comment author names throughout the site
+  - Article author names link to reporter profiles
 
 - Profile integration: `accounts.views.comment_history` at `/accounts/comments/` with pagination and stats (total, last 30 days). Profile page shows total comment count and a "View My Comments" button.
 
