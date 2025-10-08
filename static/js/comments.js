@@ -455,13 +455,20 @@
 
   function highlightParentComment(parentId){
     if(!parentId) return;
+
+    // Remove any existing highlights first
+    document.querySelectorAll('.comment-highlight').forEach(el => {
+      el.classList.remove('comment-highlight');
+    });
+
+    // Find the specific parent comment by its ID
     const parentEl = document.querySelector(`.comment-item[data-comment-id="${parentId}"]`);
     if(!parentEl) return;
 
     // Scroll to parent comment
     parentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-    // Add highlight animation
+    // Add highlight animation to ONLY this specific comment
     parentEl.classList.add('comment-highlight');
     setTimeout(() => {
       parentEl.classList.remove('comment-highlight');

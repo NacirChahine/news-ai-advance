@@ -512,7 +512,7 @@ def public_user_profile(request, username):
 
     liked_articles = NewsArticle.objects.filter(
         id__in=liked_article_ids
-    ).select_related('source').order_by('-published_at')
+    ).select_related('source').order_by('-published_date')
 
     liked_paginator = Paginator(liked_articles, 10)
     liked_page = request.GET.get('liked_page', 1)

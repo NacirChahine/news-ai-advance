@@ -395,17 +395,18 @@ def comments_list_create(request, article_id):
         paginator = Paginator(top_level, 10)
         page_obj = paginator.get_page(page_number)
 
-        # Recursively prefetch replies up to a max depth so that all existing levels load on refresh
+        # Recursively prefetch replies - load all depths (no limit)
+        # Since we now store true depth and display flat at MAX_DEPTH, we need to load all replies
         top_ids = [c.id for c in page_obj.object_list]
         children_by_parent = {}
         current_ids = top_ids[:]
-        # Load up to 5 additional depths (total depths visible up to 6)
-        for _ in range(5):
+        # Load up to 20 depths to handle very deep threads (reasonable limit to prevent infinite loops)
+        for _ in range(20):
             if not current_ids:
                 break
             qs = (Comment.objects
                   .filter(parent_id__in=current_ids, is_approved=True)
-                  .select_related('user').order_by('-cached_score', '-created_at', '-id'))
+                  .select_related('user', 'parent__user').order_by('-cached_score', '-created_at', '-id'))
             next_ids = []
             for r in qs:
                 children_by_parent.setdefault(r.parent_id, []).append(r)
@@ -465,7 +466,7 @@ def comment_replies(request, comment_id):
     parent = get_object_or_404(Comment, pk=comment_id)
     page_number = request.GET.get('page')
     qs = (Comment.objects.filter(parent=parent, is_approved=True)
-          .select_related('user')
+          .select_related('user', 'parent__user')
           .order_by('-cached_score', '-created_at', '-id'))
     paginator = Paginator(qs, 10)
     page_obj = paginator.get_page(page_number)

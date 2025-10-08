@@ -139,8 +139,8 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
   - **NEW**: Smooth scroll behavior when clicking comment counters to navigate to comments section
 - Placement: comments section is included full-width below the article and sidebar in `article_detail.html`.
 - Backend serialization/loading:
-  - `comments_list_create` recursively prefetches and serializes replies up to depth 6 and includes current-user vote mapping for all loaded comments.
-  - Replies endpoint (`comment_replies`) includes user vote mapping for the page of replies returned.
+  - **UPDATED**: `comments_list_create` recursively prefetches and serializes replies up to depth 20 (reasonable limit) and includes current-user vote mapping for all loaded comments.
+  - Replies endpoint (`comment_replies`) includes user vote mapping for the page of replies returned and parent user info.
 - Depth handling:
   - **UPDATED**: Backend stores true depth without capping (unlimited nesting)
   - **UPDATED**: Model provides `get_display_depth()` method that caps at MAX_DEPTH for UI

@@ -58,6 +58,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Comments preferences
   bindToggle('show_comments', 'show_comments');
   bindToggle('notify_on_comment_reply', 'notify_on_comment_reply');
+  // Privacy preferences
+  bindToggle('public_profile', 'public_profile');
 
   const misinformationAlertsCheckbox = document.getElementById('receive_misinformation_alerts');
   if (misinformationAlertsCheckbox && !misinformationAlertsCheckbox.disabled) {

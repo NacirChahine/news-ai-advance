@@ -294,6 +294,48 @@ class CommentSerializationTests(TestCase):
         self.assertIn('total_comments', data)
         self.assertEqual(data['total_comments'], 3)
 
+    def test_deep_comment_loading(self):
+        """Test that comments beyond depth 5 are loaded and serialized"""
+        from news_aggregator.models import Comment
+
+        # Create a deep comment thread (depth 0-7)
+        parent = Comment.objects.create(article=self.article, user=self.user1, content='depth0')
+        current = parent
+        for i in range(1, 8):
+            current = Comment.objects.create(
+                article=self.article,
+                user=self.user1,
+                parent=current,
+                content=f'depth{i}'
+            )
+
+        # Verify depths are stored correctly
+        self.assertEqual(parent.depth, 0)
+        self.assertEqual(current.depth, 7)
+
+        # Fetch comments via API
+        self.client.login(username='user1', password='x')
+        url = reverse('news_aggregator:comments_list_create', args=[self.article.id])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+
+        # Navigate through nested replies to find depth 7 comment
+        def find_deepest(comment_data, current_depth=0):
+            if not comment_data.get('replies'):
+                return current_depth
+            max_depth = current_depth
+            for reply in comment_data['replies']:
+                depth = find_deepest(reply, current_depth + 1)
+                max_depth = max(max_depth, depth)
+            return max_depth
+
+        # Check that all depths are present in the response
+        if data['results']:
+            deepest = find_deepest(data['results'][0])
+            self.assertEqual(deepest, 7, "All comment depths should be loaded")
+
 
 class CommentCounterTests(TestCase):
     """Tests for comment counter functionality"""
