@@ -629,7 +629,13 @@ Unified toast notification system for all user feedback:
 ### Comment System Enhancements
 Advanced comment threading with depth management:
 - **Capped Indentation**: Comments indent progressively up to depth 5, then remain flat
-- **Load More Replies**: Paginated reply loading for deeply nested threads
+- **Load More Replies**: Paginated reply loading for deeply nested threads with robust error handling
+  - Proper HTTP status checking before JSON parsing
+  - Accurate reply counting (excludes containers and forms)
+  - Dynamic button positioning at the bottom of reply sections using `:scope >` selector
+  - Prevents button from appearing inside nested reply containers
+  - Toggle button count updates after loading more replies
+  - Comprehensive console logging for debugging
 - **Visual Indicators**: Colored left borders and reply indicators for context
 - **Toast Notifications**: All comment actions (post, edit, delete, flag, vote) use toast notifications
 - **Smooth Animations**: Highlight animations when navigating to parent comments

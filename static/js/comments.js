@@ -92,6 +92,7 @@
   }
 
   function renderCommentItem(c, isReply=false, parentUsername=null){
+    console.log('renderCommentItem: Rendering comment', c.id, 'isReply:', isReply);
     const isAuthed = section.dataset.authenticated === 'true';
 
     // Flat structure - no depth classes needed
@@ -162,27 +163,41 @@
           ${isAuthed ? `<div class="comment-actions mt-2"><button class="btn btn-sm btn-outline-primary js-reply" aria-label="Reply to comment"><i class=\"fa-regular fa-comment-dots me-1\"></i>Reply</button> ${actionsDropdown}</div>` : ''}
         </div>
       </div>
-      <div class="replies mt-2"></div>
+      <div class="replies mt-2">
+        <div class="load-more-replies-container"></div>
+      </div>
       ${c.replies && c.replies.length ? `<button class="btn btn-sm btn-link text-decoration-none px-0 js-toggle-replies" aria-expanded="true">Hide replies (${c.replies.length})</button>` : ''}
-      <div class="load-more-replies-container"></div>
     </div>`);
 
     // Render replies in flat structure
     // All replies displayed at same level with reply indicators
     if(c.replies && c.replies.length){
       const holder = item.querySelector('.replies');
+      // Use direct child selector to get THIS comment's container, not nested ones
+      const loadMoreContainer = holder.querySelector(':scope > .load-more-replies-container');
+
       // Render all replies flat - each shows "Replying to @username"
+      // Insert replies BEFORE the load-more-replies-container
       c.replies.forEach(r => {
         const flatReply = renderCommentItem(r, true);
-        holder.appendChild(flatReply);
+        holder.insertBefore(flatReply, loadMoreContainer);
       });
     }
 
     // Add "Load More Replies" button if comment has more replies to load
     // This is determined by checking if the comment has a reply_count > current replies length
     if(c.reply_count && c.replies && c.reply_count > c.replies.length){
-      const loadMoreContainer = item.querySelector('.load-more-replies-container');
+      const holder = item.querySelector('.replies');
+      // Use direct child selector to get THIS comment's container, not nested ones
+      const loadMoreContainer = holder.querySelector(':scope > .load-more-replies-container');
+
+      if(!loadMoreContainer){
+        console.error('renderCommentItem: load-more-replies-container not found for comment', c.id);
+        return item;
+      }
+
       const remainingCount = c.reply_count - c.replies.length;
+      console.log(`renderCommentItem: Adding "Load More" button for comment ${c.id}, remaining: ${remainingCount}`);
       const loadMoreBtn = el(`
         <button class="btn btn-sm btn-outline-secondary js-load-more-replies mt-2" data-comment-id="${c.id}">
           <i class="fas fa-plus-circle me-1"></i>
@@ -242,25 +257,24 @@
         const collapsed = item.classList.contains('collapsed');
         toggleThread(item, !collapsed);
         toggleBtn.setAttribute('aria-expanded', (!item.classList.contains('collapsed')).toString());
-        toggleBtn.textContent = (item.classList.contains('collapsed') ? 'Show replies' : 'Hide replies') + (holder.children.length ? ` (${holder.children.length})` : '');
+        // Count only actual reply items (exclude load-more-replies-container and reply-form)
+        const replyCount = Array.from(holder.children).filter(child =>
+          child.classList.contains('comment-item')
+        ).length;
+        toggleBtn.textContent = (item.classList.contains('collapsed') ? 'Show replies' : 'Hide replies') + (replyCount ? ` (${replyCount})` : '');
       });
     }
   }
 
   function toggleThread(item, collapse){
     const holder = item.querySelector('.replies');
-    const loadMoreContainer = item.querySelector('.load-more-replies-container');
     const shouldCollapse = (typeof collapse === 'boolean') ? collapse : !item.classList.contains('collapsed');
     item.classList.toggle('collapsed', shouldCollapse);
 
-    // Simple flat structure - just hide/show direct replies and load more button
+    // Simple flat structure - just hide/show replies container
+    // (load-more-replies-container is inside .replies, so it's hidden automatically)
     if(holder){
       holder.style.display = shouldCollapse ? 'none' : '';
-    }
-
-    // Also hide/show the load more replies button when collapsing/expanding
-    if(loadMoreContainer){
-      loadMoreContainer.style.display = shouldCollapse ? 'none' : '';
     }
 
     const indicator = item.querySelector('.thread-collapse-indicator');
@@ -317,7 +331,15 @@
         });
         const data = await res.json();
         if(res.ok){
-          holder.prepend(renderCommentItem(data.comment, true));
+          // Insert new reply BEFORE the load-more-replies-container to maintain button position
+          // Use direct child selector to get THIS comment's container, not nested ones
+          const loadMoreContainer = holder.querySelector(':scope > .load-more-replies-container');
+          const newReply = renderCommentItem(data.comment, true);
+          if(loadMoreContainer){
+            holder.insertBefore(newReply, loadMoreContainer);
+          } else {
+            holder.prepend(newReply);
+          }
           form.remove();
           if(window.toast) window.toast.success('Reply posted successfully!');
         }else{
@@ -472,8 +494,17 @@
   async function loadMoreReplies(commentId, item){
     const loadMoreBtn = item.querySelector('.js-load-more-replies');
     const repliesHolder = item.querySelector('.replies');
+    // Use direct child selector to get THIS comment's container, not nested ones
+    const loadMoreContainer = repliesHolder ? repliesHolder.querySelector(':scope > .load-more-replies-container') : null;
 
-    if(!loadMoreBtn || !repliesHolder) return;
+    if(!loadMoreBtn || !repliesHolder || !loadMoreContainer){
+      console.error('loadMoreReplies: Missing required elements', {
+        loadMoreBtn: !!loadMoreBtn,
+        repliesHolder: !!repliesHolder,
+        loadMoreContainer: !!loadMoreContainer
+      });
+      return;
+    }
 
     // Get current page from data attribute
     let currentPage = parseInt(item.dataset.repliesPage || '1');
@@ -485,30 +516,45 @@
     loadMoreBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading...';
 
     try{
+      console.log('loadMoreReplies: Fetching page', nextPage, 'for comment', commentId);
       const res = await fetch(`/news/comments/${commentId}/replies/?page=${nextPage}`);
-      const data = await res.json();
 
-      if(res.ok && data.results && data.results.length > 0){
+      // Check if response is OK before parsing JSON
+      if(!res.ok){
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log('loadMoreReplies: Received data', data);
+
+      if(data.results && data.results.length > 0){
+        console.log('loadMoreReplies: Rendering', data.results.length, 'replies');
         // Render new replies in flat structure
-        // All replies show reply indicators automatically
-        data.results.forEach(reply => {
+        // Insert replies BEFORE the load-more-replies-container so button stays at bottom
+        data.results.forEach((reply, index) => {
+          console.log(`loadMoreReplies: Rendering reply ${index + 1}/${data.results.length}`, reply.id);
           const replyItem = renderCommentItem(reply, true);
-          repliesHolder.appendChild(replyItem);
+          repliesHolder.insertBefore(replyItem, loadMoreContainer);
         });
 
         // Initialize tooltips for new replies
         initTooltips(repliesHolder);
+        console.log('loadMoreReplies: Successfully rendered all replies');
 
         // Update page number
         item.dataset.repliesPage = nextPage.toString();
 
         // Calculate remaining replies
-        const currentRepliesCount = repliesHolder.children.length;
+        // Count all reply items (exclude load-more-replies-container and reply-form if present)
+        const replyItems = Array.from(repliesHolder.children).filter(child =>
+          child.classList.contains('comment-item')
+        );
+        const currentRepliesCount = replyItems.length;
         const totalReplies = data.count || currentRepliesCount;
         const remainingCount = totalReplies - currentRepliesCount;
 
-        // Update or remove button
-        if(remainingCount > 0 && data.page < data.num_pages){
+        // Update or remove button based on pagination info
+        if(remainingCount > 0 && nextPage < data.num_pages){
           loadMoreBtn.disabled = false;
           loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle me-1"></i>Load More Replies (${remainingCount})`;
         } else {
@@ -516,17 +562,28 @@
           loadMoreBtn.remove();
         }
 
+        // Update toggle button text to reflect new reply count
+        const toggleBtn = item.querySelector('.js-toggle-replies');
+        if(toggleBtn && !item.classList.contains('collapsed')){
+          toggleBtn.textContent = `Hide replies (${currentRepliesCount})`;
+        }
+
         if(window.toast) window.toast.success(`Loaded ${data.results.length} more replies`);
       } else {
-        // No more replies
+        // No more replies available
+        console.log('loadMoreReplies: No results in response', data);
         loadMoreBtn.remove();
+        if(window.toast) window.toast.info('No more replies to load');
       }
     }catch(err){
+      console.error('loadMoreReplies: Error caught', err);
+      console.error('loadMoreReplies: Error stack', err.stack);
       // Restore button on error
       loadMoreBtn.disabled = false;
       loadMoreBtn.innerHTML = originalText;
       if(window.toast) window.toast.error('Failed to load more replies');
     }
+    console.log('loadMoreReplies: Function completed');
   }
 
   function updateCommentCount(count){
@@ -552,20 +609,41 @@
 
     // Find the specific parent comment by its ID
     const parentEl = document.querySelector(`.comment-item[data-comment-id="${parentId}"]`);
-    if(!parentEl) return;
 
-    // Scroll to parent comment (align to top of viewport)
-    // parentEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if(!parentEl) {
+      // Parent comment not found - it might not be loaded yet
+      // Find the nearest "Load More Replies" button and guide the user
+      const loadMoreButtons = document.querySelectorAll('.js-load-more-replies');
 
+      if(loadMoreButtons.length > 0) {
+        // Scroll to the first "Load More Replies" button
+        const firstLoadMoreBtn = loadMoreButtons[0];
+        firstLoadMoreBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        // Add a pulse animation to draw attention
+        firstLoadMoreBtn.classList.add('btn-pulse');
+        setTimeout(() => {
+          firstLoadMoreBtn.classList.remove('btn-pulse');
+        }, 2000);
+
+        // Show helpful message
+        if(window.toast) {
+          window.toast.info('Parent comment not loaded yet. Click "Load More Replies" to load more comments.');
+        }
+      } else {
+        // No load more buttons available
+        if(window.toast) {
+          window.toast.warning('Parent comment not found. It may have been deleted or is not available.');
+        }
+      }
+      return;
+    }
+
+    // Scroll to parent comment
     const yOffset = -80; // your offset
     const y = parentEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
 
     window.scrollTo({ top: y, behavior: 'smooth' });
-
-
-    // setTimeout(() => {
-    //   window.scrollBy({ top: -80, behavior: 'smooth' }); // adjust -80px as needed
-    // }, 300); // delay a bit to let scrollIntoView finish
 
     // Add highlight animation to ONLY the comment content (not the entire comment div)
     const contentEl = parentEl.querySelector('.comment-content');

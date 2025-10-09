@@ -158,19 +158,37 @@ The News Advance system is built on Django 5.2 with a modular architecture organ
     - **UPDATED**: Load more replies functionality with flat pagination using root_comment
       - Backend uses root_comment field to fetch ALL replies in thread (not just direct children)
       - Backend limits initial replies to 5 per thread with reply_count showing total in thread
-      - "Load More Replies (X)" button appears when thread has more than 5 total replies
+      - "Load More Replies (X)" button appears INSIDE .replies container at the very end
+      - **NEW**: Button positioned inside .replies div, not as sibling, for proper visual hierarchy
       - AJAX loading of additional replies (5 at a time) from entire thread without page refresh
+      - **NEW**: New replies inserted BEFORE the load-more-replies-container so button stays at bottom
+      - **FIXED**: Proper HTTP error handling - checks res.ok before parsing JSON to catch 404/500 errors
+      - **FIXED**: Accurate reply counting - filters only comment-item elements (excludes containers and forms)
+      - **FIXED**: Toggle button count updates after loading more replies to reflect current state
+      - **FIXED**: New replies from reply form inserted before load-more container to maintain button position
+      - **CRITICAL FIX**: Uses `:scope > .load-more-replies-container` selector to target ONLY direct child container
+        - Prevents selecting nested containers from child replies (which also have .replies divs)
+        - Ensures button appears at bottom of parent comment's replies, not inside first reply
+        - Fixes issue where button was appearing after 1st reply instead of after ALL replies
+        - Applied consistently in renderCommentItem(), loadMoreReplies(), and showReplyForm()
       - All loaded replies displayed flat with reply indicators showing parent context
-      - Loading indicator during fetch
+      - Loading indicator during fetch with spinner animation
       - Button updates with remaining count or removes when all thread replies loaded
-      - Toast notification on successful load
+      - Toast notification on successful load with detailed error messages on failure
+      - Comprehensive console logging for debugging (comment IDs, reply counts, DOM operations)
     - **UPDATED**: Collapse/expand functionality simplified for flat structure
       - Clicking left border hides/shows all replies in the thread
+      - **NEW**: Load more button automatically hidden when thread collapsed (inside .replies)
       - No recursive nesting to manage
-    - **UPDATED**: Parent comment highlighting with improved scroll positioning
+    - **UPDATED**: Parent comment highlighting with improved scroll positioning and error handling
       - Clicking "Replying to" link scrolls parent to center of viewport (not top)
       - Prevents comment from being hidden behind fixed headers or cut off at edges
       - Uses scrollIntoView with block: 'center' for better visibility
+      - **NEW**: If parent comment not found (not loaded yet):
+        - Scrolls to nearest "Load More Replies" button
+        - Shows toast message: "Parent comment not loaded yet. Click 'Load More Replies' to load more comments."
+        - Adds pulse animation to button to draw attention (2 pulses over 2 seconds)
+        - If no load more buttons available, shows warning that parent may be deleted
     - **UPDATED**: All comment actions use toast notifications
       - Post comment: "Comment posted successfully!"
       - Edit comment: "Comment updated successfully!"
