@@ -113,6 +113,10 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='replies')
 
+    # Root comment for flat threading: points to top-level parent (or self if top-level)
+    # Allows querying all replies in a thread: Comment.objects.filter(root_comment=top_level)
+    root_comment = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='thread_replies')
+
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -136,6 +140,7 @@ class Comment(models.Model):
             models.Index(fields=['article', 'created_at']),
             models.Index(fields=['parent', 'created_at']),
             models.Index(fields=['cached_score']),
+            models.Index(fields=['root_comment', 'created_at']),  # For flat threading queries
         ]
 
     def __str__(self):
@@ -146,8 +151,17 @@ class Comment(models.Model):
         # MAX_DEPTH is used only for display purposes in the frontend
         if self.parent:
             self.depth = (self.parent.depth or 0) + 1
+            # Set root_comment to parent's root_comment for flat threading
+            if not self.root_comment_id:  # Only set if not already set
+                self.root_comment = self.parent.root_comment if self.parent.root_comment else self.parent
         else:
             self.depth = 0
+            # Top-level comment: root_comment points to self
+            # We need to save first, then update root_comment
+            if not self.pk:  # New object
+                super().save(*args, **kwargs)
+                self.root_comment = self
+                kwargs['force_insert'] = False  # Prevent duplicate insert
         super().save(*args, **kwargs)
 
     def get_display_depth(self):

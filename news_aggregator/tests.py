@@ -295,7 +295,7 @@ class CommentSerializationTests(TestCase):
         self.assertEqual(data['total_comments'], 3)
 
     def test_flat_comment_structure(self):
-        """Test that comments are returned in flat structure (only direct replies)"""
+        """Test that comments are returned in flat structure with ALL replies in thread"""
         from news_aggregator.models import Comment
 
         # Create a deep comment thread (depth 0-3)
@@ -312,7 +312,7 @@ class CommentSerializationTests(TestCase):
             parent=parent,
             content='depth1_reply2'
         )
-        # Nested reply to reply1 (should not be included in parent's replies)
+        # Nested reply to reply1 (should be included in parent's replies for flat structure)
         nested = Comment.objects.create(
             article=self.article,
             user=self.user1,
@@ -328,15 +328,18 @@ class CommentSerializationTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         data = resp.json()
 
-        # Check flat structure - parent should only have direct replies
+        # Check flat structure - parent should have ALL replies in thread (including nested)
         if data['results']:
             parent_data = data['results'][0]
-            self.assertEqual(len(parent_data['replies']), 2, "Should have 2 direct replies")
-            # Nested reply should NOT be in parent's replies (flat structure)
+            # Should have 3 total replies (2 direct + 1 nested)
+            self.assertEqual(len(parent_data['replies']), 3, "Should have 3 total replies in thread")
+            self.assertEqual(parent_data['reply_count'], 3, "reply_count should be 3")
+
+            # All replies should be included in flat structure
             reply_contents = [r['content'] for r in parent_data['replies']]
             self.assertIn('depth1_reply1', reply_contents)
             self.assertIn('depth1_reply2', reply_contents)
-            self.assertNotIn('depth2_nested', reply_contents)
+            self.assertIn('depth2_nested', reply_contents, "Nested reply should be included in flat structure")
 
     def test_reply_pagination(self):
         """Test that reply_count is included and pagination works for replies"""

@@ -450,29 +450,28 @@ def comments_list_create(request, article_id):
         paginator = Paginator(top_level, 10)
         page_obj = paginator.get_page(page_number)
 
-        # Recursively prefetch replies - load all depths (no limit)
-        # Since we now store true depth and display flat at MAX_DEPTH, we need to load all replies
+        # Fetch ALL replies for each top-level comment using root_comment field
+        # This enables flat threading where all replies in a thread are displayed together
         top_ids = [c.id for c in page_obj.object_list]
-        children_by_parent = {}
-        current_ids = top_ids[:]
-        # Load up to 20 depths to handle very deep threads (reasonable limit to prevent infinite loops)
-        for _ in range(20):
-            if not current_ids:
-                break
-            qs = (Comment.objects
-                  .filter(parent_id__in=current_ids, is_approved=True)
-                  .select_related('user', 'parent__user').order_by('-cached_score', '-created_at', '-id'))
-            next_ids = []
-            for r in qs:
-                children_by_parent.setdefault(r.parent_id, []).append(r)
-                next_ids.append(r.id)
-            current_ids = next_ids
-        # Build user vote map for these comments to include in serialization
+
+        # Get all replies for these top-level comments using root_comment
+        all_thread_replies = (Comment.objects
+                             .filter(root_comment_id__in=top_ids, is_approved=True)
+                             .exclude(id__in=top_ids)  # Exclude the root comments themselves
+                             .select_related('user', 'parent__user')
+                             .order_by('root_comment_id', '-cached_score', '-created_at', '-id'))
+
+        # Group replies by root_comment for easy lookup
+        replies_by_root = {}
+        for reply in all_thread_replies:
+            replies_by_root.setdefault(reply.root_comment_id, []).append(reply)
+
+        # Build user vote map for all comments (top-level + all replies)
         if request.user.is_authenticated:
             all_ids = set(top_ids)
-            for lst in children_by_parent.values():
-                for obj in lst:
-                    all_ids.add(obj.id)
+            for replies_list in replies_by_root.values():
+                for reply in replies_list:
+                    all_ids.add(reply.id)
             user_votes = CommentVote.objects.filter(user=request.user, comment_id__in=list(all_ids))
             request._comment_user_votes = {v.comment_id: v.value for v in user_votes}
         else:
@@ -480,16 +479,17 @@ def comments_list_create(request, article_id):
 
         def serialize_with_children(node):
             """
-            Serialize comment with direct replies only (flat structure).
-            Only include first 5 direct replies to enable pagination.
+            Serialize comment with ALL replies in thread (flat structure).
+            Only include first 5 replies initially to enable pagination.
+            reply_count shows total number of ALL replies in the thread.
             """
             data = _serialize_comment(request, node)
-            children = children_by_parent.get(node.id, [])
+            all_replies = replies_by_root.get(node.id, [])
 
-            if children:
-                # Only include first 5 direct replies (flat structure)
-                data['replies'] = [_serialize_comment(request, ch) for ch in children[:5]]
-                data['reply_count'] = len(children)
+            if all_replies:
+                # Only include first 5 replies (flat structure)
+                data['replies'] = [_serialize_comment(request, r) for r in all_replies[:5]]
+                data['reply_count'] = len(all_replies)
             else:
                 data['replies'] = []
                 data['reply_count'] = 0
@@ -528,18 +528,27 @@ def comments_list_create(request, article_id):
 @require_http_methods(["GET"])
 def comment_replies(request, comment_id):
     """
-    Get paginated direct replies for a specific comment (flat structure).
-    Returns only direct replies without nested children.
+    Get paginated replies for a comment's thread (flat structure).
+    Returns ALL replies in the thread using root_comment field.
     """
-    parent = get_object_or_404(Comment, pk=comment_id)
+    comment = get_object_or_404(Comment, pk=comment_id)
+
+    # Get the root comment for this thread
+    root = comment.root_comment if comment.root_comment else comment
+
     page_number = request.GET.get('page')
-    qs = (Comment.objects.filter(parent=parent, is_approved=True)
+
+    # Fetch ALL replies in this thread (excluding the root itself)
+    qs = (Comment.objects
+          .filter(root_comment=root, is_approved=True)
+          .exclude(id=root.id)
           .select_related('user', 'parent__user')
           .order_by('-cached_score', '-created_at', '-id'))
+
     paginator = Paginator(qs, 5)  # Load 5 replies at a time
     page_obj = paginator.get_page(page_number)
 
-    # Build user vote map for direct replies only
+    # Build user vote map for replies
     if request.user.is_authenticated:
         reply_ids = [c.id for c in page_obj.object_list]
         user_votes = CommentVote.objects.filter(user=request.user, comment_id__in=reply_ids)

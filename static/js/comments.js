@@ -548,8 +548,9 @@
     const parentEl = document.querySelector(`.comment-item[data-comment-id="${parentId}"]`);
     if(!parentEl) return;
 
-    // Scroll to parent comment (align to top of viewport)
-    parentEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // Scroll to parent comment (center in viewport for better visibility)
+    // This prevents the comment from being hidden behind fixed headers or cut off at top
+    parentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
     // Add highlight animation to ONLY the comment content (not the entire comment div)
     const contentEl = parentEl.querySelector('.comment-content');
