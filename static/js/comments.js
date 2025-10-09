@@ -249,12 +249,18 @@
 
   function toggleThread(item, collapse){
     const holder = item.querySelector('.replies');
+    const loadMoreContainer = item.querySelector('.load-more-replies-container');
     const shouldCollapse = (typeof collapse === 'boolean') ? collapse : !item.classList.contains('collapsed');
     item.classList.toggle('collapsed', shouldCollapse);
 
-    // Simple flat structure - just hide/show direct replies
+    // Simple flat structure - just hide/show direct replies and load more button
     if(holder){
       holder.style.display = shouldCollapse ? 'none' : '';
+    }
+
+    // Also hide/show the load more replies button when collapsing/expanding
+    if(loadMoreContainer){
+      loadMoreContainer.style.display = shouldCollapse ? 'none' : '';
     }
 
     const indicator = item.querySelector('.thread-collapse-indicator');
@@ -548,9 +554,18 @@
     const parentEl = document.querySelector(`.comment-item[data-comment-id="${parentId}"]`);
     if(!parentEl) return;
 
-    // Scroll to parent comment (center in viewport for better visibility)
-    // This prevents the comment from being hidden behind fixed headers or cut off at top
-    parentEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Scroll to parent comment (align to top of viewport)
+    // parentEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    const yOffset = -80; // your offset
+    const y = parentEl.getBoundingClientRect().top + window.pageYOffset + yOffset;
+
+    window.scrollTo({ top: y, behavior: 'smooth' });
+
+
+    // setTimeout(() => {
+    //   window.scrollBy({ top: -80, behavior: 'smooth' }); // adjust -80px as needed
+    // }, 300); // delay a bit to let scrollIntoView finish
 
     // Add highlight animation to ONLY the comment content (not the entire comment div)
     const contentEl = parentEl.querySelector('.comment-content');
