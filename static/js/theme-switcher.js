@@ -22,10 +22,10 @@ const setPreference = () => {
 
 const reflectPreference = () => {
   document.firstElementChild.setAttribute('data-theme', theme.value);
-  
+
   // Update Bootstrap theme attribute for compatibility
   document.documentElement.setAttribute('data-bs-theme', theme.value);
-  
+
   const toggleBtn = document.querySelector('#theme-toggle');
   if (toggleBtn) {
     toggleBtn.setAttribute('aria-label', theme.value);

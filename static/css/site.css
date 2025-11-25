@@ -983,12 +983,13 @@ a.text-muted:hover .fa-comments {
   padding: 0;
   cursor: pointer;
   width: 40px;
-  /*height: 40px;*/
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   transition: background-color 0.2s ease;
+  color: inherit;
 }
 
 .theme-toggle:hover {

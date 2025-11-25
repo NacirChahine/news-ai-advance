@@ -60,10 +60,10 @@
                                     <img src="{{ user.profile.profile_picture.url }}"
                                          alt="{{ user.username }}"
                                          class="comment-avatar me-2"
-                                         style="width: 32px; height: 32px;">
+                                         style="width: 28px; height: 28px;">
                                 {% else %}
                                     <div class="comment-avatar-letter me-2"
-                                         style="width: 32px; height: 32px; font-size: 14px;">
+                                         style="width: 28px; height: 28px; font-size: 14px;">
                                         {{ user.username|first|upper }}
                                     </div>
                                 {% endif %}
@@ -77,6 +77,10 @@
                                 <a class="dropdown-item" href="{% url 'accounts:logout' %}">Logout</a>
                             </div>
                         </div>
+                    {% else %}
+                        <a class="nav-link" href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}">Login</a>
+                        <a class="nav-link" href="{% url 'accounts:signup' %}">Sign Up</a>
+                    {% endif %}
                         <!-- Enhanced Theme toggle (visible to all users) -->
                         <button class="theme-toggle ms-2" id="theme-toggle" title="Toggles light & dark" aria-label="auto" aria-live="polite">
                             <svg class="sun-and-moon" aria-hidden="true" width="24" height="24" viewBox="0 0 24 24">
@@ -97,11 +101,6 @@
                                 </g>
                             </svg>
                         </button>
-
-                    {% else %}
-                        <a class="nav-link" href="{% url 'accounts:login' %}?next={{ request.get_full_path|urlencode }}">Login</a>
-                        <a class="nav-link" href="{% url 'accounts:signup' %}">Sign Up</a>
-                    {% endif %}
                 </div>
             </div>
         </div>
