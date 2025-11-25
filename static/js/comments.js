@@ -147,7 +147,7 @@
 
     const item = el(`<div class="list-group-item comment-item" data-comment-id="${c.id}" data-parent-id="${c.parent_id || ''}" data-replies-page="1">
       <div class="thread-left-gutter" role="button" aria-label="Toggle thread" tabindex="0" data-bs-toggle="tooltip" data-bs-placement="left" title="Click to collapse/expand thread"></div>
-      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+      <div class="d-flex align-items-start flex-wrap gap-2">
         ${voteBlock}
         <div class="comment-avatar-container me-2">
           ${avatarHtml}
