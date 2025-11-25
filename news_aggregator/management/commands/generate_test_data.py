@@ -40,37 +40,77 @@ class Command(BaseCommand):
         num_articles_per_source = options.get('articles')
         num_users = options.get('users')
         clear_data = options.get('clear')
-        
+
         # Initialize Faker
         fake = Faker()
-        
+
         if clear_data:
             self.clear_existing_data()
-            
+
+        # Check which flags were explicitly provided
+        # If no specific flags are provided, generate everything with defaults
+        import sys
+        provided_args = sys.argv
+        users_flag_provided = '--users' in provided_args
+        sources_flag_provided = '--sources' in provided_args
+        articles_flag_provided = '--articles' in provided_args
+
+        # If no specific generation flags provided, generate everything
+        generate_all = not (users_flag_provided or sources_flag_provided or articles_flag_provided)
+
+        users = []
+        sources = []
+        articles = []
+
         # Generate test users
-        users = self.generate_test_users(num_users, fake)
-        
+        if generate_all or users_flag_provided:
+            users = self.generate_test_users(num_users, fake)
+
         # Generate news sources
-        sources = self.generate_news_sources(num_sources, fake)
-        
-        # Generate articles
-        articles = self.generate_articles(sources, num_articles_per_source, fake)
-        
-        # Generate analysis data
-        self.generate_analysis_data(articles, fake)
-        
-        # Generate user interactions
-        self.generate_user_interactions(users, articles, fake)
-        
-        # Generate misinformation alerts
-        self.generate_misinformation_alerts(articles, fake)
-        
-        self.stdout.write(self.style.SUCCESS(
-            f'Successfully generated test data: '
-            f'{len(users)} users, '
-            f'{len(sources)} sources, '
-            f'{len(articles)} articles'
-        ))
+        if generate_all or sources_flag_provided:
+            sources = self.generate_news_sources(num_sources, fake)
+
+        # Generate articles (requires sources)
+        if generate_all or articles_flag_provided:
+            # If articles are requested but no sources exist, create default sources
+            if not sources:
+                if NewsSource.objects.exists():
+                    sources = list(NewsSource.objects.all()[:10])
+                else:
+                    self.stdout.write(self.style.WARNING('No sources available. Creating default sources...'))
+                    sources = self.generate_news_sources(10, fake)
+
+            # Get users for article posting (use existing if not generated)
+            article_users = users if users else list(User.objects.all()[:5])
+            articles = self.generate_articles(sources, num_articles_per_source, fake, article_users)
+
+        # Generate analysis data (only if articles were generated)
+        if articles:
+            self.generate_analysis_data(articles, fake)
+
+        # Generate user interactions (only if both users and articles exist)
+        if users and articles:
+            self.generate_user_interactions(users, articles, fake)
+
+        # Generate misinformation alerts (only if articles exist)
+        if articles:
+            self.generate_misinformation_alerts(articles, fake)
+
+        # Build success message
+        message_parts = []
+        if users:
+            message_parts.append(f'{len(users)} users')
+        if sources:
+            message_parts.append(f'{len(sources)} sources')
+        if articles:
+            message_parts.append(f'{len(articles)} articles')
+
+        if message_parts:
+            self.stdout.write(self.style.SUCCESS(
+                f'Successfully generated test data: {", ".join(message_parts)}'
+            ))
+        else:
+            self.stdout.write(self.style.WARNING('No data was generated. Use --users, --sources, or --articles flags.'))
     
     def clear_existing_data(self):
         """Clear existing data from the database"""
@@ -168,53 +208,71 @@ class Command(BaseCommand):
             
         return sources
     
-    def generate_articles(self, sources, num_articles_per_source, fake):
+    def generate_articles(self, sources, num_articles_per_source, fake, users=None):
         """Generate news articles for each source"""
         self.stdout.write(f'Generating {num_articles_per_source} articles per source...')
-        
+
         articles = []
-        
+
         # Topics for more realistic article generation
         topics = [
-            "Politics", "Economy", "Health", "Technology", "Environment", 
+            "Politics", "Economy", "Health", "Technology", "Environment",
             "Education", "International", "Science", "Sports", "Culture"
         ]
-        
+
+        # Get or create a default system user for posting articles
+        system_user, _ = User.objects.get_or_create(
+            username='system',
+            defaults={
+                'email': 'system@newsadvance.com',
+                'first_name': 'System',
+                'last_name': 'User'
+            }
+        )
+
         for source in sources:
             for i in range(num_articles_per_source):
                 # Generate a random topic
                 topic = random.choice(topics)
-                
+
                 # Generate a title based on the topic
                 title = fake.sentence().rstrip('.')
                 if random.random() < 0.7:  # 70% chance to include topic in title
                     title = f"{topic}: {title}"
-                
+
                 # Determine published date (within last 30 days)
                 days_ago = random.randint(0, 30)
                 published_date = timezone.now() - datetime.timedelta(days=days_ago)
-                
+
                 # Generate unique URL
                 url = f"{source.url}/news/{published_date.strftime('%Y/%m/%d')}/{fake.slug()}"
-                
+
                 # Skip if article with this URL already exists
                 if NewsArticle.objects.filter(url=url).exists():
                     continue
-                
+
                 # Generate content
                 paragraphs = []
                 for _ in range(random.randint(5, 15)):
                     paragraphs.append(fake.paragraph())
                 content = "\n\n".join(paragraphs)
-                
+
                 # Create summary (first paragraph)
                 summary = paragraphs[0]
-                
+
+                # Randomly decide if article is posted by a user or system
+                # If users are available, 30% chance it's posted by a test user
+                if users and random.random() < 0.3:
+                    posted_by = random.choice(users)
+                else:
+                    posted_by = system_user
+
                 article = NewsArticle.objects.create(
                     title=title,
                     source=source,
                     url=url,
-                    author=fake.name(),
+                    author_name=fake.name(),  # Fixed: use author_name instead of author
+                    posted_by=posted_by,  # Added: required posted_by field
                     published_date=published_date,
                     content=content,
                     summary=summary,
@@ -222,9 +280,9 @@ class Command(BaseCommand):
                     is_analyzed=False,
                     is_summarized=True
                 )
-                
+
                 articles.append(article)
-                
+
         return articles
     
     def generate_analysis_data(self, articles, fake):
