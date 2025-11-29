@@ -559,11 +559,42 @@ OLLAMA_ENDPOINT=http://localhost:11434/api/generate
 
 # ML Models Configuration
 USE_ML_SUMMARIZATION=True
+
+# RAG and Web Search Configuration (for fact-checking)
+ENABLE_RAG=True
+ENABLE_WEB_SEARCH=True
+WEB_SEARCH_API_KEY=your-google-api-key-here
+WEB_SEARCH_CX=your-custom-search-engine-id-here
+WEB_SEARCH_PROVIDER=google
 ```
 
 **Security Note**: The `.env` file is excluded from version control to protect sensitive credentials. Use `.env.example` as a template for new setups.
 
 **Important**: For local development, ensure `DJANGO_DEBUG=True` is set in your `.env` file. This enables Django's development server to properly serve static files (CSS, JavaScript, images). In production, use a proper web server like nginx or Apache to serve static files.
+
+### Google Custom Search API Setup (Required for Fact-Checking)
+
+The fact-checking feature uses the Google Custom Search API to verify claims. To enable this:
+
+1. **Get an API Key**:
+   - Visit [Google Cloud Console APIs & Credentials](https://console.cloud.google.com/apis/credentials)
+   - Create a new project or select an existing one
+   - Click "Create Credentials" → "API Key"
+   - Copy the API key and set it as `WEB_SEARCH_API_KEY` in your `.env` file
+
+2. **Create a Custom Search Engine**:
+   - Visit [Programmable Search Engine](https://programmablesearchengine.google.com/)
+   - Click "Add" to create a new search engine
+   - Configure it to search the entire web
+   - Copy the "Search engine ID" (starts with a random string like `a1b2c3d4e5f6g7h8i`)
+   - Set it as `WEB_SEARCH_CX` in your `.env` file (this is **different** from your API key)
+
+3. **Enable the Custom Search API**:
+   - Visit [Google Cloud Console APIs Library](https://console.cloud.google.com/apis/library)
+   - Search for "Custom Search API"
+   - Click "Enable"
+
+**Important**: The `WEB_SEARCH_CX` parameter must be your Custom Search Engine ID, NOT your API key. These are two different values.
 
 ### Django Settings
 

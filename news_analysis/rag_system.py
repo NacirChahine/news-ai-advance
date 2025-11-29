@@ -94,20 +94,71 @@ class WebSearcher:
         self.api_key = getattr(settings, 'WEB_SEARCH_API_KEY', '')
         self.cx = getattr(settings, 'WEB_SEARCH_CX', '')
         self.provider = getattr(settings, 'WEB_SEARCH_PROVIDER', 'google')
+        self._validate_config()
+        
+    def _validate_config(self):
+        """Validate the configuration for web search."""
+        if not self.api_key:
+            logger.warning("WEB_SEARCH_API_KEY is not configured. Web search will be disabled.")
+            return
+            
+        if self.provider == 'google':
+            if not self.cx:
+                logger.error("WEB_SEARCH_CX (Google Custom Search Engine ID) is not configured. "
+                           "Please set this in your environment or settings.py. "
+                           "Web search will be disabled.")
+            elif self.cx == self.api_key:
+                logger.error("WEB_SEARCH_CX appears to be the same as WEB_SEARCH_API_KEY. "
+                           "The CX parameter should be your Custom Search Engine ID, not your API key. "
+                           "Please check your configuration at https://programmablesearchengine.google.com/")
+        
+    def _sanitize_query(self, query: str) -> Optional[str]:
+        """Sanitize and validate search query."""
+        if not query or not query.strip():
+            logger.warning("Empty search query provided.")
+            return None
+            
+        # Trim whitespace
+        sanitized = query.strip()
+        
+        # Limit query length (Google has a 2048 character limit for the entire URL)
+        max_query_length = 1500  # Conservative limit
+        if len(sanitized) > max_query_length:
+            logger.warning(f"Query too long ({len(sanitized)} chars), truncating to {max_query_length} chars.")
+            sanitized = sanitized[:max_query_length]
+            
+        return sanitized
         
     def search(self, query: str, num_results: int = 5) -> List[Dict[str, str]]:
         """Perform a web search."""
         if not self.api_key:
-            logger.warning("Web search API key not configured.")
+            logger.debug("Web search skipped: API key not configured.")
+            return []
+            
+        # Sanitize query
+        sanitized_query = self._sanitize_query(query)
+        if not sanitized_query:
             return []
             
         if self.provider == 'google':
-            return self._search_google(query, num_results)
+            return self._search_google(sanitized_query, num_results)
         # Add other providers here
         return []
         
     def _search_google(self, query: str, num_results: int) -> List[Dict[str, str]]:
         """Search using Google Custom Search JSON API."""
+        # Validate configuration before making request
+        if not self.cx:
+            logger.error("Cannot perform Google search: WEB_SEARCH_CX is not configured.")
+            return []
+            
+        if self.cx == self.api_key:
+            logger.error("Cannot perform Google search: WEB_SEARCH_CX appears to be incorrectly set to the API key value.")
+            return []
+            
+        # Validate num_results (Google allows 1-10)
+        num_results = max(1, min(num_results, 10))
+        
         url = "https://www.googleapis.com/customsearch/v1"
         params = {
             'key': self.api_key,
@@ -117,7 +168,8 @@ class WebSearcher:
         }
         
         try:
-            response = requests.get(url, params=params)
+            logger.debug(f"Performing Google search for query: {query[:100]}...")
+            response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             data = response.json()
             
@@ -129,9 +181,29 @@ class WebSearcher:
                         'link': item.get('link', ''),
                         'snippet': item.get('snippet', '')
                     })
+                logger.info(f"Google search returned {len(results)} results.")
+            else:
+                logger.warning(f"Google search returned no items for query: {query[:100]}")
             return results
+        except requests.exceptions.HTTPError as e:
+            # Log detailed error information
+            error_msg = f"Google search HTTP error: {e}"
+            if hasattr(e.response, 'text'):
+                try:
+                    error_data = e.response.json()
+                    error_msg += f"\n{json.dumps(error_data, indent=2)}"
+                except:
+                    error_msg += f"\nResponse: {e.response.text[:500]}"
+            logger.error(error_msg)
+            return []
+        except requests.exceptions.Timeout:
+            logger.error(f"Google search timeout for query: {query[:100]}")
+            return []
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Google search request error: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Google search error: {e}")
+            logger.error(f"Unexpected error during Google search: {e}")
             return []
 
 class RAGPipeline:
