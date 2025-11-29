@@ -167,7 +167,7 @@ class Command(BaseCommand):
                         title=title,
                         source=source,
                         url=url,
-                        author=author,
+                        author_name=author,
                         published_date=published_date,
                         content=content,
                         image_url=image_url,
