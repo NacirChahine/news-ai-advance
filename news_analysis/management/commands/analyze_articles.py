@@ -465,11 +465,26 @@ class Command(BaseCommand):
                 name = det.get("name") or ""
                 if not name:
                     continue
-                # Match to catalog by name or slug
+                    
+                # Match to catalog with increasingly fuzzy strategies
+                # 1) Try exact case-insensitive match
                 lf = LogicalFallacy.objects.filter(name__iexact=name).first()
+                
+                # 2) Try slug match
                 if not lf:
                     slug = slugify(name)
                     lf = LogicalFallacy.objects.filter(slug=slug).first()
+                
+                # 3) Try fuzzy match by removing spaces/hyphens (e.g., "Strawman" -> "strawman" matches "Straw Man")
+                if not lf:
+                    normalized_name = name.replace(" ", "").replace("-", "").replace("_", "").lower()
+                    for candidate in LogicalFallacy.objects.all():
+                        candidate_normalized = candidate.name.replace(" ", "").replace("-", "").replace("_", "").lower()
+                        if candidate_normalized == normalized_name:
+                            lf = candidate
+                            self.stdout.write(f"  Fuzzy matched '{name}' to catalog entry '{candidate.name}'")
+                            break
+                
                 if not lf:
                     self.stderr.write(f"  Unknown fallacy label from AI: '{name}' — skipping (add to catalog if desired)")
                     continue

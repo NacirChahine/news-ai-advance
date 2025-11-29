@@ -435,23 +435,49 @@ Format your response as JSON with the following structure:
         try:
             # Extract the JSON part from the response
             json_str = response["response"].strip()
-            # Handle potential text before or after the JSON
-            json_str = json_str.split("```json")[1].split("```")[0] if "```json" in json_str else json_str
-            json_str = json_str.split("```")[1].split("```")[0] if "```" in json_str else json_str
+            
+            # Check for empty response
+            if not json_str:
+                logger.warning("Empty response from Ollama for sentiment analysis")
+                vader_result = analyze_sentiment(text)
+                return {'classification': vader_result['classification'], 'score': vader_result['compound'], 'explanation': 'Empty LLM response, using VADER'}
+            
+            # Handle code fences
+            if "```json" in json_str:
+                try:
+                    parts = json_str.split("```json", 1)
+                    if len(parts) > 1:
+                        json_str = parts[1].split("```", 1)[0].strip()
+                except IndexError:
+                    pass
+            elif "```" in json_str:
+                try:
+                    parts = json_str.split("```", 2)
+                    if len(parts) >= 3:
+                        json_str = parts[1].strip()
+                except IndexError:
+                    pass
+            
+            # Check again after extraction
+            if not json_str:
+                logger.warning("JSON string empty after code fence extraction")
+                vader_result = analyze_sentiment(text)
+                return {'classification': vader_result['classification'], 'score': vader_result['compound'], 'explanation': 'Malformed LLM response, using VADER'}
 
             # Parse the JSON
             result = json.loads(json_str)
             return result
         except (json.JSONDecodeError, IndexError) as e:
             logger.error(f"Error parsing sentiment analysis response: {e}")
+            logger.debug(f"Raw response (first 200 chars): {response['response'][:200]}")
             # Fallback to basic classification
             response_text = response["response"].lower()
             if "positive" in response_text:
-                return {"classification": "positive", "score": 0.5, "explanation": response_text}
+                return {"classification": "positive", "score": 0.5, "explanation": response_text[:200]}
             elif "negative" in response_text:
-                return {"classification": "negative", "score": -0.5, "explanation": response_text}
+                return {"classification": "negative", "score": -0.5, "explanation": response_text[:200]}
             else:
-                return {"classification": "neutral", "score": 0, "explanation": response_text}
+                return {"classification": "neutral", "score": 0, "explanation": response_text[:200]}
 
     # Fallback to VADER if Ollama fails
     vader_result = analyze_sentiment(text)
@@ -509,22 +535,46 @@ Format your response as JSON with the following structure:
         try:
             # Extract the JSON part from the response
             json_str = response["response"].strip()
-            # Handle potential text before or after the JSON
-            json_str = json_str.split("```json")[1].split("```")[0] if "```json" in json_str else json_str
-            json_str = json_str.split("```")[1].split("```")[0] if "```" in json_str else json_str
+            
+            # Check for empty response
+            if not json_str:
+                logger.warning("Empty response from Ollama for bias detection")
+                return {'political_leaning': 'unknown', 'bias_score': 0, 'confidence': 0, 'explanation': 'Empty LLM response'}
+            
+            # Handle code fences
+            if "```json" in json_str:
+                try:
+                    parts = json_str.split("```json", 1)
+                    if len(parts) > 1:
+                        json_str = parts[1].split("```", 1)[0].strip()
+                except IndexError:
+                    pass
+            elif "```" in json_str:
+                try:
+                    parts = json_str.split("```", 2)
+                    if len(parts) >= 3:
+                        json_str = parts[1].strip()
+                except IndexError:
+                    pass
+            
+            # Check again after extraction
+            if not json_str:
+                logger.warning("JSON string empty after code fence extraction")
+                return {'political_leaning': 'unknown', 'bias_score': 0, 'confidence': 0, 'explanation': 'Malformed LLM response'}
 
             # Parse the JSON
             return json.loads(json_str)
         except (json.JSONDecodeError, IndexError) as e:
             logger.error(f"Error parsing bias detection response: {e}")
+            logger.debug(f"Raw response (first 200 chars): {response['response'][:200]}")
             # Fallback to basic classification
             response_text = response["response"].lower()
             if "left" in response_text:
-                return {"political_leaning": "left", "bias_score": -0.5, "confidence": 0.3, "explanation": response_text}
+                return {"political_leaning": "left", "bias_score": -0.5, "confidence": 0.3, "explanation": response_text[:200]}
             elif "right" in response_text:
-                return {"political_leaning": "right", "bias_score": 0.5, "confidence": 0.3, "explanation": response_text}
+                return {"political_leaning": "right", "bias_score": 0.5, "confidence": 0.3, "explanation": response_text[:200]}
             else:
-                return {"political_leaning": "center", "bias_score": 0, "confidence": 0.3, "explanation": response_text}
+                return {"political_leaning": "center", "bias_score": 0, "confidence": 0.3, "explanation": response_text[:200]}
 
     return {
         'political_leaning': 'unknown',

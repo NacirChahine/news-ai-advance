@@ -13,32 +13,51 @@ class EmbeddingGenerator:
     
     def __init__(self, model: str = "llama3"):
         self.model = model
-        self.ollama_endpoint = os.environ.get("OLLAMA_ENDPOINT", "http://localhost:11434/api/embeddings")
+        # Use dedicated embedding endpoint, not the generate endpoint
+        # The OLLAMA_ENDPOINT env var is for /api/generate (text generation)
+        # Embeddings need /api/embed or /api/embeddings
+        base_url = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434")
+        self.ollama_endpoint = f"{base_url}/api/embed"
 
     def generate(self, text: str) -> List[float]:
         """Generate embeddings for a single text string."""
         if not text:
             return []
             
+        # Ollama embeddings API expects 'input' not 'prompt'
         payload = {
             "model": self.model,
-            "prompt": text
+            "input": text
         }
         
         try:
             response = requests.post(self.ollama_endpoint, json=payload, timeout=30)
             response.raise_for_status()
             
-            # Handle potential NDJSON (newline-delimited JSON) response
-            # Ollama sometimes returns multiple JSON objects on separate lines
+            # Ollama embeddings endpoint returns: {"embeddings": [[...]]} or {"embedding": [...]}
             response_text = response.text.strip()
+            
+            if not response_text:
+                logger.error("Empty response from Ollama embeddings API")
+                return []
             
             # Try parsing as single JSON first
             try:
                 result = json.loads(response_text)
-                embedding = result.get("embedding", [])
-                if embedding:
-                    return embedding
+                
+                # Check for 'embeddings' array (batch format)
+                if "embeddings" in result and isinstance(result["embeddings"], list):
+                    if len(result["embeddings"]) > 0:
+                        return result["embeddings"][0]
+                
+                # Check for single 'embedding' (single input format)
+                if "embedding" in result and isinstance(result["embedding"], list):
+                    return result["embedding"]
+                
+                # Log unexpected format
+                logger.warning(f"Unexpected embeddings response format. Keys: {result.keys()}")
+                return []
+                
             except json.JSONDecodeError as json_err:
                 # If that fails, try parsing as NDJSON (multiple JSON objects per line)
                 logger.debug(f"Single JSON parse failed, trying NDJSON format: {json_err}")
@@ -51,10 +70,17 @@ class EmbeddingGenerator:
                         continue
                     try:
                         obj = json.loads(line)
-                        embedding = obj.get("embedding", [])
-                        if embedding:
+                        
+                        # Check both possible formats
+                        if "embeddings" in obj and isinstance(obj["embeddings"], list):
+                            if len(obj["embeddings"]) > 0:
+                                logger.debug(f"Successfully extracted embedding from NDJSON line")
+                                return obj["embeddings"][0]
+                        
+                        if "embedding" in obj and isinstance(obj["embedding"], list):
                             logger.debug(f"Successfully extracted embedding from NDJSON line")
-                            return embedding
+                            return obj["embedding"]
+                            
                     except json.JSONDecodeError:
                         continue
                 
