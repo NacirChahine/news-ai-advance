@@ -240,13 +240,58 @@ def query_ollama(prompt, model="llama3", system_prompt=None, max_tokens=1000):
 
     try:
         # Make the API request
-        response = requests.post(ollama_endpoint, json=payload)
+        response = requests.post(ollama_endpoint, json=payload, timeout=60)
         response.raise_for_status()  # Raise an exception for HTTP errors
 
-        # Parse and return the response
-        return response.json()
+        # Handle potential NDJSON (newline-delimited JSON) response
+        # Even with stream=False, some Ollama versions return NDJSON
+        response_text = response.text.strip()
+        
+        # Try parsing as single JSON first
+        try:
+            return response.json()
+        except json.JSONDecodeError as json_err:
+            # If single JSON parse fails, try NDJSON format
+            logger.debug(f"Single JSON parse failed for Ollama response, trying NDJSON: {json_err}")
+            lines = response_text.strip().split('\n')
+            
+            # Ollama NDJSON format: each line is a JSON object with partial response
+            # The final aggregated response is built from the "response" field of each chunk
+            aggregated_response = ""
+            final_data = None
+            
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    chunk = json.loads(line)
+                    # Accumulate the response text
+                    if "response" in chunk:
+                        aggregated_response += chunk.get("response", "")
+                    # Keep the last chunk's metadata (done, model, etc.)
+                    final_data = chunk
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Failed to parse NDJSON line: {e}")
+                    continue
+            
+            if final_data is not None:
+                # Replace the response with the aggregated text
+                final_data["response"] = aggregated_response
+                logger.debug(f"Successfully parsed NDJSON response ({len(lines)} chunks)")
+                return final_data
+            else:
+                logger.error(f"Failed to parse Ollama response as JSON or NDJSON. First 200 chars: {response_text[:200]}")
+                return None
+                
+    except requests.exceptions.Timeout:
+        logger.error(f"Timeout querying Ollama API (model: {model})")
+        return None
     except requests.exceptions.RequestException as e:
         logger.error(f"Error querying Ollama API: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error querying Ollama API: {e}")
         return None
 
 
@@ -529,19 +574,60 @@ Format your response as a JSON array of strings, each representing a key insight
         try:
             # Extract the JSON part from the response
             json_str = response["response"].strip()
+            
+            # Check if response is empty
+            if not json_str:
+                logger.warning("Empty response from Ollama for insights extraction")
+                return []
+            
             # Handle potential text before or after the JSON
-            json_str = json_str.split("```json")[1].split("```")[0] if "```json" in json_str else json_str
-            json_str = json_str.split("```")[1].split("```")[0] if "```" in json_str else json_str
+            # Look for ```json ... ``` blocks first
+            if "```json" in json_str:
+                try:
+                    parts = json_str.split("```json", 1)
+                    if len(parts) > 1:
+                        json_str = parts[1].split("```", 1)[0].strip()
+                except IndexError:
+                    logger.warning("Found ```json marker but couldn't extract content")
+            # Then try generic ``` blocks
+            elif "```" in json_str:
+                try:
+                    parts = json_str.split("```", 2)
+                    if len(parts) >= 3:
+                        json_str = parts[1].strip()
+                    elif len(parts) == 2:
+                        # Only one ``` pair, take the content between them
+                        json_str = parts[1].strip()
+                except IndexError:
+                    logger.warning("Found ``` marker but couldn't extract content")
+            
+            # Check again if empty after extraction
+            if not json_str:
+                logger.warning("JSON string is empty after code fence extraction")
+                # Try fallback extraction from plain text
+                lines = response["response"].strip().split("\n")
+                insights = [line.strip() for line in lines if line.strip() and not line.strip().startswith("#")]
+                return insights[:num_insights] if insights else []
 
             # Parse the JSON
             insights = json.loads(json_str)
             return insights if isinstance(insights, list) else []
-        except (json.JSONDecodeError, IndexError) as e:
+        except json.JSONDecodeError as e:
             logger.error(f"Error parsing insights extraction response: {e}")
+            logger.debug(f"Raw response (first 300 chars): {response['response'][:300]}")
             # Try to extract insights from plain text response
             lines = response["response"].strip().split("\n")
             insights = [line.strip() for line in lines if line.strip() and not line.strip().startswith("#")]
-            return insights[:num_insights] if insights else []
+            cleaned = []
+            for insight in insights[:num_insights]:
+                # Remove common list markers
+                insight = re.sub(r'^[\d\.\-\*\+]+\s*', '', insight)
+                if insight and len(insight) > 10:  # Skip very short lines
+                    cleaned.append(insight)
+            return cleaned if cleaned else []
+        except (IndexError, KeyError) as e:
+            logger.error(f"Error extracting insights: {e}")
+            return []
 
     return []
 

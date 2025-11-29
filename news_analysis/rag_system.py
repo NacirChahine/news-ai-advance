@@ -26,12 +26,51 @@ class EmbeddingGenerator:
         }
         
         try:
-            response = requests.post(self.ollama_endpoint, json=payload)
+            response = requests.post(self.ollama_endpoint, json=payload, timeout=30)
             response.raise_for_status()
-            result = response.json()
-            return result.get("embedding", [])
+            
+            # Handle potential NDJSON (newline-delimited JSON) response
+            # Ollama sometimes returns multiple JSON objects on separate lines
+            response_text = response.text.strip()
+            
+            # Try parsing as single JSON first
+            try:
+                result = json.loads(response_text)
+                embedding = result.get("embedding", [])
+                if embedding:
+                    return embedding
+            except json.JSONDecodeError as json_err:
+                # If that fails, try parsing as NDJSON (multiple JSON objects per line)
+                logger.debug(f"Single JSON parse failed, trying NDJSON format: {json_err}")
+                lines = response_text.strip().split('\n')
+                
+                # Parse each line and look for the embedding in the last complete response
+                for line in reversed(lines):  # Start from the end
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        obj = json.loads(line)
+                        embedding = obj.get("embedding", [])
+                        if embedding:
+                            logger.debug(f"Successfully extracted embedding from NDJSON line")
+                            return embedding
+                    except json.JSONDecodeError:
+                        continue
+                
+                # If we still don't have an embedding, log the raw response for debugging
+                logger.error(f"Failed to extract embedding from response. First 200 chars: {response_text[:200]}")
+                return []
+            
+            return []
+        except requests.exceptions.Timeout:
+            logger.error(f"Timeout generating embeddings for text (length: {len(text)})")
+            return []
+        except requests.exceptions.RequestException as e:
+            logger.error(f"Request error generating embeddings: {e}")
+            return []
         except Exception as e:
-            logger.error(f"Error generating embeddings: {e}")
+            logger.error(f"Unexpected error generating embeddings: {e}")
             return []
 
 class VectorStore:
