@@ -10,6 +10,7 @@ import logging
 import requests
 import json
 import os
+from .rag_system import RAGPipeline, FactChecker
 
 logger = logging.getLogger(__name__)
 
@@ -641,6 +642,22 @@ def verify_claim_with_ai(claim: str, context_text: str | None = None, model: str
         "You are a professional fact-checker. Be accurate and conservative. "
         "If insufficient information, return rating 'unverified'. Prefer citing 1-3 reputable sources."
     )
+
+    # RAG Integration
+    if getattr(settings, 'ENABLE_RAG', False) and getattr(settings, 'ENABLE_WEB_SEARCH', False):
+        try:
+            rag = RAGPipeline()
+            checker = FactChecker(rag)
+            # Perform web search and get context
+            rag_result = checker.check(claim)
+            rag_context = rag_result.get("context", "")
+            
+            if rag_context:
+                # Append RAG context to existing context
+                ctx = f"{ctx}\n\n--- Retrieved Information ---\n{rag_context}"
+                logger.info(f"Augmented fact-check with RAG context for claim: {claim[:50]}...")
+        except Exception as e:
+            logger.error(f"RAG fact-check failed: {e}")
 
     resp = query_ollama(prompt, model=model, system_prompt=system_prompt, max_tokens=700)
     if resp and "response" in resp:

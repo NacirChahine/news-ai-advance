@@ -195,3 +195,11 @@ LOGGING = {
 SUMMARIZATION_MODEL_DIR = BASE_DIR / 'news_analysis' / 'ml_models' / 'summarization' / 'trained_model'
 SUMMARIZATION_BASE_MODEL = 'facebook/bart-base'  # Fallback if trained model not available
 USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
+
+# RAG and Web Search Configuration
+ENABLE_RAG = config('ENABLE_RAG', default=True, cast=bool)
+ENABLE_WEB_SEARCH = config('ENABLE_WEB_SEARCH', default=True, cast=bool)
+WEB_SEARCH_API_KEY = config('WEB_SEARCH_API_KEY', default='')
+WEB_SEARCH_CX = config('WEB_SEARCH_CX', default='')  # For Google Custom Search
+WEB_SEARCH_PROVIDER = config('WEB_SEARCH_PROVIDER', default='google')  # google, bing, serpapi
+VECTOR_DB_PATH = BASE_DIR / 'news_analysis' / 'vector_db'

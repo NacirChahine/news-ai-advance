@@ -792,6 +792,36 @@ python manage.py reverify_fact_checks --older-than-days 14 --limit 50
 - End-to-end tests with Selenium
 - ML model evaluation using ROUGE metrics
 
+## RAG and Web Search Integration
+
+The system includes a Retrieval-Augmented Generation (RAG) pipeline to enhance fact-checking and analysis with real-time information.
+
+### Components (news_analysis/rag_system.py)
+
+1.  **RAGPipeline**: Orchestrates the RAG process.
+    -   **EmbeddingGenerator**: Generates embeddings using Ollama (default: llama3).
+    -   **VectorStore**: In-memory vector store using cosine similarity for document retrieval.
+    -   **WebSearcher**: Handles web search operations (supports Google Custom Search).
+
+2.  **FactChecker**: Professional fact-checking workflow.
+    -   Searches the web for claims.
+    -   Retrieves relevant context from the vector store.
+    -   Augments LLM prompts with retrieved information for verification.
+
+### Configuration
+
+Settings in `settings.py`:
+-   `ENABLE_RAG`: Enable/disable RAG (default: True).
+-   `ENABLE_WEB_SEARCH`: Enable/disable web search (default: True).
+-   `WEB_SEARCH_API_KEY`: API key for the search provider.
+-   `WEB_SEARCH_CX`: Custom Search Engine ID (for Google).
+-   `WEB_SEARCH_PROVIDER`: Search provider (default: 'google').
+
+### Usage
+
+The RAG system is automatically used by `verify_claim_with_ai` in `news_analysis/utils.py` if enabled. It augments the context provided to the LLM with search results to improve accuracy and provide citations.
+
+
 ## Performance Considerations
 
 - Asynchronous processing for long-running analysis tasks
