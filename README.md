@@ -116,8 +116,46 @@ python manage.py generate_test_data --sources 10 --articles 30 --users 5
 To fetch news articles from configured sources:
 
 ```bash
+# Fetch with validation enabled (default - only scrapes valid articles)
 python manage.py fetch_news
+
+# Fetch from a specific source
+python manage.py fetch_news --source_id 1
+
+# Fetch limited number of articles
+python manage.py fetch_news --limit 20
+
+# Disable validation and scrape all pages (legacy mode)
+python manage.py fetch_news --scrape-all
 ```
+
+#### Article Validation System
+
+The news scraper includes intelligent article validation to filter out non-article pages and ensure only legitimate news articles are collected:
+
+**What it validates:**
+- URL patterns (excludes category pages, tag pages, author pages, etc.)
+- Article metadata (publication date, author, Open Graph tags)
+- Content structure (headline, paragraphs, minimum word count)
+- Text quality (minimum 100 words, 2+ paragraphs)
+
+**Benefits:**
+- ✅ Improved data quality - only real articles stored
+- ✅ Reduced noise - no category/navigation pages
+- ✅ Better AI analysis - ML models work with quality content
+- ✅ Storage efficiency - no wasted database space
+
+**Statistics example:**
+```
+Processing Example News (https://example.com)
+  ✓ Added: Breaking News Story About...
+  ✓ Added: Important Update on Current...
+Added 15 articles from Example News
+  Skipped 5 existing articles
+  Skipped 12 non-article pages (validation)
+```
+
+For detailed documentation, see [docs/ARTICLE_VALIDATION.md](docs/ARTICLE_VALIDATION.md)
 
 
 ### Health Check

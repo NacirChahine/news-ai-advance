@@ -501,3 +501,132 @@ class PublicProfileTests(TestCase):
 
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.context['liked_page_obj'].paginator.count, 1)
+
+
+class ArticleValidationTests(TestCase):
+    """Integration tests for article validation functionality"""
+    
+    def setUp(self):
+        self.source = NewsSource.objects.create(
+            name='Test News',
+            url='https://testnews.example.com'
+        )
+    
+    def test_valid_article_url_patterns(self):
+        """Test that valid article URLs pass validation"""
+        from news_aggregator.article_validator import ArticleValidator
+        
+        valid_urls = [
+            'https://testnews.example.com/news/2024/11/breaking-story',
+            'https://testnews.example.com/article/important-update',
+            'https://testnews.example.com/politics/election-news',
+        ]
+        
+        for url in valid_urls:
+            with self.subTest(url=url):
+                self.assertTrue(ArticleValidator.is_valid_article_url(url))
+    
+    def test_invalid_category_and_tag_urls(self):
+        """Test that category and tag pages are rejected"""
+        from news_aggregator.article_validator import ArticleValidator
+        
+        invalid_urls = [
+            'https://testnews.example.com/category/politics',
+            'https://testnews.example.com/tag/breaking-news',
+            'https://testnews.example.com/author/john-doe',
+        ]
+        
+        for url in invalid_urls:
+            with self.subTest(url=url):
+                self.assertFalse(ArticleValidator.is_valid_article_url(url))
+    
+    def test_article_structure_validation(self):
+        """Test validation of article HTML structure"""
+        from news_aggregator.article_validator import ArticleValidator
+        from bs4 import BeautifulSoup
+        
+        # Valid article HTML
+        valid_html = """
+        <html>
+        <head>
+            <title>Breaking News: Important Update</title>
+            <meta property="og:type" content="article">
+            <meta property="article:author" content="Jane Smith">
+            <meta property="article:published_time" content="2024-11-29T10:00:00Z">
+        </head>
+        <body>
+            <article>
+                <h1>Breaking News: Important Update</h1>
+                <p>This is the first paragraph with substantial content.</p>
+                <p>This is the second paragraph with more details.</p>
+                <p>This is the third paragraph with analysis.</p>
+                <p>This is the fourth paragraph with conclusion.</p>
+            </article>
+        </body>
+        </html>
+        """
+        
+        soup = BeautifulSoup(valid_html, 'lxml')
+        validation = ArticleValidator.validate_article_structure(soup)
+        
+        self.assertTrue(validation['is_valid'])
+        self.assertTrue(validation['has_title'])
+        self.assertTrue(validation['has_content'])
+        self.assertTrue(validation['has_metadata'])
+    
+    def test_invalid_article_insufficient_content(self):
+        """Test that pages with insufficient content are rejected"""
+        from news_aggregator.article_validator import ArticleValidator
+        from bs4 import BeautifulSoup
+        
+        # Minimal content
+        invalid_html = """
+        <html>
+        <head><title>Short Page</title></head>
+        <body>
+            <h1>Short Page</h1>
+            <p>Too short.</p>
+        </body>
+        </html>
+        """
+        
+        soup = BeautifulSoup(invalid_html, 'lxml')
+        validation = ArticleValidator.validate_article_structure(soup)
+        
+        self.assertFalse(validation['is_valid'])
+        self.assertFalse(validation['has_content'])
+    
+    def test_complete_validation_flow(self):
+        """Test the complete validation flow with URL and HTML"""
+        from news_aggregator.article_validator import ArticleValidator
+        
+        url = 'https://testnews.example.com/news/2024/11/article'
+        html = """
+        <html>
+        <head>
+            <title>Valid Article Title</title>
+            <meta property="og:type" content="article">
+            <meta property="article:author" content="Test Author">
+            <meta property="article:published_time" content="2024-11-29T10:00:00Z">
+        </head>
+        <body>
+            <article>
+                <h1>Valid Article Title</h1>
+                <div class="author">By Test Author</div>
+                <time datetime="2024-11-29">November 29, 2024</time>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit.</p>
+                <p>Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+                <p>Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.</p>
+                <p>Duis aute irure dolor in reprehenderit in voluptate velit esse.</p>
+            </article>
+        </body>
+        </html>
+        """
+        
+        is_valid, details = ArticleValidator.is_valid_article(url, html)
+        
+        self.assertTrue(is_valid)
+        self.assertEqual(details['url'], url)
+        self.assertTrue(details['has_title'])
+        self.assertTrue(details['has_content'])
+

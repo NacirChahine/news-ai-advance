@@ -438,7 +438,24 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 
 ## Utility Modules
 
-### News Aggregator Utilities (news_aggregator/utils.py)
+### News Aggregator Utilities
+
+#### Article Validation (news_aggregator/article_validator.py)
+
+- **ArticleValidator class**: Main validator for filtering non-article pages
+  - `is_valid_article_url(url)`: Validates URL patterns (returns bool)
+  - `extract_metadata(soup)`: Extracts article metadata from HTML (Open Graph, author, date, title)
+  - `validate_article_structure(soup)`: Validates content structure and quality (returns validation dict)
+  - `is_valid_article(url, html_content)`: Complete validation pipeline (returns tuple: is_valid, details)
+- **Validation thresholds**:
+  - MIN_ARTICLE_WORD_COUNT = 100
+  - MIN_PARAGRAPH_COUNT = 2
+  - MIN_TITLE_LENGTH = 10
+  - MAX_TITLE_LENGTH = 300
+- **URL pattern filters**: Comprehensive list of non-article patterns (categories, tags, authors, indexes, search, archives, etc.)
+- **Benefits**: Improved data quality, reduced noise, better AI analysis, storage efficiency
+
+#### General Utilities (news_aggregator/utils.py)
 
 - **clean_html(html_content)**: Removes scripts, styles, and unwanted HTML elements
 - **extract_article_content(url, timeout)**: Extracts article content using newspaper3k

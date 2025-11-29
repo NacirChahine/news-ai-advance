@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django.db import IntegrityError
 from news_aggregator.models import NewsSource, NewsArticle
+from news_aggregator.article_validator import ArticleValidator
 
 logger = logging.getLogger(__name__)
 
@@ -26,10 +27,21 @@ class Command(BaseCommand):
             default=10,
             help='Maximum number of articles to fetch per source'
         )
+        parser.add_argument(
+            '--scrape-all',
+            action='store_true',
+            help='Scrape all pages without article validation (includes category pages, etc.)'
+        )
 
     def handle(self, *args, **options):
         source_id = options.get('source_id')
         limit = options.get('limit')
+        scrape_all = options.get('scrape_all', False)
+
+        if scrape_all:
+            self.stdout.write(self.style.WARNING('Article validation is DISABLED. All pages will be scraped.'))
+        else:
+            self.stdout.write('Article validation is ENABLED. Only valid articles will be scraped.')
 
         if source_id:
             try:
@@ -43,11 +55,11 @@ class Command(BaseCommand):
             self.stdout.write(f"Fetching news from {sources.count()} sources")
 
         for source in sources:
-            self.fetch_articles_for_source(source, limit)
+            self.fetch_articles_for_source(source, limit, scrape_all)
 
         self.stdout.write(self.style.SUCCESS('News article fetching completed!'))
 
-    def fetch_articles_for_source(self, source, limit):
+    def fetch_articles_for_source(self, source, limit, scrape_all=False):
         """Fetch articles for a specific source"""
         self.stdout.write(f"Processing {source.name} ({source.url})")
 
@@ -64,7 +76,6 @@ class Command(BaseCommand):
             soup = BeautifulSoup(response.text, 'lxml')
 
             # Find all links that might be articles
-            # This is a basic implementation - might need customization based on specific news sites
             article_links = []
             base_domain = urlparse(source.url).netloc
 
@@ -75,34 +86,65 @@ class Command(BaseCommand):
                 if not url.startswith('http'):
                     url = urljoin(source.url, url)
 
-                # Filter URLs to likely be articles (basic heuristics)
+                # Basic URL filtering
                 url_path = urlparse(url).path
-                if (urlparse(url).netloc == base_domain and
-                        url_path.strip('/') and
-                        not url_path.endswith(('.jpg', '.png', '.pdf', '.zip')) and
-                        '?' not in url and
-                        '#' not in url and
-                        '/tag/' not in url_path and
-                        '/category/' not in url_path):
-                    article_links.append(url)
+                parsed_url = urlparse(url)
+                
+                # Skip if not from same domain
+                if parsed_url.netloc != base_domain:
+                    continue
+                
+                # Skip file extensions
+                if url_path.endswith(('.jpg', '.png', '.pdf', '.zip', '.css', '.js')):
+                    continue
+                
+                # Skip anchors
+                if '#' in url:
+                    continue
+
+                # Apply URL validation if not scraping all
+                if not scrape_all:
+                    if not ArticleValidator.is_valid_article_url(url):
+                        continue
+                else:
+                    # Minimal filtering for scrape-all mode
+                    if (not url_path.strip('/') or
+                        '/tag/' in url_path or
+                        '/category/' in url_path):
+                        continue
+
+                article_links.append(url)
 
             # Remove duplicates and limit
-            article_links = list(dict.fromkeys(article_links))[:limit * 2]  # Get more than needed in case some fail
+            article_links = list(dict.fromkeys(article_links))[:limit * 3]  # Get more than needed in case some fail
 
             count = 0
+            skipped_validation = 0
+            skipped_existing = 0
+            
             for url in article_links:
                 if count >= limit:
                     break
 
                 # Skip if we already have this article in the database
                 if NewsArticle.objects.filter(url=url).exists():
+                    skipped_existing += 1
                     continue
 
                 try:
                     # Download and parse the article
                     article_response = requests.get(url, headers=headers, timeout=10)
                     article_response.raise_for_status()
-                    article_soup = BeautifulSoup(article_response.text, 'lxml')
+                    article_html = article_response.text
+                    article_soup = BeautifulSoup(article_html, 'lxml')
+
+                    # Validate article if not in scrape-all mode
+                    if not scrape_all:
+                        is_valid, validation_details = ArticleValidator.is_valid_article(url, article_html)
+                        if not is_valid:
+                            skipped_validation += 1
+                            logger.debug(f"Skipped {url}: {validation_details.get('reason', 'Invalid article')}")
+                            continue
 
                     # Extract title - looking for common patterns
                     title = None
@@ -146,6 +188,32 @@ class Command(BaseCommand):
                     if author_elem:
                         author = author_elem.text.strip()
 
+                    # Try to extract publish date from metadata
+                    published_date = None
+                    date_meta = article_soup.find('meta', property='article:published_time') or \
+                               article_soup.find('meta', attrs={'name': 'publishdate'}) or \
+                               article_soup.find('meta', attrs={'name': 'publication_date'})
+                    if date_meta and 'content' in date_meta.attrs:
+                        try:
+                            from dateutil import parser as date_parser
+                            published_date = date_parser.parse(date_meta['content'])
+                        except Exception:
+                            pass
+                    
+                    # Try time tag if metadata not found
+                    if not published_date:
+                        time_tag = article_soup.find('time', attrs={'datetime': True})
+                        if time_tag:
+                            try:
+                                from dateutil import parser as date_parser
+                                published_date = date_parser.parse(time_tag['datetime'])
+                            except Exception:
+                                pass
+                    
+                    # Use current time as fallback
+                    if not published_date:
+                        published_date = timezone.now()
+
                     # Try to find image
                     image_url = ""
                     main_image = article_soup.find('meta', property='og:image') or article_soup.find('meta', attrs={
@@ -158,9 +226,6 @@ class Command(BaseCommand):
                                     'featured' in c or 'main' in c or 'hero' in c))
                         if img_tag and 'src' in img_tag.attrs:
                             image_url = urljoin(url, img_tag['src'])
-
-                    # Use current time as published date (simplified)
-                    published_date = timezone.now()
 
                     # Create the NewsArticle instance
                     news_article = NewsArticle(
@@ -175,15 +240,21 @@ class Command(BaseCommand):
                     news_article.save()
 
                     count += 1
-                    self.stdout.write(f"  Added: {title}")
+                    self.stdout.write(f"  ✓ Added: {title[:80]}{'...' if len(title) > 80 else ''}")
 
                 except IntegrityError:
                     # Handle duplicate URLs (race condition)
+                    skipped_existing += 1
                     continue
                 except Exception as e:
-                    self.stderr.write(f"  Error processing article {url}: {str(e)}")
+                    self.stderr.write(f"  ✗ Error processing article {url}: {str(e)}")
 
+            # Summary output
             self.stdout.write(self.style.SUCCESS(f"Added {count} articles from {source.name}"))
+            if skipped_existing > 0:
+                self.stdout.write(f"  Skipped {skipped_existing} existing articles")
+            if skipped_validation > 0 and not scrape_all:
+                self.stdout.write(f"  Skipped {skipped_validation} non-article pages (validation)")
 
         except Exception as e:
             self.stderr.write(self.style.ERROR(f"Error fetching articles from {source.name}: {str(e)}"))
