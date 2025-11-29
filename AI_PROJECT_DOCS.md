@@ -464,6 +464,18 @@ USE_ML_SUMMARIZATION = True  # Set to False to always use Ollama instead
 - **extract_main_image(html_content, base_url)**: Finds the primary image in HTML content
 - **summarize_text(text, max_sentences)**: Generates extractive summaries of article content
 
+### News Feed Logic
+
+The news feed (`latest_news` view) implements a smart sorting algorithm:
+
+-   **Unauthenticated Users**: Articles are sorted purely by publication date (newest first).
+-   **Authenticated Users**:
+    -   **Primary Sort**: Publication Date (newest day first).
+    -   **Secondary Sort**: Source Preference (articles from favorited sources appear first within the same day).
+    -   **Tertiary Sort**: Publication Time (newest time first).
+
+This logic ensures users see the most recent news while prioritizing their preferred sources for the current day's news.
+
 ### News Analysis Utilities (news_analysis/utils.py)
 
 #### Core Analysis Functions

@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q, F, Count, Case, When, IntegerField
+from django.db.models.functions import TruncDate
 from django.http import JsonResponse
 from .models import NewsArticle, NewsSource, UserSavedArticle, ArticleLike
 
@@ -43,14 +44,17 @@ def latest_news(request):
         try:
             preferred_source_ids = list(request.user.profile.preferred_sources.values_list('id', flat=True))
             if preferred_source_ids:
-                # Add ordering priority: preferred sources first, then by date
+                # Add ordering priority:
+                # 1. Primary sort: By publication date (most recent first)
+                # 2. Secondary sort: By favorite status (favorited sources appear before non-favorited sources within the same date)
                 articles = articles.annotate(
                     is_preferred=Case(
                         When(source_id__in=preferred_source_ids, then=1),
                         default=0,
                         output_field=IntegerField()
-                    )
-                ).order_by('-is_preferred', '-published_date')
+                    ),
+                    published_date_date=TruncDate('published_date')
+                ).order_by('-published_date_date', '-is_preferred', '-published_date')
             else:
                 # No preferred sources, just order by date
                 articles = articles.order_by('-published_date')

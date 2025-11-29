@@ -1,6 +1,8 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User
 from django.urls import reverse
+from django.utils import timezone
+from datetime import timedelta
 
 from news_aggregator.models import NewsSource, NewsArticle
 from news_analysis.models import FactCheckResult
@@ -414,7 +416,7 @@ class CommentCounterTests(TestCase):
         Comment.objects.create(article=self.article, user=self.user, content='c1')
         Comment.objects.create(article=self.article, user=self.user, content='c2')
 
-        url = reverse('news_aggregator:latest_news')
+        url = reverse('news_aggregator:latest')
         resp = self.client.get(url)
 
         self.assertEqual(resp.status_code, 200)
@@ -630,3 +632,94 @@ class ArticleValidationTests(TestCase):
         self.assertTrue(details['has_title'])
         self.assertTrue(details['has_content'])
 
+
+class NewsSortingTests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='testuser', password='password')
+        self.client.login(username='testuser', password='password')
+        
+        # Create sources
+        self.source_preferred = NewsSource.objects.create(name='Preferred Source', url='http://pref.com')
+        self.source_other = NewsSource.objects.create(name='Other Source', url='http://other.com')
+        
+        # Add preferred source to user profile
+        self.user.profile.preferred_sources.add(self.source_preferred)
+        
+        # Create articles
+        now = timezone.now()
+        yesterday = now - timedelta(days=1)
+        
+        # Article 1: Today 10:00, Non-Preferred (Newest date)
+        self.a1 = NewsArticle.objects.create(
+            title='A1 Today Non-Pref',
+            source=self.source_other,
+            url='http://other.com/1',
+            published_date=now.replace(hour=10, minute=0, second=0, microsecond=0),
+            content='content'
+        )
+        
+        # Article 2: Yesterday 10:00, Preferred
+        self.a2 = NewsArticle.objects.create(
+            title='A2 Yesterday Pref 10:00',
+            source=self.source_preferred,
+            url='http://pref.com/2',
+            published_date=yesterday.replace(hour=10, minute=0, second=0, microsecond=0),
+            content='content'
+        )
+        
+        # Article 3: Yesterday 09:00, Non-Preferred
+        self.a3 = NewsArticle.objects.create(
+            title='A3 Yesterday Non-Pref 09:00',
+            source=self.source_other,
+            url='http://other.com/3',
+            published_date=yesterday.replace(hour=9, minute=0, second=0, microsecond=0),
+            content='content'
+        )
+        
+        # Article 4: Yesterday 11:00, Preferred
+        self.a4 = NewsArticle.objects.create(
+            title='A4 Yesterday Pref 11:00',
+            source=self.source_preferred,
+            url='http://pref.com/4',
+            published_date=yesterday.replace(hour=11, minute=0, second=0, microsecond=0),
+            content='content'
+        )
+
+    def test_latest_news_sorting(self):
+        url = reverse('news_aggregator:latest')
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        articles = list(response.context['page_obj'])
+        
+        # Expected order:
+        # 1. A1 (Today)
+        # 2. A4 (Yesterday, Preferred, 11:00)
+        # 3. A2 (Yesterday, Preferred, 10:00)
+        # 4. A3 (Yesterday, Non-Preferred, 09:00)
+        
+        self.assertEqual(articles[0], self.a1)
+        self.assertEqual(articles[1], self.a4)
+        self.assertEqual(articles[2], self.a2)
+        self.assertEqual(articles[3], self.a3)
+
+    def test_sorting_without_preference(self):
+        # Remove preference
+        self.user.profile.preferred_sources.clear()
+        
+        url = reverse('news_aggregator:latest')
+        response = self.client.get(url)
+        
+        articles = list(response.context['page_obj'])
+        
+        # Expected order (pure date desc):
+        # 1. A1 (Today 10:00)
+        # 2. A4 (Yesterday 11:00)
+        # 3. A2 (Yesterday 10:00)
+        # 4. A3 (Yesterday 09:00)
+        
+        self.assertEqual(articles[0], self.a1)
+        self.assertEqual(articles[1], self.a4)
+        self.assertEqual(articles[2], self.a2)
+        self.assertEqual(articles[3], self.a3)
