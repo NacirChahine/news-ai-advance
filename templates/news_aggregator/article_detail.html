@@ -61,19 +61,8 @@
                                 <i class="far fa-calendar-alt me-1"></i> {{ article.published_date|date:"F d, Y" }}
                             </span>
                         </div>
-                        <div class="article-metadata-actions">
-                            {% if user.is_authenticated %}
-                                {% if user_saved %}
-                                    <a href="#" class="btn btn-sm btn-outline-danger save-article-btn" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
-                                        <i class="fas fa-bookmark"></i> <span>Unsave</span>
-                                    </a>
-                                {% else %}
-                                    <a href="#" class="btn btn-sm btn-outline-primary save-article-btn" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
-                                        <i class="far fa-bookmark"></i> <span>Save</span>
-                                    </a>
-                                {% endif %}
-                            {% endif %}
-                            <a href="{{ article.url }}" target="_blank" class="btn btn-sm btn-outline-secondary ms-0 ms-lg-2 mt-2 mt-sm-0  original-source-link">
+                        <div class="article-metadata-actions col-2 ms-1">
+                            <a href="{{ article.url }}" target="_blank" class="btn btn-sm btn-outline-secondary mt-1 original-source-link">
                                 <i class="fas fa-external-link-alt"></i> Original Source
                             </a>
                         </div>
@@ -98,6 +87,16 @@
                             <i class="far fa-comments"></i>
                             <span id="article-comment-count">{{ comment_count|default:0 }}</span>
                         </a>
+                        {% if user_saved %}
+                            <a href="#" class="btn btn-sm btn-outline-danger save-article-btn ms-2" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
+                                <i class="fas fa-bookmark"></i> <span>Unsave</span>
+                            </a>
+                        {% else %}
+                            <a href="#" class="btn btn-sm btn-outline-primary save-article-btn ms-2" data-article-id="{{ article.id }}" data-save-url="{% url 'news_aggregator:save_article' %}">
+                                <i class="far fa-bookmark"></i> <span>Save</span>
+                            </a>
+                        {% endif %}
+
                     </div>
                     {% else %}
                     <div class="article-likes-container mb-3 d-flex align-items-center">
